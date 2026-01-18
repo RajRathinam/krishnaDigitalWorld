@@ -1,0 +1,1122 @@
+
+----------------------------------------------------------
+import { DataTypes } from 'sequelize';
+import sequelize from '../config/database.js';
+
+const Order = sequelize.define('Order', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  orderNumber: {
+    type: DataTypes.STRING(50),
+    unique: true,
+    allowNull: false
+  },
+  userId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    }
+  },
+  orderItems: {
+    type: DataTypes.JSON,
+    allowNull: false,
+    defaultValue: []
+  },
+  shippingAddress: {
+    type: DataTypes.JSON,
+    allowNull: false
+  },
+  billingAddress: {
+    type: DataTypes.JSON,
+    allowNull: true
+  },
+  paymentMethod: {
+    type: DataTypes.ENUM('cod', 'card', 'upi', 'emi'),
+    defaultValue: 'cod'
+  },
+  emiTenure: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    validate: {
+      isIn: [[3, 6, 9, 12]]
+    },
+    comment: 'EMI tenure in months (if payment method is EMI)'
+  },
+  paymentStatus: {
+    type: DataTypes.ENUM('pending', 'paid', 'failed', 'refunded'),
+    defaultValue: 'pending'
+  },
+  orderStatus: {
+    type: DataTypes.ENUM('pending', 'processing', 'shipped', 'delivered', 'cancelled'),
+    defaultValue: 'pending'
+  },
+  totalPrice: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: false
+  },
+  shippingCost: {
+    type: DataTypes.DECIMAL(10, 2),
+    defaultValue: 0
+  },
+  taxAmount: {
+    type: DataTypes.DECIMAL(10, 2),
+    defaultValue: 0
+  },
+  discountAmount: {
+    type: DataTypes.DECIMAL(10, 2),
+    defaultValue: 0
+  },
+  finalAmount: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: false
+  },
+  trackingId: {
+    type: DataTypes.STRING(100),
+    unique: true,
+    allowNull: true
+  },
+  notes: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  couponId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'coupons',
+      key: 'id'
+    }
+  }
+}, {
+  tableName: 'orders',
+  hooks: {
+    beforeValidate: (order) => {
+      // Generate order number if not provided
+      if (!order.orderNumber) {
+        const timestamp = Date.now();
+        const random = Math.floor(Math.random() * 1000);
+        order.orderNumber = `ORD${timestamp}${random}`;
+      }
+      
+      // Generate tracking ID if not provided and order is shipped
+      if (!order.trackingId && order.orderStatus === 'shipped') {
+        order.trackingId = `TRK${Date.now()}${Math.floor(Math.random() * 10000)}`;
+      }
+      
+      // Calculate final amount
+      if (order.totalPrice !== undefined) {
+        const shipping = order.shippingCost || 0;
+        const tax = order.taxAmount || 0;
+        const discount = order.discountAmount || 0;
+        order.finalAmount = order.totalPrice + shipping + tax - discount;
+      }
+    }
+  }
+});
+
+export default Order;
+--------------------------------------------------------------
+import express from 'express';
+import {
+  createOrder,
+  getOrders,
+  getOrder,
+  cancelOrder,
+  trackOrder,
+  getOrderByNumber
+} from '../controllers/orderController.js';
+import { authenticate, requireCustomer } from '../middleware/auth.js';
+import { validateOrderData } from '../middleware/validation.js';
+
+const router = express.Router();
+
+// Public route
+router.get('/track/:trackingId', trackOrder);
+
+// Protected routes (customer only)
+router.use(authenticate, requireCustomer);
+
+router.post('/', validateOrderData, createOrder);
+router.get('/', getOrders);
+router.get('/number/:orderNumber', getOrderByNumber);
+router.get('/:id', getOrder);
+router.put('/:id/cancel', cancelOrder);
+
+export default router;
+---------------------------------------------
+// middleware/auth.js
+import jwt from 'jsonwebtoken'; // Add this import
+import { verifyToken, decodeToken } from '../utils/jwt.js';
+import { User } from '../models/index.js';
+
+/**
+ * Authentication middleware
+ * Verifies JWT token and attaches user to request
+ */
+export const authenticate = async (req, res, next) => {
+  try {
+    console.log('=== AUTHENTICATE MIDDLEWARE ===');
+    console.log('Request URL:', req.originalUrl);
+    console.log('Request method:', req.method);
+    
+    // Get token from header, body, or cookie
+    let token = req.headers.authorization || req.body.token || req.query.token;
+    
+    console.log('Raw Authorization header:', req.headers.authorization);
+    console.log('Raw cookies:', req.cookies);
+    
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+      token = req.headers.authorization.substring(7);
+      console.log('Token extracted from Bearer header');
+    } else if (req.cookies && req.cookies.token) {
+      token = req.cookies.token;
+      console.log('Token extracted from cookies');
+    }
+
+    console.log('Token extracted:', token ? `${token.substring(0, 20)}...` : 'NO TOKEN');
+
+    if (!token) {
+      console.log('ERROR: No token provided');
+      return res.status(401).json({
+        success: false,
+        message: 'Access denied. No token provided.'
+      });
+    }
+
+    // First try to decode to see what's in the token
+    try {
+      const decodedWithoutVerify = jwt.decode(token);
+      console.log('Token decoded (without verification):', decodedWithoutVerify);
+    } catch (decodeError) {
+      console.log('Cannot decode token:', decodeError.message);
+    }
+
+    // Verify token
+    console.log('Attempting to verify token...');
+    const decoded = verifyToken(token);
+    console.log('Token verified successfully:', decoded);
+    
+    // Check if user still exists
+    console.log('Looking for user with ID:', decoded.userId);
+    const user = await User.findByPk(decoded.userId);
+    
+    if (!user) {
+      console.log('ERROR: User not found for ID:', decoded.userId);
+      return res.status(401).json({
+        success: false,
+        message: 'User no longer exists.'
+      });
+    }
+
+    console.log('User found:', {
+      id: user.id,
+      name: user.name,
+      role: user.role,
+      isActive: user.isActive,
+      isVerified: user.isVerified
+    });
+
+    // Check if user is active
+    if (!user.isActive) {
+      console.log('ERROR: User account is inactive');
+      return res.status(401).json({
+        success: false,
+        message: 'Account is deactivated.'
+      });
+    }
+
+    // Attach user to request
+    req.user = {
+      id: user.id,
+      phone: user.phone,
+      slug: user.slug,
+      role: user.role,
+      isVerified: user.isVerified
+    };
+    
+    console.log('=== AUTHENTICATION SUCCESSFUL ===');
+    console.log('User attached to request:', req.user);
+    
+    next();
+  } catch (error) {
+    console.error('=== AUTHENTICATION FAILED ===');
+    console.error('Error:', error.message);
+    console.error('Error stack:', error.stack);
+    
+    let message = 'Invalid or expired token.';
+    if (error.message === 'Token expired') {
+      message = 'Token expired. Please login again.';
+    } else if (error.message === 'Invalid token') {
+      message = 'Invalid token format.';
+    }
+    
+    return res.status(401).json({
+      success: false,
+      message: message,
+      debug: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+/**
+ * Optional authentication middleware
+ * Doesn't fail if no token, but attaches user if valid token exists
+ */
+export const optionalAuthenticate = async (req, res, next) => {
+  try {
+    // Get token from header, body, or cookie
+    let token = req.headers.authorization || req.body.token || req.query.token;
+    
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+      token = req.headers.authorization.substring(7);
+    } else if (req.cookies && req.cookies.token) {
+      token = req.cookies.token;
+    }
+
+    if (!token) {
+      return next(); // No token, continue without user
+    }
+
+    // Verify token
+    const decoded = verifyToken(token);
+    
+    // Check if user still exists
+    const user = await User.findByPk(decoded.userId);
+    
+    if (user && user.isActive) {
+      // Attach user to request
+      req.user = {
+        id: user.id,
+        phone: user.phone,
+        slug: user.slug,
+        role: user.role,
+        isVerified: user.isVerified
+      };
+    }
+    
+    next();
+  } catch (error) {
+    // Invalid token, continue without user
+    next();
+  }
+};
+
+/**
+ * Check if user is verified
+ */
+export const requireVerified = (req, res, next) => {
+  if (!req.user || !req.user.isVerified) {
+    return res.status(403).json({
+      success: false,
+      message: 'Account verification required.'
+    });
+  }
+  next();
+};
+
+/**
+ * Customer middleware
+ * Checks if user has customer role
+ */
+export const requireCustomer = (req, res, next) => {
+  if (!req.user || req.user.role !== 'customer') {
+    return res.status(403).json({
+      success: false,
+      message: 'Access denied. Customer account required.'
+    });
+  }
+  next();
+};
+
+/**
+ * Verified customer middleware
+ */
+export const requireVerifiedCustomer = (req, res, next) => {
+  if (!req.user || req.user.role !== 'customer') {
+    return res.status(403).json({
+      success: false,
+      message: 'Access denied. Customer account required.'
+    });
+  }
+
+  if (!req.user.isVerified) {
+    return res.status(403).json({
+      success: false,
+      message: 'Account verification required.'
+    });
+  }
+  next();
+};
+
+/**
+ * Admin middleware
+ * Checks if user has admin role
+ */
+export const requireAdmin = (req, res, next) => {
+  if (!req.user || req.user.role !== 'admin') {
+    return res.status(403).json({
+      success: false,
+      message: 'Access denied. Admin privileges required.'
+    });
+  }
+  next();
+};
+--------------------------
+export const validateOrderData = validate(validateOrder);
+----------------------------
+/**
+ * Validate order data
+ */
+export const validateOrder = (data) => {
+  const errors = {};
+
+  if (!data.shippingAddress || typeof data.shippingAddress !== 'object') {
+    errors.shippingAddress = 'Valid shipping address is required';
+  } else {
+    const { street, city, state, zipCode, country } = data.shippingAddress;
+    if (!street || !city || !state || !zipCode || !country) {
+      errors.shippingAddress = 'Complete shipping address is required';
+    }
+  }
+
+  if (!data.orderItems || !Array.isArray(data.orderItems) || data.orderItems.length === 0) {
+    errors.orderItems = 'At least one order item is required';
+  }
+
+  if (data.paymentMethod && !['cod', 'card', 'upi'].includes(data.paymentMethod)) {
+    errors.paymentMethod = 'Valid payment method is required';
+  }
+
+  return {
+    isValid: Object.keys(errors).length === 0,
+    errors
+  };
+};
+-------------------------------------------
+import { Order, Cart, Product, User, Coupon, UserCoupon, EmiPayment, EmiInstallment, sequelize, Sequelize } from '../models/index.js';
+import { generateOrderNumber, getTotalStock, getStockForColor } from '../utils/helpers.js';
+import { sendOrderConfirmationEmail } from '../services/emailService.js';
+import { sendOrderConfirmationSMS } from '../services/smsService.js';
+import { calculateEMI, generateInstallmentSchedule } from '../utils/emiCalculator.js';
+
+/**
+ * @desc    Create new order from cart
+ * @route   POST /api/orders
+ * @access  Private (Customer)
+ */
+export const createOrder = async (req, res) => {
+  const transaction = await sequelize.transaction();
+  
+  try {
+    const {
+      shippingAddress,
+      billingAddress,
+      paymentMethod,
+      notes,
+      couponCode,
+      emiTenure,
+      emiInterestRate
+    } = req.body;
+    
+    // Validate shipping address
+    if (!shippingAddress || typeof shippingAddress !== 'object') {
+      await transaction.rollback();
+      return res.status(400).json({
+        success: false,
+        message: 'Shipping address is required'
+      });
+    }
+    
+    // Get user's cart
+    const cart = await Cart.findOne({
+      where: { userId: req.user.id },
+      transaction
+    });
+    
+    if (!cart || !cart.items || cart.items.length === 0) {
+      await transaction.rollback();
+      return res.status(400).json({
+        success: false,
+        message: 'Cart is empty'
+      });
+    }
+    
+    // Verify all items are available and prepare order items
+    const orderItems = [];
+    let totalPrice = 0;
+    let shippingCost = 0;
+    let taxAmount = 0;
+    const productsToUpdate = []; // Store products that need stock update
+    
+    for (const item of cart.items) {
+      const product = await Product.findByPk(item.productId, { transaction });
+      
+      if (!product) {
+        await transaction.rollback();
+        return res.status(404).json({
+          success: false,
+          message: `Product ${item.productId} not found`
+        });
+      }
+      
+      // Check stock availability (color-specific if colorName provided)
+      let availableStock;
+      if (item.colorName && product.colorsAndImages && product.colorsAndImages[item.colorName]) {
+        availableStock = getStockForColor(product.stock, item.colorName);
+      } else {
+        availableStock = getTotalStock(product.stock);
+      }
+      
+      if (!product.availability || availableStock < item.quantity) {
+        await transaction.rollback();
+        return res.status(400).json({
+          success: false,
+          message: `Product "${product.name}"${item.colorName ? ` (${item.colorName})` : ''} is out of stock or insufficient quantity. Available: ${availableStock}`
+        });
+      }
+      
+      const price = product.discountPrice || product.price;
+      const itemTotal = price * item.quantity;
+      
+      // Get image for the specific color if available
+      let itemImage = null;
+      if (item.colorName && product.colorsAndImages && product.colorsAndImages[item.colorName]) {
+        const colorImages = product.colorsAndImages[item.colorName];
+        const mainImage = colorImages.find(img => img.type === 'main');
+        itemImage = mainImage ? mainImage.url : (colorImages[0] ? colorImages[0].url : null);
+      } else if (product.images && product.images.length > 0) {
+        itemImage = product.images[0].url;
+      } else if (product.colorsAndImages) {
+        // Get first available color's main image
+        const firstColor = Object.keys(product.colorsAndImages)[0];
+        if (firstColor && product.colorsAndImages[firstColor].length > 0) {
+          const mainImage = product.colorsAndImages[firstColor].find(img => img.type === 'main');
+          itemImage = mainImage ? mainImage.url : product.colorsAndImages[firstColor][0].url;
+        }
+      }
+      
+      orderItems.push({
+        productId: product.id,
+        name: product.name,
+        code: product.code,
+        price,
+        quantity: item.quantity,
+        colorName: item.colorName || null,
+        total: itemTotal,
+        image: itemImage,
+        variant: product.variant
+      });
+      
+      // Store product and item info for stock deduction
+      productsToUpdate.push({
+        product,
+        quantity: item.quantity,
+        colorName: item.colorName
+      });
+      
+      totalPrice += itemTotal;
+      taxAmount += itemTotal * (product.tax || 0) / 100;
+    }
+    
+    // Apply coupon if provided
+    let discountAmount = 0;
+    let couponId = null;
+    
+    if (couponCode) {
+      const coupon = await Coupon.findOne({
+        where: {
+          code: couponCode,
+          isActive: true,
+          validFrom: { [Sequelize.Op.lte]: new Date() },
+          validUntil: { [Sequelize.Op.gte]: new Date() }
+        },
+        transaction
+      });
+      
+      if (coupon) {
+        // Check usage limit
+        if (coupon.usageLimit && coupon.usedCount >= coupon.usageLimit) {
+          await transaction.rollback();
+          return res.status(400).json({
+            success: false,
+            message: 'Coupon usage limit reached'
+          });
+        }
+        
+        // Check minimum order amount
+        if (coupon.minOrderAmount && totalPrice < coupon.minOrderAmount) {
+          await transaction.rollback();
+          return res.status(400).json({
+            success: false,
+            message: `Minimum order amount of ${coupon.minOrderAmount} required for this coupon`
+          });
+        }
+        
+        // Check if user has already used this coupon
+        if (coupon.isSingleUse) {
+          const userCoupon = await UserCoupon.findOne({
+            where: {
+              userId: req.user.id,
+              couponId: coupon.id,
+              isUsed: true
+            },
+            transaction
+          });
+          
+          if (userCoupon) {
+            await transaction.rollback();
+            return res.status(400).json({
+              success: false,
+              message: 'Coupon already used'
+            });
+          }
+        }
+        
+        // Calculate discount
+        let discount = 0;
+        if (coupon.discountType === 'percentage') {
+          discount = (totalPrice * coupon.discountValue) / 100;
+          if (coupon.maxDiscount && discount > coupon.maxDiscount) {
+            discount = coupon.maxDiscount;
+          }
+        } else {
+          discount = coupon.discountValue;
+        }
+        
+        discountAmount = discount;
+        couponId = coupon.id;
+        
+        // Mark coupon as used
+        await UserCoupon.create({
+          userId: req.user.id,
+          couponId: coupon.id,
+          isUsed: true,
+          usedAt: new Date(),
+          orderId: null // Will be updated after order creation
+        }, { transaction });
+        
+        // Increment coupon usage count
+        await coupon.increment('usedCount', { transaction });
+      }
+    }
+    
+    // Calculate final amount
+    const finalAmount = totalPrice + shippingCost + taxAmount - discountAmount;
+    
+    // Generate order number
+    const orderNumber = generateOrderNumber();
+    
+    // Validate EMI if payment method is EMI
+    if (paymentMethod === 'emi') {
+      if (!emiTenure || ![3, 6, 9, 12].includes(parseInt(emiTenure))) {
+        await transaction.rollback();
+        return res.status(400).json({
+          success: false,
+          message: 'Valid EMI tenure (3, 6, 9, or 12 months) is required'
+        });
+      }
+    }
+    
+    // Create order
+    const order = await Order.create({
+      orderNumber,
+      userId: req.user.id,
+      orderItems,
+      shippingAddress,
+      billingAddress: billingAddress || shippingAddress,
+      paymentMethod: paymentMethod || 'cod',
+      paymentStatus: paymentMethod === 'cod' ? 'pending' : (paymentMethod === 'emi' ? 'pending' : 'pending'),
+      orderStatus: 'pending',
+      totalPrice,
+      shippingCost,
+      taxAmount,
+      discountAmount,
+      finalAmount,
+      notes,
+      couponId,
+      emiTenure: paymentMethod === 'emi' ? parseInt(emiTenure) : null
+    }, { transaction });
+    
+    // Deduct stock for all products in order
+    for (const { product, quantity, colorName } of productsToUpdate) {
+      let updatedStock = { ...(product.stock || {}) };
+      
+      if (colorName && typeof updatedStock === 'object' && !Array.isArray(updatedStock)) {
+        // Deduct from specific color stock
+        const currentColorStock = getStockForColor(updatedStock, colorName);
+        const newColorStock = Math.max(0, currentColorStock - quantity);
+        updatedStock[colorName] = newColorStock;
+      } else if (typeof updatedStock === 'object' && !Array.isArray(updatedStock)) {
+        // If no color specified, deduct from first available color or distribute
+        const colors = Object.keys(updatedStock);
+        if (colors.length > 0) {
+          // Deduct from first color (or could distribute)
+          const firstColor = colors[0];
+          const currentStock = getStockForColor(updatedStock, firstColor);
+          updatedStock[firstColor] = Math.max(0, currentStock - quantity);
+        }
+      } else {
+        // Legacy numeric stock
+        const currentStock = typeof updatedStock === 'number' ? updatedStock : getTotalStock(updatedStock);
+        updatedStock = Math.max(0, currentStock - quantity);
+      }
+      
+      // Update product stock and availability
+      const totalStockAfter = getTotalStock(updatedStock);
+      await product.update({
+        stock: updatedStock,
+        availability: totalStockAfter > 0
+      }, { transaction });
+    }
+    
+    // Update coupon with order ID if used
+    if (couponId) {
+      await UserCoupon.update(
+        { orderId: order.id },
+        {
+          where: {
+            userId: req.user.id,
+            couponId,
+            orderId: null
+          },
+          transaction
+        }
+      );
+    }
+    
+    // Update product stock
+    for (const item of cart.items) {
+      await Product.decrement('stock', {
+        by: item.quantity,
+        where: { id: item.productId },
+        transaction
+      });
+      
+      // Check if stock becomes zero
+      const updatedProduct = await Product.findByPk(item.productId, { transaction });
+      if (updatedProduct.stock === 0) {
+        await updatedProduct.update({ availability: false }, { transaction });
+      }
+    }
+    
+    // Clear cart
+    await cart.update({
+      items: [],
+      totalAmount: 0
+    }, { transaction });
+    
+    // Create EMI payment if payment method is EMI
+    let emiPayment = null;
+    if (paymentMethod === 'emi') {
+      const interestRate = emiInterestRate || 0; // Default 0% interest, can be configured
+      const emiDetails = calculateEMI(finalAmount, interestRate, parseInt(emiTenure));
+      const startDate = new Date(); // EMI starts from order date
+      
+      emiPayment = await EmiPayment.create({
+        orderId: order.id,
+        userId: req.user.id,
+        principalAmount: finalAmount,
+        interestRate: interestRate,
+        tenure: parseInt(emiTenure),
+        monthlyInstallment: emiDetails.monthlyInstallment,
+        totalAmount: emiDetails.totalAmount,
+        totalInterest: emiDetails.totalInterest,
+        startDate: startDate,
+        status: 'active',
+        nextDueDate: new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000), // First installment due in 30 days
+        paidInstallments: 0,
+        remainingInstallments: parseInt(emiTenure)
+      }, { transaction });
+      
+      // Generate installment schedule
+      const installments = generateInstallmentSchedule(
+        finalAmount,
+        emiDetails.monthlyInstallment,
+        interestRate,
+        parseInt(emiTenure),
+        startDate
+      );
+      
+      // Create installments
+      await EmiInstallment.bulkCreate(
+        installments.map(inst => ({
+          emiPaymentId: emiPayment.id,
+          installmentNumber: inst.installmentNumber,
+          dueDate: inst.dueDate,
+          amount: inst.amount,
+          principalAmount: inst.principalAmount,
+          interestAmount: inst.interestAmount,
+          status: inst.status
+        })),
+        { transaction }
+      );
+    }
+    
+    await transaction.commit();
+    
+    // Send confirmation notifications
+    const user = await User.findByPk(req.user.id);
+    await sendOrderConfirmationEmail(user, order);
+    await sendOrderConfirmationSMS(user.phone, order.orderNumber, order.finalAmount);
+    
+    // Include EMI details in response if EMI payment was created
+    const orderResponse = order.toJSON();
+    if (emiPayment) {
+      const emiWithInstallments = await EmiPayment.findByPk(emiPayment.id, {
+        include: [
+          {
+            model: EmiInstallment,
+            as: 'installments',
+            order: [['installmentNumber', 'ASC']]
+          }
+        ]
+      });
+      orderResponse.emiPayment = emiWithInstallments;
+    }
+    
+    res.status(201).json({
+      success: true,
+      message: paymentMethod === 'emi' 
+        ? 'Order created successfully with EMI payment plan' 
+        : 'Order created successfully',
+      data: orderResponse
+    });
+  } catch (error) {
+    await transaction.rollback();
+    console.error('Create order error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while creating order'
+    });
+  }
+};
+
+/**
+ * @desc    Get user's orders
+ * @route   GET /api/orders
+ * @access  Private (Customer)
+ */
+export const getOrders = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, status } = req.query;
+    const offset = (page - 1) * limit;
+    
+    const where = { userId: req.user.id };
+    if (status) where.orderStatus = status;
+    
+    const { count, rows: orders } = await Order.findAndCountAll({
+      where,
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+      order: [['createdAt', 'DESC']],
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'name', 'phone']
+        }
+      ]
+    });
+    
+    res.status(200).json({
+      success: true,
+      data: {
+        orders,
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages: Math.ceil(count / limit),
+          totalItems: count,
+          itemsPerPage: parseInt(limit)
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Get orders error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching orders'
+    });
+  }
+};
+
+/**
+ * @desc    Get single order
+ * @route   GET /api/orders/:id
+ * @access  Private (Customer)
+ */
+export const getOrder = async (req, res) => {
+  try {
+    const order = await Order.findOne({
+      where: {
+        id: req.params.id,
+        userId: req.user.id
+      },
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'name', 'phone', 'email']
+        },
+        {
+          model: Coupon,
+          as: 'coupon',
+          attributes: ['id', 'code', 'discountType', 'discountValue']
+        }
+      ]
+    });
+    
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found'
+      });
+    }
+    
+    // Enrich order items with product details
+    const enrichedItems = await Promise.all(
+      order.orderItems.map(async (item) => {
+        const product = await Product.findByPk(item.productId, {
+          attributes: ['id', 'name', 'slug', 'images']
+        });
+        
+        return {
+          ...item,
+          product: product || null
+        };
+      })
+    );
+    
+    const enrichedOrder = {
+      ...order.toJSON(),
+      orderItems: enrichedItems
+    };
+    
+    res.status(200).json({
+      success: true,
+      data: enrichedOrder
+    });
+  } catch (error) {
+    console.error('Get order error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching order'
+    });
+  }
+};
+
+/**
+ * @desc    Cancel order
+ * @route   PUT /api/orders/:id/cancel
+ * @access  Private (Customer)
+ */
+export const cancelOrder = async (req, res) => {
+  const transaction = await sequelize.transaction();
+  
+  try {
+    const order = await Order.findOne({
+      where: {
+        id: req.params.id,
+        userId: req.user.id
+      },
+      transaction
+    });
+    
+    if (!order) {
+      await transaction.rollback();
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found'
+      });
+    }
+    
+    // Check if order can be cancelled
+    if (!['pending', 'processing'].includes(order.orderStatus)) {
+      await transaction.rollback();
+      return res.status(400).json({
+        success: false,
+        message: `Order cannot be cancelled in "${order.orderStatus}" status`
+      });
+    }
+    
+    // Update order status
+    await order.update({
+      orderStatus: 'cancelled',
+      paymentStatus: order.paymentStatus === 'paid' ? 'refunded' : 'failed'
+    }, { transaction });
+    
+    // Restore product stock (handle JSON stock structure and colorName)
+    for (const item of order.orderItems) {
+      const product = await Product.findByPk(item.productId, { transaction });
+      
+      if (product) {
+        let updatedStock = { ...(product.stock || {}) };
+        
+        if (item.colorName && typeof updatedStock === 'object' && !Array.isArray(updatedStock)) {
+          // Restore to specific color stock
+          const currentColorStock = getStockForColor(updatedStock, item.colorName);
+          updatedStock[item.colorName] = (currentColorStock || 0) + item.quantity;
+        } else if (typeof updatedStock === 'object' && !Array.isArray(updatedStock)) {
+          // If no color specified, restore to first available color
+          const colors = Object.keys(updatedStock);
+          if (colors.length > 0) {
+            const firstColor = colors[0];
+            const currentStock = getStockForColor(updatedStock, firstColor);
+            updatedStock[firstColor] = (currentStock || 0) + item.quantity;
+          } else {
+            // No colors, create default
+            updatedStock['default'] = item.quantity;
+          }
+        } else {
+          // Legacy numeric stock
+          const currentStock = typeof updatedStock === 'number' ? updatedStock : getTotalStock(updatedStock);
+          updatedStock = (currentStock || 0) + item.quantity;
+        }
+        
+        // Update product stock and availability
+        const totalStockAfter = getTotalStock(updatedStock);
+        await product.update({
+          stock: updatedStock,
+          availability: totalStockAfter > 0
+        }, { transaction });
+      }
+    }
+    
+    // Refund coupon if used
+    if (order.couponId) {
+      await UserCoupon.update(
+        { isUsed: false, usedAt: null, orderId: null },
+        {
+          where: {
+            userId: req.user.id,
+            couponId: order.couponId,
+            orderId: order.id
+          },
+          transaction
+        }
+      );
+      
+      await Coupon.decrement('usedCount', {
+        where: { id: order.couponId },
+        transaction
+      });
+    }
+    
+    await transaction.commit();
+    
+    res.status(200).json({
+      success: true,
+      message: 'Order cancelled successfully',
+      data: order
+    });
+  } catch (error) {
+    await transaction.rollback();
+    console.error('Cancel order error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while cancelling order'
+    });
+  }
+};
+
+/**
+ * @desc    Track order by tracking ID
+ * @route   GET /api/orders/track/:trackingId
+ * @access  Public
+ */
+export const trackOrder = async (req, res) => {
+  try {
+    const { trackingId } = req.params;
+    
+    const order = await Order.findOne({
+      where: { trackingId },
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'name']
+        }
+      ]
+    });
+    
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found'
+      });
+    }
+    
+    // Return limited info for public tracking
+    const trackingInfo = {
+      orderNumber: order.orderNumber,
+      orderStatus: order.orderStatus,
+      shippingAddress: order.shippingAddress,
+      estimatedDelivery: order.estimatedDelivery,
+      lastUpdated: order.updatedAt
+    };
+    
+    res.status(200).json({
+      success: true,
+      data: trackingInfo
+    });
+  } catch (error) {
+    console.error('Track order error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while tracking order'
+    });
+  }
+};
+
+/**
+ * @desc    Get order by order number
+ * @route   GET /api/orders/number/:orderNumber
+ * @access  Private (Customer)
+ */
+export const getOrderByNumber = async (req, res) => {
+  try {
+    const { orderNumber } = req.params;
+    
+    const order = await Order.findOne({
+      where: {
+        orderNumber,
+        userId: req.user.id
+      },
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'name', 'phone', 'email']
+        },
+        {
+          model: Coupon,
+          as: 'coupon',
+          attributes: ['id', 'code', 'discountType', 'discountValue']
+        }
+      ]
+    });
+    
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found'
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      data: order
+    });
+  } catch (error) {
+    console.error('Get order by number error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching order'
+    });
+  }
+};
+

@@ -1,0 +1,5 @@
+Starting Debug
+DB Connected
+Order Status Counts: {"pending":10,"delivered":5,"cancelled":3,"shipped":1}
+Found 5 pending orders.
+Last Order Items Value: "[{\"productId\":21,\"name\":\"IFB 10 Kg Fully Automatic Front Load Washing Machine\",\"code\":\"WM004\",\"price\":\"47000.00\",\"quantity\":1,\"colorName\":\"Black\",\"total\":47000,\"variant\":\"Aqua Energie with Steam\"}]"
