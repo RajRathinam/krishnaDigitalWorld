@@ -7,10 +7,7 @@ export default function CustomerGuard() {
     // While we are resolving auth, don't render anything (or a loader)
     if (loading)
         return null;
-    // If logged-in user is an admin, redirect them to the admin panel
-    if (user && user.role === "admin") {
-        return <Navigate to="/admin" replace state={{ from: location.pathname }}/>;
-    }
+
     // Otherwise allow access to customer routes
     return <Outlet />;
 }

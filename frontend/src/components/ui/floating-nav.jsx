@@ -14,9 +14,7 @@ const FloatingNav = () => {
     const [isLoading, setIsLoading] = useState(false);
     // Get cart context
     const { cartCount, isLoading: cartLoading } = useCart(); // Add this
-    // Hide floating nav on admin routes
-    if (location.pathname.startsWith('/admin'))
-        return null;
+
     const [active, setActive] = useState(0);
     const [indicatorStyle, setIndicatorStyle] = useState({ width: 0, left: 0 });
     const containerRef = useRef(null);
@@ -139,36 +137,36 @@ const FloatingNav = () => {
         return () => window.removeEventListener("resize", updateIndicator);
     }, [active]);
     return (<div className="md:hidden fixed bottom-0 left-0 right-0 z-40 px-3 pb-3 pt-1 pointer-events-none">
-      <nav ref={containerRef} className="relative flex items-center justify-around bg-card/95 backdrop-blur-md border border-border rounded-2xl shadow-lg py-2 pointer-events-auto">
-        {items.map((item, index) => {
-            const Icon = item.icon;
-            const isActive = active === index;
-            if (item.isSearch) {
-                return (<SearchModal key={item.id} data={getSearchData()} isLoading={isLoading}>
-                <button ref={(el) => (btnRefs.current[index] = el)} className="relative flex flex-col items-center justify-center flex-1 px-2 py-2 text-sm font-medium text-muted-foreground">
-                  <Icon className="w-5 h-5"/>
-                  <span className="text-[10px] mt-0.5">{item.label}</span>
-                </button>
-              </SearchModal>);
-            }
-            return (<Link key={item.id} to={item.href} ref={(el) => (btnRefs.current[index] = el)} onClick={() => setActive(index)} className={`relative flex flex-col items-center justify-center flex-1 px-2 py-2 text-sm font-medium transition-colors ${isActive ? "text-accent" : "text-muted-foreground"}`}>
-              <div className="relative">
-                <Icon className="w-5 h-5"/>
-                {/* Dynamic cart badge */}
-                {item.badge !== undefined && item.showBadge && (<span className="absolute -top-1.5 -right-1.5 bg-accent text-accent-foreground text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                    {cartLoading ? '...' : item.badge}
-                  </span>)}
-              </div>
-              <span className="text-[10px] mt-0.5">{item.label}</span>
-            </Link>);
-        })}
+        <nav ref={containerRef} className="relative flex items-center justify-around bg-card/95 backdrop-blur-md border border-border rounded-2xl shadow-lg py-2 pointer-events-auto">
+            {items.map((item, index) => {
+                const Icon = item.icon;
+                const isActive = active === index;
+                if (item.isSearch) {
+                    return (<SearchModal key={item.id} data={getSearchData()} isLoading={isLoading}>
+                        <button ref={(el) => (btnRefs.current[index] = el)} className="relative flex flex-col items-center justify-center flex-1 px-2 py-2 text-sm font-medium text-muted-foreground">
+                            <Icon className="w-5 h-5" />
+                            <span className="text-[10px] mt-0.5">{item.label}</span>
+                        </button>
+                    </SearchModal>);
+                }
+                return (<Link key={item.id} to={item.href} ref={(el) => (btnRefs.current[index] = el)} onClick={() => setActive(index)} className={`relative flex flex-col items-center justify-center flex-1 px-2 py-2 text-sm font-medium transition-colors ${isActive ? "text-accent" : "text-muted-foreground"}`}>
+                    <div className="relative">
+                        <Icon className="w-5 h-5" />
+                        {/* Dynamic cart badge */}
+                        {item.badge !== undefined && item.showBadge && (<span className="absolute -top-1.5 -right-1.5 bg-accent text-accent-foreground text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                            {cartLoading ? '...' : item.badge}
+                        </span>)}
+                    </div>
+                    <span className="text-[10px] mt-0.5">{item.label}</span>
+                </Link>);
+            })}
 
-        {/* Sliding Active Indicator */}
-        {active >= 0 && (<motion.div className="absolute top-0 h-0.5 bg-accent rounded-full" initial={false} animate={{
+            {/* Sliding Active Indicator */}
+            {active >= 0 && (<motion.div className="absolute top-0 h-0.5 bg-accent rounded-full" initial={false} animate={{
                 width: indicatorStyle.width * 0.5,
                 left: indicatorStyle.left + indicatorStyle.width * 0.25,
-            }} transition={{ type: "spring", stiffness: 400, damping: 30 }}/>)}
-      </nav>
+            }} transition={{ type: "spring", stiffness: 400, damping: 30 }} />)}
+        </nav>
     </div>);
 };
 export default FloatingNav;

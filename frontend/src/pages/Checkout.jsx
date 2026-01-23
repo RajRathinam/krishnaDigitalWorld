@@ -4,6 +4,7 @@ import { Footer } from "@/components/layout/Footer";
 import { Check, MapPin, Truck, CreditCard, Building2, Smartphone, Banknote, ShieldCheck, Lock, Tv, WashingMachine, PartyPopper, Plus, Home, Briefcase, MapPin as MapPinIcon, User as UserIcon } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ScratchToReveal } from "@/components/ui/scratch-to-reveal";
 import { Confetti } from "@/components/ui/confetti";
 import { toast } from "sonner";
@@ -419,10 +420,12 @@ export default function Checkout() {
       <Link to="/" className="inline-block bg-accent text-primary font-medium px-6 py-2 rounded-lg">
         Sign in / Register
       </Link>
-    </div>) : isLoadingAddresses ? (<div className="text-center py-8">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto"></div>
-      <p className="text-sm text-muted-foreground mt-2">Loading addresses...</p>
-    </div>) : savedAddressesList.length === 0 ? (<div className="text-center py-8">
+    </div>) : isLoadingAddresses ? (
+      <div className="space-y-4">
+        <Skeleton className="h-24 w-full rounded-lg" />
+        <Skeleton className="h-24 w-full rounded-lg" />
+      </div>
+    ) : savedAddressesList.length === 0 ? (<div className="text-center py-8">
       <MapPin className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
       <p className="text-muted-foreground mb-4">No saved addresses found</p>
       <button onClick={() => setShowAddressForm(true)} className="inline-block bg-accent text-primary font-medium px-6 py-2 rounded-lg">
@@ -667,7 +670,7 @@ export default function Checkout() {
       </motion.div>)}
     </AnimatePresence>
 
-   
+
   </div>);
   return (<div className="min-h-screen bg-background">
     <Header />

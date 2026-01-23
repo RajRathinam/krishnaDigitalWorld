@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from '@/hooks/use-toast';
+import { getImageUrl } from "@/lib/utils";
 import { Star, Heart, ShoppingCart, Check, Tv, Refrigerator, WashingMachine, AirVent, Fan, Lightbulb, Flame, Microwave, Droplets, Shirt, Wind, Sofa, BedDouble, Armchair, DoorOpen, BookOpen, Package, Headphones, Speaker, Wifi, Keyboard, } from "lucide-react";
 import axios from "axios";
 import { baseUrl } from '@/config/baseUrl';
@@ -65,6 +66,7 @@ const parseProductData = (productData) => {
     }
     return parsed;
 };
+const isValidNumber = (num) => typeof num === 'number' && !isNaN(num);
 const iconMap = {
     tv: Tv,
     refrigerator: Refrigerator,
@@ -561,7 +563,7 @@ export function ProductCard({ product, variant = "default", selectedColor }) {
 
             {/* Image */}
             <div className="aspect-square bg-secondary/30 rounded-lg flex items-center justify-center mb-4 overflow-hidden">
-                <img src={displayImageUrl} alt={name} className="w-full h-full object-cover" onError={(e) => {
+                <img src={getImageUrl(displayImageUrl)} alt={name} className="w-full h-full object-cover" onError={(e) => {
                     e.currentTarget.src = '/placeholder.svg';
                 }} />
             </div>
@@ -607,60 +609,62 @@ export function ProductCard({ product, variant = "default", selectedColor }) {
         </article>);
     }
     // Default variant
-    return (<article role="link" tabIndex={0} onClick={goToProduct} onKeyDown={onCardKeyDown} className="group block premium-card p-4 md:p-5 relative cursor-pointer" aria-label={`View ${name}`}>
+    return (<article role="link" tabIndex={0} onClick={goToProduct} onKeyDown={onCardKeyDown} className="group block bg-card rounded-xl border border-border/60 p-3 md:p-4 hover:shadow-lg hover:shadow-accent/5 transition-all duration-300 relative cursor-pointer h-full flex flex-col" aria-label={`View ${name}`}>
         {/* Wishlist Button */}
-        <button type="button" onClick={handleAddToWishlist} className="absolute top-3 right-3 z-10 p-2 bg-background/90 rounded-full shadow-sm opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity" aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}>
-            <Heart className={`w-4 h-4 transition-colors ${isWishlisted ? "text-red-500 fill-red-500" : "text-muted-foreground hover:text-destructive"}`} />
+        <button type="button" onClick={handleAddToWishlist} className="absolute top-2 right-2 z-10 p-2 bg-background/80 backdrop-blur-sm rounded-full shadow-sm md:opacity-0 md:group-hover:opacity-100 transition-all hover:bg-background" aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}>
+            <Heart className={`w-3.5 h-3.5 md:w-4 md:h-4 transition-colors ${isWishlisted ? "text-red-500 fill-red-500" : "text-muted-foreground hover:text-destructive"}`} />
         </button>
 
         {/* Badge */}
-        {badge && (<div className="absolute top-3 left-3 z-10">
-            <span className="deal-badge">{badge}</span>
+        {badge && (<div className="absolute top-2 left-2 z-10">
+            <span className="bg-accent/90 backdrop-blur-sm text-accent-foreground text-[10px] font-bold px-2 py-1 rounded shadow-sm">{badge}</span>
         </div>)}
 
         {/* Image */}
-        <div className="aspect-square bg-secondary/50 rounded-lg flex items-center justify-center mb-4 group-hover:bg-secondary/70 transition-colors overflow-hidden">
-            <img src={displayImageUrl} alt={name} className="w-full h-full object-cover" onError={(e) => {
+        <div className="aspect-square bg-secondary/30 rounded-lg flex items-center justify-center mb-3 overflow-hidden group-hover:bg-secondary/50 transition-colors relative">
+            <img src={getImageUrl(displayImageUrl)} alt={name} className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" onError={(e) => {
                 e.currentTarget.src = '/placeholder.svg';
             }} />
         </div>
 
-        {/* Title */}
-        <h3 className="text-sm md:text-base text-foreground line-clamp-2 mb-3 min-h-[44px] font-medium group-hover:text-accent transition-colors">{name}</h3>
+        {/* Content Container */}
+        <div className="flex flex-col flex-1">
+            {/* Title */}
+            <h3 className="text-sm text-foreground line-clamp-2 mb-2 font-medium leading-snug group-hover:text-accent transition-colors min-h-[2.5em]">
+                {name}
+            </h3>
 
-        {/* Rating + Discount */}
-        <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
+            {/* Rating */}
+            <div className="flex items-center gap-1.5 mb-2">
                 {renderStars(rating)}
-                <span className="text-xs text-muted-foreground">({reviews.toLocaleString()})</span>
+                <span className="text-[10px] text-muted-foreground">({isValidNumber(reviews) ? reviews.toLocaleString() : 0})</span>
             </div>
-            {discount > 0 && (<span className="text-xs font-medium text-accent">{discount}% off</span>)}
-        </div>
 
-        {/* Price */}
-        <div className="mb-4">
-            <div className="flex items-baseline gap-2 flex-wrap">
-                <span className="text-xl font-bold text-foreground">{formatPrice(price)}</span>
-                {originalPrice > price && (<span className="text-sm text-muted-foreground line-through">{formatPrice(originalPrice)}</span>)}
+            {/* Price section - Push to bottom of flex container */}
+            <div className="mt-auto">
+                <div className="flex items-baseline gap-2 flex-wrap mb-3">
+                    <span className="text-base md:text-lg font-bold text-foreground">{formatPrice(price)}</span>
+                    {originalPrice > price && (<span className="text-xs text-muted-foreground line-through hidden sm:inline">{formatPrice(originalPrice)}</span>)}
+                    {discount > 0 && (<span className="text-[10px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded ml-auto sm:ml-0">{discount}% OFF</span>)}
+                </div>
+
+                {/* Add to Cart Button */}
+                <button type="button" onClick={handleAddToCart} disabled={isAddingToCart} className={`w-full flex items-center justify-center gap-2 py-2.5 text-sm md:text-sm text-xs font-medium rounded-lg transition-all duration-300 active:scale-95 touch-manipulation ${showSuccess
+                    ? 'bg-emerald-500 text-white shadow-emerald-500/20'
+                    : 'bg-primary text-primary-foreground hover:bg-accent hover:text-accent-foreground shadow-sm hover:shadow-accent/20'}`}>
+                    {showSuccess ? (<span className="inline-flex items-center gap-1.5 animate-in zoom-in duration-300">
+                        <Check className="w-3.5 h-3.5" />
+                        <span>Added</span>
+                    </span>) : isAddingToCart ? (<span className="inline-flex items-center gap-1.5">
+                        <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        <span>Wait...</span>
+                    </span>) : (<>
+                        <ShoppingCart className="w-3.5 h-3.5" />
+                        <span>Add to Cart</span>
+                    </>)}
+                </button>
             </div>
-            {/* REMOVED EMI */}
         </div>
-
-        {/* Add to Cart Button */}
-        <button type="button" onClick={handleAddToCart} disabled={isAddingToCart} className={`w-full flex items-center justify-center gap-2 py-2.5 text-sm transition-all duration-300 active:scale-95 overflow-hidden rounded-md font-medium ${showSuccess
-            ? 'bg-emerald-500 text-white'
-            : 'btn-primary hover:shadow-lg hover:shadow-accent/20'}`}>
-            {showSuccess ? (<span className="inline-flex items-center gap-2 animate-in zoom-in duration-300">
-                <Check className="w-4 h-4" />
-                <span>Added!</span>
-            </span>) : isAddingToCart ? (<span className="inline-flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                <span>Adding...</span>
-            </span>) : (<>
-                <ShoppingCart className="w-4 h-4" />
-                <span>Add to Cart</span>
-            </>)}
-        </button>
     </article>);
 }
 export default ProductCard;

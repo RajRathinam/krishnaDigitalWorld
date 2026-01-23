@@ -12,7 +12,6 @@
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
-    "cloudinary": "^2.8.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "crypto-js": "^4.2.0",
@@ -24,7 +23,6 @@
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.0.2",
-    "multer-storage-cloudinary": "^4.0.0",
     "mysql2": "^3.16.0",
     "sequelize": "^6.37.7"
   },

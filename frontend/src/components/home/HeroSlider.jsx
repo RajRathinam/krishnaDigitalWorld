@@ -1,141 +1,144 @@
 import { useState, useEffect, useCallback } from "react";
-import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowRight, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
-const slides = [
+import { Button } from "@/components/ui/button";
+
+const heroSlides = [
   {
     id: 1,
-    title: "Transform Your Living Space",
-    subtitle: "Premium furniture & home decor at unbeatable prices",
-    cta: "Shop Living Room",
-    ctaLink: "/products?category=furniture",
-    image: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1920&q=80",
-    accent: "Up to 50% Off",
+    title: "Next-Gen Electronics",
+    subtitle: "Upgrade Your Lifestyle",
+    description: "Experience the future with our latest collection of smart gadgets and premium home appliances.",
+    image: "https://images.unsplash.com/photo-1550009158-9ebf69173e03?q=80&w=2101&auto=format&fit=crop",
+    accent: "from-blue-600 to-indigo-600",
+    cta: "Explore Now",
+    link: "/products?category=electronics"
   },
   {
     id: 2,
-    title: "Smart Kitchen Essentials",
-    subtitle: "Modern appliances for the contemporary home chef",
-    cta: "Explore Kitchen",
-    ctaLink: "/products?category=kitchen",
-    image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=1920&q=80",
-    accent: "New Arrivals",
+    title: "Premium Home Comfort",
+    subtitle: "Designed for Living",
+    description: "Transform your living space with our elegant, energy-efficient appliances.",
+    image: "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?q=80&w=2070&auto=format&fit=crop",
+    accent: "from-amber-500 to-orange-600",
+    cta: "Shop Home",
+    link: "/products?category=home-appliances"
   },
   {
     id: 3,
-    title: "Summer Cooling Solutions",
-    subtitle: "Beat the heat with energy-efficient ACs & coolers",
+    title: "Smart Kitchen",
+    subtitle: "Cook Like a Pro",
+    description: "Professional grade kitchen appliances for the modern culinary enthusiast.",
+    image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?q=80&w=2000&auto=format&fit=crop",
+    accent: "from-emerald-500 to-teal-600",
     cta: "View Collection",
-    ctaLink: "/products?category=home-appliances",
-    image: "https://images.unsplash.com/photo-1631679706909-1844bbd07221?w=1920&q=80",
-    accent: "Starting ₹15,999",
-  },
-  {
-    id: 4,
-    title: "Entertainment Upgrade",
-    subtitle: "4K TVs & sound systems for immersive experiences",
-    cta: "Shop Electronics",
-    ctaLink: "/products?category=electronics",
-    image: "https://images.unsplash.com/photo-1593784991095-a205069470b6?w=1920&q=80",
-    accent: "Flash Sale",
-  },
+    link: "/products?category=kitchen"
+  }
 ];
+
 export function HeroSlider() {
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
-  const [direction, setDirection] = useState(1); // 1 = right, -1 = left
+  const [current, setCurrent] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+
   const nextSlide = useCallback(() => {
-    setDirection(1);
-    setCurrentSlide((prev) => (prev + 1) % slides.length);
+    setCurrent((prev) => (prev + 1) % heroSlides.length);
   }, []);
-  const prevSlide = useCallback(() => {
-    setDirection(-1);
-    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
-  }, []);
-  useEffect(() => {
-    if (!isAutoPlaying)
-      return;
-    const timer = setInterval(nextSlide, 5000);
-    return () => clearInterval(timer);
-  }, [isAutoPlaying, nextSlide]);
-  const handleManualNavigation = (index) => {
-    setDirection(index > currentSlide ? 1 : -1);
-    setIsAutoPlaying(false);
-    setCurrentSlide(index);
-    setTimeout(() => setIsAutoPlaying(true), 10000);
+
+  const prevSlide = () => {
+    setCurrent((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
   };
-  return (<section className="relative w-full h-[60vh] min-h-[400px] sm:h-[400px] md:h-[480px] lg:h-[540px] overflow-hidden bg-muted" onMouseEnter={() => setIsAutoPlaying(false)} onMouseLeave={() => setIsAutoPlaying(true)}>
-    {/* Colorful accent elements */}
-    <div className="absolute top-0 left-0 w-72 h-72 bg-accent/20 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
-    <div className="absolute bottom-0 right-0 w-96 h-96 bg-yellow-400/15 rounded-full blur-3xl translate-x-1/3 translate-y-1/3 pointer-events-none" />
 
-    {/* Slides Container */}
-    <div className="relative w-full h-full">
-      {slides.map((slide, index) => (<div key={slide.id} className="absolute inset-0 transition-transform duration-700 ease-out" style={{
-        transform: `translateX(${(index - currentSlide) * 100}%)`,
-      }}>
-        {/* Background Image */}
-        <div className="absolute inset-0 bg-cover bg-center transition-transform duration-[8s] ease-out" style={{
-          backgroundImage: `url(${slide.image})`,
-          backgroundPosition: "center center",
-          transform: index === currentSlide ? 'scale(1.05)' : 'scale(1)'
-        }}>
-          {/* Enhanced Gradient for Mobile Usability */}
-          <div className="absolute inset-0 bg-black/40 sm:bg-gradient-to-r sm:from-black/70 sm:via-black/40 sm:to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent sm:hidden" />
-        </div>
+  useEffect(() => {
+    if (isPaused) return;
+    const interval = setInterval(nextSlide, 5000);
+    return () => clearInterval(interval);
+  }, [nextSlide, isPaused]);
 
-        {/* Content */}
-        <div className="relative h-full container flex flex-col justify-center items-center sm:items-start text-center sm:text-left px-4 sm:px-6 lg:px-8 pb-12 sm:pb-0">
-          <div className={`max-w-lg lg:max-w-xl transition-all duration-500 delay-200 flex flex-col items-center sm:items-start ${index === currentSlide
-            ? 'opacity-100 translate-y-0 sm:translate-x-0'
-            : 'opacity-0 translate-y-4 sm:translate-y-0 sm:translate-x-8'}`}>
-            {/* Accent Badge */}
-            <span className="inline-block mb-3 sm:mb-4 px-3 sm:px-4 py-1.5 bg-accent text-accent-foreground text-xs sm:text-sm font-semibold rounded-full shadow-lg animate-float">
-              {slide.accent}
-            </span>
+  return (
+    <section
+      className="relative w-full h-[600px] md:h-[700px] overflow-hidden bg-background"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+    >
+      {/* Slides */}
+      {heroSlides.map((slide, index) => (
+        <div
+          key={slide.id}
+          className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === current ? "opacity-100 z-10" : "opacity-0 z-0"
+            }`}
+        >
+          {/* Background Image with Parallax-like scaling */}
+          <div className="absolute inset-0 overflow-hidden bg-black">
+            <img
+              src={slide.image}
+              alt={slide.title}
+              className={`w-full h-full object-cover transition-transform duration-10000 ease-linear ${index === current ? "scale-110" : "scale-100"
+                }`}
+            />
+            {/* Gradient Overlay - Simplified for maximum visibility - White text needs dark bottom */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30" />
+          </div>
 
-            <h1 className="text-3xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-3 sm:mb-4 leading-tight drop-shadow-lg">
-              {slide.title}
-            </h1>
+          {/* Content */}
+          <div className="absolute inset-0 flex items-center justify-center md:justify-start container px-6 md:px-12">
+            <div className={`max-w-2xl text-white space-y-6 md:space-y-8 ${index === current ? 'animate-in slide-in-from-bottom-10 fade-in duration-1000' : ''}`}>
+              <div className="space-y-2">
+                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-sm font-medium">
+                  <Sparkles className="w-3 h-3 text-yellow-400" />
+                  {slide.subtitle}
+                </span>
+                <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight tracking-tight">
+                  {slide.title}
+                </h1>
+              </div>
 
-            <p className="text-base sm:text-base md:text-lg text-white/90 mb-6 sm:mb-8 max-w-xs sm:max-w-md line-clamp-3 sm:line-clamp-none">
-              {slide.subtitle}
-            </p>
+              <p className="text-lg md:text-xl text-white/90 leading-relaxed max-w-lg">
+                {slide.description}
+              </p>
 
-            <div className="flex flex-wrap gap-3 justify-center sm:justify-start w-full">
-              <Link to={slide.ctaLink} className="group inline-flex items-center gap-2 bg-accent text-accent-foreground font-semibold py-3 px-8 rounded-full hover:bg-accent/90 hover:shadow-lg hover:shadow-accent/30 transition-all duration-300 text-sm sm:text-base">
-                {slide.cta}
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Link>
-              <Link to="/products" className="hidden sm:inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm text-white font-medium py-3 px-6 rounded-full border border-white/25 hover:bg-white/25 hover:border-accent/50 transition-all duration-300 text-sm sm:text-base">
-                View All
-              </Link>
+              <div className="flex flex-wrap gap-4">
+                <Link to={slide.link}>
+                  <Button size="lg" className="bg-white text-black hover:bg-white/90 border-0 rounded-full px-8 h-12 md:h-14 md:text-lg font-semibold shadow-xl shadow-black/20 hover:scale-105 transition-all duration-300">
+                    {slide.cta} <ArrowRight className="ml-2 w-5 h-5" />
+                  </Button>
+                </Link>
+                <Link to="/products">
+                  <Button variant="outline" size="lg" className="bg-transparent border-white text-white hover:bg-white/10 rounded-full px-8 h-12 md:h-14 md:text-lg">
+                    View All Products
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
         </div>
-      </div>))}
-    </div>
+      ))}
 
-    {/* Navigation Arrows - Hidden on Mobile to reduce clutter */}
-    <button onClick={() => { prevSlide(); setIsAutoPlaying(false); setTimeout(() => setIsAutoPlaying(true), 10000); }} className="hidden sm:block absolute left-4 lg:left-6 top-1/2 -translate-y-1/2 bg-white/15 backdrop-blur-sm hover:bg-white/25 p-3 rounded-full border border-white/20 transition-all" aria-label="Previous slide">
-      <ChevronLeft className="w-5 h-5 text-white" />
-    </button>
-    <button onClick={() => { nextSlide(); setIsAutoPlaying(false); setTimeout(() => setIsAutoPlaying(true), 10000); }} className="hidden sm:block absolute right-4 lg:right-6 top-1/2 -translate-y-1/2 bg-white/15 backdrop-blur-sm hover:bg-white/25 p-3 rounded-full border border-white/20 transition-all" aria-label="Next slide">
-      <ChevronRight className="w-5 h-5 text-white" />
-    </button>
+      {/* Navigation - Bottom Indicators */}
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-3">
+        {heroSlides.map((_, index) => (
+          <button
+            key={index}
+            onClick={() => setCurrent(index)}
+            className={`h-1.5 rounded-full transition-all duration-300 ${current === index ? "w-8 bg-white" : "w-2 bg-white/40 hover:bg-white/60"
+              }`}
+            aria-label={`Go to slide ${index + 1}`}
+          />
+        ))}
+      </div>
 
-    {/* Slide Indicators */}
-    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10">
-      {slides.map((_, index) => (<button key={index} onClick={() => handleManualNavigation(index)} className={`h-1.5 sm:h-2 rounded-full transition-all duration-300 ${index === currentSlide
-        ? "w-6 sm:w-8 bg-white"
-        : "w-1.5 sm:w-2 bg-white/40 hover:bg-white/60"}`} aria-label={`Go to slide ${index + 1}`} />))}
-    </div>
-
-    {/* Slide Counter - Desktop only */}
-    <div className="hidden md:flex absolute bottom-6 right-6 lg:right-8 items-center gap-2 text-white/60 text-sm font-medium">
-      <span className="text-white text-lg">{String(currentSlide + 1).padStart(2, '0')}</span>
-      <span>/</span>
-      <span>{String(slides.length).padStart(2, '0')}</span>
-    </div>
-  </section>);
+      {/* Navigation - Sides */}
+      <button
+        onClick={prevSlide}
+        className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-black/20 backdrop-blur-md border border-white/10 flex items-center justify-center text-white/80 hover:bg-black/40 hover:text-white transition-all duration-300 hidden md:flex"
+      >
+        <ChevronLeft className="w-6 h-6" />
+      </button>
+      <button
+        onClick={nextSlide}
+        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-black/20 backdrop-blur-md border border-white/10 flex items-center justify-center text-white/80 hover:bg-black/40 hover:text-white transition-all duration-300 hidden md:flex"
+      >
+        <ChevronRight className="w-6 h-6" />
+      </button>
+    </section>
+  );
 }

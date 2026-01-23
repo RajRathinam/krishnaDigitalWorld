@@ -1,4 +1,7 @@
 import { Gallery4 } from "@/components/ui/gallery4";
+import { SplitHeading } from "@/components/ui/split-heading";
+import { TrendingUp, Star } from "lucide-react";
+
 const bestSellerItems = [
     {
         id: "ceiling-fan",
@@ -42,7 +45,35 @@ const bestSellerItems = [
         href: "/product/10",
         image: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=600&h=400&fit=crop",
     },
+    {
+        id: "iron",
+        title: "Philips Dry Iron",
+        description: "Lightweight dry iron with non-stick coating and uniform heating.",
+        href: "/product/11",
+        image: "https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=600&h=400&fit=crop",
+    }
 ];
+
 export function BestSellers() {
-    return (<Gallery4 title="Best Sellers" description="Our most popular products this week, loved by thousands of happy customers." items={bestSellerItems}/>);
+    return (
+        <section className="py-12 md:py-20 relative overflow-hidden bg-muted/30">
+            {/* Background Gradients */}
+            <div className="absolute top-0 right-0 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+
+            <div className="container relative z-10">
+                <div className="flex items-center gap-3 mb-8 md:mb-12">
+                    <div className="p-3 bg-purple-100 dark:bg-purple-900/20 rounded-xl">
+                        <TrendingUp className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <SplitHeading text="Best Sellers" className="text-2xl md:text-3xl font-bold" />
+                </div>
+
+                <Gallery4
+                    title=""
+                    description="Our most popular products this week, loved by thousands of happy customers."
+                    items={bestSellerItems}
+                />
+            </div>
+        </section>
+    );
 }

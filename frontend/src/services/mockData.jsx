@@ -53,15 +53,7 @@ export const mockUsers = [
         address: '789 Oak Lane, Bangalore, KA 560001',
         hasOrdered: true,
     },
-    {
-        id: '5',
-        name: 'Admin User',
-        phone: '+91 9876543214',
-        email: 'admin@example.com',
-        role: 'admin',
-        createdAt: '2024-01-01T00:00:00Z',
-        hasOrdered: false,
-    },
+
 ];
 // Product mocks removed — using backend APIs for production data
 export const mockProducts = [];

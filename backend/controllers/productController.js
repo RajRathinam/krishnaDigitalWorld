@@ -646,7 +646,7 @@ export const createProduct = async (req, res) => {
         await transaction.rollback();
         return res.status(404).json({ success: false, message: 'Model not found' });
       }
-      modelCode = String(model.modelCode || model.modelCode);
+      modelCode = String(model.modelCode || model.code || '');
       modelName = String(model.name || model.modelName || '');
     } else if (req.body.modelCode && req.body.modelName) {
       modelCode = String(req.body.modelCode);
@@ -657,17 +657,19 @@ export const createProduct = async (req, res) => {
     }
 
     // Generate unique slug
-    const baseSlug = generateProductSlug(name, brand.name, variant);
-    const existingSlugs = await Product.findAll({
-      attributes: ['slug'],
-      raw: true,
-      transaction
-    }).then(products => products.map(p => p.slug));
-
+    const baseSlug = generateProductSlug(name, brand.name, modelName, variant);
     let slug = baseSlug;
     let counter = 1;
 
-    while (existingSlugs.includes(slug)) {
+    while (true) {
+      const existingProduct = await Product.findOne({
+        where: { slug },
+        attributes: ['id'],
+        transaction
+      });
+
+      if (!existingProduct) break;
+
       slug = `${baseSlug}-${counter}`;
       counter++;
     }
@@ -943,6 +945,9 @@ export const createProduct = async (req, res) => {
     }
 
     console.error('Create product error:', error);
+    if (error.original) {
+      console.error('Original DB Error:', error.original);
+    }
 
     // Handle specific errors
     if (error.name === 'SequelizeUniqueConstraintError') {

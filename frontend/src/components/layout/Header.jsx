@@ -128,87 +128,96 @@ export function Header() {
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isMenuOpen]);
   return (<>
-    <header className="sticky top-0 left-0 right-0 z-50 bg-card border-b border-border">
-      {/* Top Bar */}
+    <header className="sticky top-0 left-0 right-0 z-40 bg-card/80 backdrop-blur-md border-b border-border transition-all duration-200">
+      {/* Top Bar - Hidden on mobile to save space */}
       <div className="hidden lg:block bg-primary text-primary-foreground">
         <div className="container flex items-center justify-between py-1.5 text-xs">
           <p>Free shipping on orders over ₹999</p>
           <div className="flex items-center gap-6">
-            <Link to="/help" className="hover:underline">Help Center</Link>
-            <Link to="/account" className="hover:underline">Track Order</Link>
+            <Link to="/help" className="hover:underline opacity-90 hover:opacity-100">Help Center</Link>
+            <Link to="/account" className="hover:underline opacity-90 hover:opacity-100">Track Order</Link>
           </div>
         </div>
       </div>
 
       {/* Main Header */}
-      <div className="container flex items-center gap-3 lg:gap-6 py-3 lg:py-4">
+      <div className="container flex items-center gap-3 lg:gap-6 py-2.5 lg:py-4">
         {/* Mobile Menu Toggle */}
-        <button type="button" onClick={() => setIsMenuOpen(true)} className="lg:hidden p-2 -ml-2 text-foreground hover:text-accent transition-colors" aria-label="Open menu">
-          <Menu className="w-5 h-5" />
+        <button type="button" onClick={() => setIsMenuOpen(true)} className="lg:hidden p-2 -ml-2 text-foreground hover:text-accent transition-colors active:scale-95" aria-label="Open menu">
+          <Menu className="w-6 h-6" />
         </button>
 
         {/* Logo */}
         <Link to="/" className="flex items-center shrink-0">
           <div className="flex items-center gap-2">
-            <img src="/SK_Logo.png" alt="Krishna Stores" className="h-10 w-auto lg:h-12" />
+            <img src="/SK_Logo.png" alt="Krishna Stores" className="h-8 lg:h-12 w-auto" />
             <div className="flex flex-col">
-              <span className="text-xl lg:text-2xl font-bold text-foreground tracking-wide leading-tight">
+              <span className="text-lg lg:text-2xl font-bold text-foreground tracking-wide leading-tight">
                 <span className="text-accent">Sri</span> Krishna
               </span>
-              <span className="text-xs lg:text-sm font-medium text-muted-foreground tracking-wide">
+              <span className="text-[10px] lg:text-sm font-medium text-muted-foreground tracking-wide hidden sm:block">
                 Digital World
               </span>
             </div>
           </div>
         </Link>
 
+        {/* Mobile Search Trigger  */}
+        <div className="lg:hidden flex-1 flex justify-end">
+          <SearchModal data={searchData}>
+            <button className="p-2 text-foreground hover:text-accent">
+              <Search className="w-5 h-5" />
+            </button>
+          </SearchModal>
+        </div>
+
         {/* Desktop Navigation */}
         <nav className="hidden lg:flex items-center gap-0.5 ml-4">
           {categories.map((cat) => (<div key={cat.id} className="relative group">
-            <Link to={`/products?category=${cat.slug}`} className="flex items-center gap-1 px-2.5 py-2 text-sm text-foreground/80 hover:text-foreground transition-colors whitespace-nowrap">
+            <Link to={`/products?category=${cat.slug}`} className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-foreground/80 hover:text-accent transition-colors whitespace-nowrap">
               {cat.name}
-              <ChevronDown className="w-3.5 h-3.5 opacity-50" />
+              <ChevronDown className="w-3.5 h-3.5 opacity-50 group-hover:rotate-180 transition-transform duration-200" />
             </Link>
             {/* Dropdown - FIXED with safe array */}
-            <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
-              <div className="bg-card rounded-lg border border-border shadow-dropdown p-3 min-w-[180px]">
-                {ensureArray(cat.subcategories).map((sub, index) => (<Link key={`${cat.id}-sub-${index}`} to={`/products?category=${cat.slug}&subcategory=${encodeURIComponent(sub)}`} className="block px-3 py-2 text-sm text-foreground/80 hover:text-foreground hover:bg-secondary rounded-md transition-colors">
+            <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+              <div className="bg-card/95 backdrop-blur-md rounded-lg border border-border shadow-lg p-3 min-w-[200px] animate-fade-up">
+                {ensureArray(cat.subcategories).map((sub, index) => (<Link key={`${cat.id}-sub-${index}`} to={`/products?category=${cat.slug}&subcategory=${encodeURIComponent(sub)}`} className="block px-3 py-2 text-sm text-foreground/80 hover:text-accent hover:bg-accent/5 rounded-md transition-colors">
                   {sub}
                 </Link>))}
                 <div className="border-t border-border mt-2 pt-2">
-                  <Link to={`/products?category=${cat.slug}`} className="block px-3 py-2 text-sm font-medium text-accent hover:bg-secondary rounded-md transition-colors">
+                  <Link to={`/products?category=${cat.slug}`} className="block px-3 py-2 text-sm font-medium text-accent hover:bg-accent/10 rounded-md transition-colors">
                     View All
                   </Link>
                 </div>
               </div>
             </div>
           </div>))}
-          <div className="h-4 w-px bg-border mx-1" />
-          {quickLinks.map((item) => (<Link key={item.label} to={item.href} className={`px-2.5 py-2 text-sm transition-colors whitespace-nowrap ${item.highlight
-            ? "text-accent font-medium"
-            : "text-foreground/80 hover:text-foreground"}`}>
+          <div className="h-5 w-px bg-border mx-2" />
+          {quickLinks.map((item) => (<Link key={item.label} to={item.href} className={`px-3 py-2 text-sm font-medium transition-colors whitespace-nowrap rounded-md ${item.highlight
+            ? "bg-accent/10 text-accent hover:bg-accent/20"
+            : "text-foreground/80 hover:text-foreground hover:bg-secondary"}`}>
             {item.label}
           </Link>))}
         </nav>
 
         {/* Spacer */}
-        <div className="flex-1 min-w-0" />
+        <div className="hidden lg:block flex-1 min-w-0" />
 
         {/* Desktop Search */}
         <div className="hidden lg:block w-full max-w-xs xl:max-w-sm">
           <SearchModal data={searchData}>
-            <button type="button" className="w-full flex items-center gap-3 px-4 py-2.5 bg-secondary border border-border rounded-full text-muted-foreground text-sm text-left hover:border-accent/50 transition-colors">
-              <Search className="w-4 h-4 shrink-0" />
+            <button type="button" className="w-full flex items-center gap-3 px-4 py-2 bg-secondary/50 border border-border rounded-full text-muted-foreground text-sm text-left hover:border-accent/50 hover:bg-secondary transition-all duration-300 group">
+              <Search className="w-4 h-4 shrink-0 group-hover:text-accent transition-colors" />
               <span className="flex-1 truncate">Search products...</span>
-              <kbd className="hidden xl:inline-flex h-5 items-center gap-1 rounded bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground shrink-0">
+              <kbd className="hidden xl:inline-flex h-5 items-center gap-1 rounded bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground shrink-0 border border-border">
                 ⌘K
               </kbd>
             </button>
           </SearchModal>
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-0.5">
+        {/* Actions - Desktop Only (since mobile uses bottom nav) */}
+        <div className="hidden lg:flex items-center gap-2">
           {/* Wishlist */}
           <Link to="/account" onClick={(e) => {
             const storedUser = localStorage.getItem('user');
@@ -216,7 +225,7 @@ export function Header() {
               e.preventDefault();
               openSignup();
             }
-          }} type="button" className="hidden md:flex p-2 text-foreground hover:text-accent transition-colors" aria-label="Wishlist">
+          }} type="button" className="p-2.5 text-foreground hover:text-accent hover:bg-accent/10 rounded-full transition-all duration-300" aria-label="Wishlist">
             <Heart className="w-5 h-5" />
           </Link>
 
@@ -227,7 +236,7 @@ export function Header() {
               e.preventDefault();
               openSignup();
             }
-          }} className="flex p-2 text-foreground hover:text-accent transition-colors" aria-label="Account">
+          }} className="p-2.5 text-foreground hover:text-accent hover:bg-accent/10 rounded-full transition-all duration-300" aria-label="Account">
             <User className="w-5 h-5" />
           </Link>
 
@@ -238,20 +247,13 @@ export function Header() {
               e.preventDefault();
               openSignup();
             }
-          }} className="flex items-center gap-2 p-2 text-foreground hover:text-accent transition-colors" aria-label="Cart">
+          }} className="flex items-center gap-2 p-2.5 text-foreground hover:text-accent hover:bg-accent/10 rounded-full transition-all duration-300 group" aria-label="Cart">
             <div className="relative">
-              <ShoppingCart className="w-5 h-5" />
-              <span className="absolute -top-1.5 -right-1.5 bg-accent text-accent-foreground text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+              <ShoppingCart className="w-5 h-5 group-hover:scale-110 transition-transform" />
+              <span className="absolute -top-1.5 -right-1.5 bg-accent text-accent-foreground text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow-sm">
                 {isLoading ? '...' : cartCount}
               </span>
             </div>
-            {/* <span className="hidden lg:block text-sm font-medium">
-          {new Intl.NumberFormat('en-IN', {
-            style: 'currency',
-            currency: 'INR',
-            maximumFractionDigits: 0
-          }).format(cartTotal)}
-        </span> */}
           </Link>
         </div>
       </div>

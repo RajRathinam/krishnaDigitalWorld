@@ -2,6 +2,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { toast } from "sonner";
 import { Minus, Plus, Trash2, ShieldCheck, Truck, Tag, ShoppingCart } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
@@ -269,14 +270,49 @@ export default function Cart() {
     }
   };
   if (loading) {
-    return (<div className="min-h-screen bg-background">
-      <Header />
-      <div className="container py-20 text-center">
-        <ShoppingCart className="w-16 h-16 mx-auto mb-4 animate-pulse text-muted-foreground" />
-        <p className="text-muted-foreground">Loading cart...</p>
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container py-4 md:py-6 px-3 md:px-4">
+          <div className="flex justify-between items-center mb-4 md:mb-6">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-24" />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6">
+            <div className="lg:col-span-8 space-y-3 md:space-y-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="bg-card rounded-lg border border-border p-3 md:p-4">
+                  <div className="flex gap-3 md:gap-4">
+                    <Skeleton className="w-20 h-20 md:w-28 md:h-28 rounded-lg shrink-0" />
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <Skeleton className="h-5 w-3/4" />
+                      <Skeleton className="h-4 w-1/3" />
+                      <div className="flex justify-between items-center mt-4">
+                        <Skeleton className="h-8 w-24 rounded" />
+                        <Skeleton className="h-4 w-16" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="lg:col-span-4">
+              <div className="bg-card rounded-lg border border-border p-4 space-y-4">
+                <Skeleton className="h-6 w-32" />
+                <div className="space-y-2">
+                  <Skeleton className="h-10 w-full rounded" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                </div>
+                <Skeleton className="h-12 w-full rounded-lg" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <Footer />
       </div>
-      <Footer />
-    </div>);
+    );
   }
   if (!isAuthenticated) {
     return (<div className="min-h-screen bg-background">

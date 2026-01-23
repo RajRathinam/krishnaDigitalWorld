@@ -14,63 +14,64 @@ import { BrandShowcase } from "@/components/home/BrandShowcase";
 import { BundleOffers } from "@/components/home/BundleOffers";
 import { FeaturedProjects } from "@/components/home/FeaturedProjects";
 const Index = () => {
-    useEffect(() => {
-        AOS.init({
-            duration: 600,
-            easing: "ease-out-cubic",
-            once: true,
-            offset: 50,
-        });
-        // If the user hasn't seen the signup modal yet, ask the app to open it after a short delay
-        const hasSignedUp = localStorage.getItem("hasSignedUp");
-        if (!hasSignedUp) {
-            const timer = setTimeout(() => {
-                window.dispatchEvent(new Event('openSignup'));
-            }, 5000);
-            return () => clearTimeout(timer);
-        }
-    }, []);
-    return (<div className="min-h-screen bg-background overflow-x-hidden w-full">
-      <Header />
-      
-      <main>
-        <HeroSlider />
-        <CategoryGrid />
-        
-        <div data-aos="fade-up">
-          <DealOfTheDay />
-        </div>
-        
-        <div data-aos="fade-up" data-aos-delay="100">
-          <BestSellers />
-        </div>
-        
-        <div data-aos="fade-up" data-aos-delay="100">
-          <PromoBanners />
-        </div>
-        
-        <div data-aos="fade-up" data-aos-delay="100">
-          <ProductShowcase />
-        </div>
+  useEffect(() => {
+    AOS.init({
+      duration: 600,
+      easing: "ease-out-cubic",
+      once: true,
+      offset: 50,
+      disable: 'mobile' // Disable animations on mobile to prevent blank spaces
+    });
+    // If the user hasn't seen the signup modal yet, ask the app to open it after a short delay
+    const hasSignedUp = localStorage.getItem("hasSignedUp");
+    if (!hasSignedUp) {
+      const timer = setTimeout(() => {
+        window.dispatchEvent(new Event('openSignup'));
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+  return (<div className="min-h-screen bg-background overflow-x-hidden w-full">
+    <Header />
 
-        <div data-aos="fade-up" data-aos-delay="100">
-          <FeaturedProjects />
-        </div>
-        
-        <div data-aos="fade-up" data-aos-delay="100">
-          <BrandShowcase />
-        </div>
+    <main>
+      <HeroSlider />
+      <CategoryGrid />
 
-        <div data-aos="fade-up" data-aos-delay="100">
-          <BundleOffers />
-        </div>
-        
-        <div data-aos="fade-up" data-aos-delay="100">
-          <TrustBadges />
-        </div>
-      </main>
+      <div data-aos="fade-up">
+        <DealOfTheDay />
+      </div>
 
-      <Footer />
-    </div>);
+      <div data-aos="fade-up" data-aos-delay="100">
+        <BestSellers />
+      </div>
+
+      <div data-aos="fade-up" data-aos-delay="100">
+        <PromoBanners />
+      </div>
+
+      <div data-aos="fade-up" data-aos-delay="100">
+        <ProductShowcase />
+      </div>
+
+      <div data-aos="fade-up" data-aos-delay="100">
+        <FeaturedProjects />
+      </div>
+
+      <div data-aos="fade-up" data-aos-delay="100">
+        <BrandShowcase />
+      </div>
+
+      <div data-aos="fade-up" data-aos-delay="100">
+        <BundleOffers />
+      </div>
+
+      <div data-aos="fade-up" data-aos-delay="100">
+        <TrustBadges />
+      </div>
+    </main>
+
+    <Footer />
+  </div>);
 };
 export default Index;

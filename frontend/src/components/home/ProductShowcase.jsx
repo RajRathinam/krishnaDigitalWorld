@@ -2,6 +2,7 @@ import { ProductCard } from "@/components/product/ProductCard";
 import { Link } from "react-router-dom";
 import { useRef, useState, useEffect } from "react";
 import { SplitHeading } from "@/components/ui/split-heading";
+import { Skeleton } from "@/components/ui/skeleton";
 import api from "@/lib/api";
 
 // Product API functions
@@ -26,6 +27,8 @@ export function ProductShowcase() {
     const [activeIndex, setActiveIndex] = useState(0);
     const totalDots = 4;
     const [featuredProducts, setFeaturedProducts] = useState([]);
+    const [loading, setLoading] = useState(true);
+
     useEffect(() => {
         let cancelled = false;
         const fetchFeaturedProducts = async () => {
@@ -39,6 +42,8 @@ export function ProductShowcase() {
             catch (err) {
                 // silently fail; product showcase is optional
                 console.error('Failed to load featured products', err);
+            } finally {
+                if (!cancelled) setLoading(false);
             }
         };
         fetchFeaturedProducts();
@@ -81,28 +86,44 @@ export function ProductShowcase() {
                 </Link>
             </div>
 
-            {/* Mobile: Horizontal scroll with indicators */}
-            <div className="md:hidden">
-                <div ref={scrollRef} className="flex gap-4 overflow-x-auto scrollbar-hide pb-4 -mx-1 px-1 snap-x snap-mandatory">
-                    {(featuredProducts.length ? featuredProducts.slice(0, 8) : []).map((product) => (<div key={product.id} className="flex-shrink-0 w-[240px] snap-center first:pl-2 last:pr-2">
-                        <ProductCard product={product} variant="compact" />
-                    </div>))}
+            {loading ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className="space-y-3">
+                            <Skeleton className="w-full h-40 md:h-48 rounded-lg" />
+                            <div className="space-y-2">
+                                <Skeleton className="h-4 w-3/4" />
+                                <Skeleton className="h-4 w-1/2" />
+                            </div>
+                        </div>
+                    ))}
                 </div>
+            ) : (
+                <>
+                    {/* Mobile: Horizontal scroll with indicators */}
+                    <div className="md:hidden">
+                        <div ref={scrollRef} className="flex gap-4 overflow-x-auto scrollbar-hide pb-4 -mx-1 px-1 snap-x snap-mandatory">
+                            {(featuredProducts.length ? featuredProducts.slice(0, 8) : []).map((product) => (<div key={product.id} className="flex-shrink-0 w-[240px] snap-center first:pl-2 last:pr-2">
+                                <ProductCard product={product} variant="compact" />
+                            </div>))}
+                        </div>
 
-                {/* Swipe Indicators */}
-                <div className="flex justify-center gap-2 mt-2">
-                    {Array.from({ length: totalDots }).map((_, index) => (<button key={index} onClick={() => scrollToIndex(index)} className={`h-1.5 rounded-full transition-all duration-300 ${activeIndex === index
-                        ? "w-8 bg-accent"
-                        : "w-2 bg-muted-foreground/20"}`} aria-label={`Go to slide ${index + 1}`} />))}
-                </div>
-            </div>
+                        {/* Swipe Indicators */}
+                        <div className="flex justify-center gap-2 mt-2">
+                            {Array.from({ length: totalDots }).map((_, index) => (<button key={index} onClick={() => scrollToIndex(index)} className={`h-1.5 rounded-full transition-all duration-300 ${activeIndex === index
+                                ? "w-8 bg-accent"
+                                : "w-2 bg-muted-foreground/20"}`} aria-label={`Go to slide ${index + 1}`} />))}
+                        </div>
+                    </div>
 
-            {/* Desktop Grid - 4 columns for better density */}
-            <div className="hidden md:grid md:grid-cols-4 gap-4 md:gap-5 relative">
-                {(featuredProducts.length ? featuredProducts.slice(0, 8) : []).map((product, index) => (<div key={product.id} className="animate-slide-up" style={{ animationDelay: `${index * 50}ms` }}>
-                    <ProductCard product={product} variant="default" />
-                </div>))}
-            </div>
+                    {/* Desktop Grid - 4 columns for better density */}
+                    <div className="hidden md:grid md:grid-cols-4 gap-4 md:gap-5 relative">
+                        {(featuredProducts.length ? featuredProducts.slice(0, 8) : []).map((product, index) => (<div key={product.id} className="animate-slide-up" style={{ animationDelay: `${index * 50}ms` }}>
+                            <ProductCard product={product} variant="default" />
+                        </div>))}
+                    </div>
+                </>
+            )}
         </div>
     </section>);
 }

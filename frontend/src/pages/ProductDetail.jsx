@@ -2,11 +2,13 @@ import { useState, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Star, Heart, Share2, ShoppingCart, Check, ChevronDown, ChevronUp, ThumbsUp, Package } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { ProductCard } from "@/components/product/ProductCard";
 import { FloatingContactButtons } from "@/components/product/FloatingContactButtons";
 import { toast } from "sonner";
 import api from "@/lib/api";
+import { getImageUrl } from "@/lib/utils";
 
 // Frontend URL - use environment variable or fallback
 const FRONTEND_URL = import.meta.env.VITE_FRONTEND_URL || window.location.origin;
@@ -521,15 +523,39 @@ export default function ProductDetail() {
   const highlights = product?.description ? [product.description] : [];
   const reviews = Array.isArray(product?.reviews) ? product.reviews : [];
   if (loading) {
-    return (<div className="min-h-screen bg-background">
-      <Header />
-      <div className="container py-20 text-center">
-        <Package className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-        <h1 className="text-2xl font-bold text-foreground mb-2">Loading product…</h1>
-        <p className="text-muted-foreground mb-6">Please wait while we fetch the product details.</p>
+    return (
+      <div className="min-h-screen bg-background pb-20 md:pb-0">
+        <Header />
+        <div className="bg-card border-b md:mt-4 mt-1 border-border">
+          <div className="container py-2 px-3 md:px-4">
+            <Skeleton className="h-4 w-1/3" />
+          </div>
+        </div>
+        <div className="container py-4 md:py-6 px-3 md:px-4">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-8">
+            <div className="lg:col-span-5">
+              <Skeleton className="aspect-square rounded-lg w-full" />
+              <div className="flex gap-2 mt-4">
+                <Skeleton className="w-16 h-16 rounded-lg" />
+                <Skeleton className="w-16 h-16 rounded-lg" />
+                <Skeleton className="w-16 h-16 rounded-lg" />
+              </div>
+            </div>
+            <div className="lg:col-span-7 space-y-4">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-8 w-3/4" />
+              <Skeleton className="h-6 w-32" />
+              <Skeleton className="h-24 w-full rounded-lg" />
+              <div className="flex gap-4">
+                <Skeleton className="h-12 flex-1 rounded-lg" />
+                <Skeleton className="h-12 flex-1 rounded-lg" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <Footer />
       </div>
-      <Footer />
-    </div>);
+    );
   }
   if (!product) {
     return (<div className="min-h-screen bg-background">
@@ -613,7 +639,7 @@ export default function ProductDetail() {
             {/* Main Image */}
             <div className="bg-card rounded-lg border border-border p-4 md:p-8 mb-3 relative">
               <div className="aspect-square flex items-center justify-center bg-secondary/30 rounded-lg overflow-hidden">
-                {selectedColorImages.length > 0 && selectedColorImages[selectedImage]?.url ? (<img src={selectedColorImages[selectedImage].url} alt={selectedColorImages[selectedImage]?.alt || `${product?.name} - ${selectedColorName}`} className="w-full h-full object-cover" onError={(e) => {
+                {selectedColorImages.length > 0 && selectedColorImages[selectedImage]?.url ? (<img src={getImageUrl(selectedColorImages[selectedImage].url)} alt={selectedColorImages[selectedImage]?.alt || `${product?.name} - ${selectedColorName}`} className="w-full h-full object-cover" onError={(e) => {
                   e.currentTarget.src = '/placeholder.svg';
                 }} />) : (<div className="text-center">
                   <Package className="w-24 h-24 md:w-32 md:h-32 text-muted-foreground/50 mx-auto mb-2" />
@@ -638,7 +664,7 @@ export default function ProductDetail() {
             {/* Thumbnails */}
             {selectedColorImages.length > 0 && (<div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
               {selectedColorImages.map((image, i) => (<button key={i} onClick={() => setSelectedImage(i)} className={`shrink-0 w-16 h-16 md:w-20 md:h-20 flex items-center justify-center rounded-lg border-2 transition-colors bg-card ${selectedImage === i ? "border-accent" : "border-border hover:border-accent/50"}`}>
-                {image?.url ? (<img src={image.url} alt={image.alt || `${product?.name} - ${selectedColorName}`} className="w-full h-full object-cover" onError={(e) => {
+                {image?.url ? (<img src={getImageUrl(image.url)} alt={image.alt || `${product?.name} - ${selectedColorName}`} className="w-full h-full object-cover" onError={(e) => {
                   e.currentTarget.src = '/placeholder.svg';
                 }} />) : (<Package className="w-8 h-8 text-muted-foreground/50" />)}
               </button>))}

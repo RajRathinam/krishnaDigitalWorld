@@ -59,8 +59,7 @@ export function MobileBottomNav() {
         return () => window.removeEventListener("scroll", handleScroll);
     }, [lastScrollY]);
 
-    // Don't show on admin pages or checkout
-    if (location.pathname.startsWith('/admin') || location.pathname === '/checkout') {
+    if (location.pathname === '/checkout') {
         return null;
     }
 

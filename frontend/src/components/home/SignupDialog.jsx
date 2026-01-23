@@ -242,15 +242,7 @@ export function SignupDialog({ open, onOpenChange }) {
                     title: 'Signed in successfully',
                     variant: 'default',
                 });
-                // If this account is an admin, redirect them to the admin panel immediately
-                if (user.role === 'admin') {
-                    setDevOtp(null);
-                    setTimeout(() => {
-                        onOpenChange(false);
-                        navigate('/admin');
-                    }, 200);
-                    return;
-                }
+
                 setUsername(user.name || '');
                 setStep('success');
                 setDevOtp(null);

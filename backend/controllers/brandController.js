@@ -13,7 +13,7 @@ export const getBrands = async (req, res) => {
       where: { isActive: true },
       order: [['name', 'ASC']]
     });
-    
+
     res.status(200).json({
       success: true,
       data: brands
@@ -46,14 +46,14 @@ export const getBrand = async (req, res) => {
         }
       ]
     });
-    
+
     if (!brand) {
       return res.status(404).json({
         success: false,
         message: 'Brand not found'
       });
     }
-    
+
     res.status(200).json({
       success: true,
       data: brand
@@ -75,28 +75,28 @@ export const getBrand = async (req, res) => {
 export const createBrand = async (req, res) => {
   try {
     const { name, description } = req.body;
-    
+
     if (!name) {
       return res.status(400).json({
         success: false,
         message: 'Brand name is required'
       });
     }
-    
+
     // Generate unique slug
     const existingSlugs = await Brand.findAll({
       attributes: ['slug'],
       raw: true
     }).then(brands => brands.map(b => b.slug));
-    
+
     const slug = generateSlug(name, existingSlugs);
-    
+
     // Process logo if uploaded
     let logo = null;
     if (req.uploadedFiles && req.uploadedFiles.length > 0) {
       logo = req.uploadedFiles[0].url;
     }
-    
+
     // Create brand
     const brand = await Brand.create({
       name,
@@ -105,7 +105,7 @@ export const createBrand = async (req, res) => {
       logo,
       isActive: true
     });
-    
+
     res.status(201).json({
       success: true,
       message: 'Brand created successfully',
@@ -113,14 +113,14 @@ export const createBrand = async (req, res) => {
     });
   } catch (error) {
     console.error('Create brand error:', error);
-    
+
     if (error.name === 'SequelizeUniqueConstraintError') {
       return res.status(400).json({
         success: false,
         message: 'Brand name or slug already exists'
       });
     }
-    
+
     res.status(500).json({
       success: false,
       message: 'Server error while creating brand'
@@ -136,30 +136,28 @@ export const createBrand = async (req, res) => {
 export const updateBrand = async (req, res) => {
   try {
     const brand = await Brand.findByPk(req.params.id);
-    
+
     if (!brand) {
       return res.status(404).json({
         success: false,
         message: 'Brand not found'
       });
     }
-    
+
     // Process logo update
     if (req.uploadedFiles && req.uploadedFiles.length > 0) {
-      // Delete old logo from Cloudinary if exists
-      if (brand.logo && brand.logo.includes('cloudinary')) {
-        // Extract public ID from URL
-        const parts = brand.logo.split('/');
-        const publicId = parts[parts.length - 1].split('.')[0];
-        await deleteImage(publicId);
+      // Delete old logo from local storage if exists
+      if (brand.logo && brand.logo.startsWith('/uploads/')) {
+        const filename = brand.logo.replace('/uploads/', '');
+        await deleteImage(filename);
       }
-      
+
       req.body.logo = req.uploadedFiles[0].url;
     }
-    
+
     // Update brand
     await brand.update(req.body);
-    
+
     res.status(200).json({
       success: true,
       message: 'Brand updated successfully',
@@ -167,14 +165,14 @@ export const updateBrand = async (req, res) => {
     });
   } catch (error) {
     console.error('Update brand error:', error);
-    
+
     if (error.name === 'SequelizeUniqueConstraintError') {
       return res.status(400).json({
         success: false,
         message: 'Brand name or slug already exists'
       });
     }
-    
+
     res.status(500).json({
       success: false,
       message: 'Server error while updating brand'
@@ -190,40 +188,39 @@ export const updateBrand = async (req, res) => {
 export const deleteBrand = async (req, res) => {
   try {
     const brand = await Brand.findByPk(req.params.id);
-    
+
     if (!brand) {
       return res.status(404).json({
         success: false,
         message: 'Brand not found'
       });
     }
-    
+
     // Check if brand has products
     const productCount = await Product.count({
       where: { brandId: brand.id }
     });
-    
+
     if (productCount > 0) {
       return res.status(400).json({
         success: false,
         message: 'Cannot delete brand with existing products'
       });
     }
-    
-    // Delete logo from Cloudinary if exists
-    if (brand.logo && brand.logo.includes('cloudinary')) {
-      const parts = brand.logo.split('/');
-      const publicId = parts[parts.length - 1].split('.')[0];
-      await deleteImage(publicId);
+
+    // Delete logo from local storage if exists
+    if (brand.logo && brand.logo.startsWith('/uploads/')) {
+      const filename = brand.logo.replace('/uploads/', '');
+      await deleteImage(filename);
     }
-    
+
     // Soft delete or hard delete
     if (req.query.hardDelete === 'true') {
       await brand.destroy();
     } else {
       await brand.update({ isActive: false });
     }
-    
+
     res.status(200).json({
       success: true,
       message: `Brand ${req.query.hardDelete === 'true' ? 'deleted' : 'deactivated'} successfully`

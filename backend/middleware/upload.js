@@ -1,23 +1,33 @@
 import multer from 'multer';
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
-import cloudinary from '../config/cloudinary.js';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Create uploads directory if it doesn't exist
+const uploadsDir = path.join(__dirname, '..', 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  console.log('✅ Created uploads directory:', uploadsDir);
+}
 
 /**
- * Configure Cloudinary storage for multer
+ * Configure local disk storage for multer
  */
-const cloudinaryStorage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: 'ecommerce/products',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
-    transformation: [{ width: 1000, height: 1000, crop: 'limit' }],
-    public_id: (req, file) => {
-      const timestamp = Date.now();
-      const originalname = file.originalname.split('.')[0];
-      // Clean filename
-      const cleanName = originalname.replace(/[^a-zA-Z0-9]/g, '_');
-      return `product_${timestamp}_${cleanName}`;
-    }
+const diskStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadsDir);
+  },
+  filename: (req, file, cb) => {
+    const timestamp = Date.now();
+    const originalname = file.originalname.split('.')[0];
+    // Clean filename - remove special characters
+    const cleanName = originalname.replace(/[^a-zA-Z0-9]/g, '_');
+    const ext = path.extname(file.originalname);
+    const filename = `${timestamp}_${cleanName}${ext}`;
+    cb(null, filename);
   }
 });
 
@@ -26,7 +36,7 @@ const cloudinaryStorage = new CloudinaryStorage({
  */
 const fileFilter = (req, file, cb) => {
   // Accept images only
-  if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
+  if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
     return cb(new Error('Only image files are allowed!'), false);
   }
   cb(null, true);
@@ -36,7 +46,7 @@ const fileFilter = (req, file, cb) => {
  * Multer upload instance
  */
 export const upload = multer({
-  storage: cloudinaryStorage,
+  storage: diskStorage,
   fileFilter: fileFilter,
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB limit
@@ -98,31 +108,33 @@ export const handleUploadError = (err, req, res, next) => {
 };
 
 /**
- * Process uploaded files - CRITICAL: This creates the req.uploadedFiles array
+ * Process uploaded files - Creates the req.uploadedFiles array with local paths
  */
 export const processUploadedFiles = (req, res, next) => {
   console.log('Processing uploaded files...');
-  
+
   if (req.files && req.files.length > 0) {
     console.log(`Found ${req.files.length} uploaded files`);
-    
+
     req.uploadedFiles = req.files.map(file => {
-      console.log(`File uploaded to Cloudinary: ${file.path}`);
+      const localPath = `/uploads/${file.filename}`;
+      console.log(`File saved locally: ${localPath}`);
       return {
-        url: file.path, // Cloudinary URL
+        url: localPath, // Local path instead of Cloudinary URL
         publicId: file.filename,
         originalName: file.originalname,
         size: file.size,
         mimetype: file.mimetype
       };
     });
-    
+
     console.log('Uploaded files processed:', req.uploadedFiles.length);
   } else if (req.file) {
-    console.log('Single file uploaded to Cloudinary:', req.file.path);
-    
+    const localPath = `/uploads/${req.file.filename}`;
+    console.log('Single file saved locally:', localPath);
+
     req.uploadedFiles = [{
-      url: req.file.path, // Cloudinary URL
+      url: localPath, // Local path instead of Cloudinary URL
       publicId: req.file.filename,
       originalName: req.file.originalname,
       size: req.file.size,
@@ -140,16 +152,16 @@ export const processUploadedFiles = (req, res, next) => {
  */
 export const validateProductImages = (req, res, next) => {
   console.log('Validating product images...');
-  
+
   // Check if we have existing colorsAndImages or uploaded files
-  const hasColorsAndImages = req.body.colorsAndImages && 
-    req.body.colorsAndImages.trim() !== '' && 
+  const hasColorsAndImages = req.body.colorsAndImages &&
+    req.body.colorsAndImages.trim() !== '' &&
     req.body.colorsAndImages.trim() !== '{}';
-  
+
   const hasUploadedFiles = req.uploadedFiles && req.uploadedFiles.length > 0;
-  
+
   console.log('Validation check:', { hasColorsAndImages, hasUploadedFiles });
-  
+
   if (!hasColorsAndImages && !hasUploadedFiles) {
     return res.status(400).json({
       success: false,
@@ -160,27 +172,38 @@ export const validateProductImages = (req, res, next) => {
 };
 
 /**
- * Delete image from Cloudinary
+ * Delete image from local storage
  */
-export const deleteImage = async (publicId) => {
+export const deleteImage = async (filename) => {
   try {
-    const result = await cloudinary.uploader.destroy(publicId);
-    return result;
+    const filePath = path.join(uploadsDir, filename);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      console.log('✅ Deleted local file:', filename);
+      return { result: 'ok' };
+    } else {
+      console.log('⚠️ File not found:', filename);
+      return { result: 'not found' };
+    }
   } catch (error) {
-    console.error('Error deleting image from Cloudinary:', error);
+    console.error('Error deleting local file:', error);
     throw error;
   }
 };
 
 /**
- * Delete multiple images from Cloudinary
+ * Delete multiple images from local storage
  */
-export const deleteImages = async (publicIds) => {
+export const deleteImages = async (filenames) => {
   try {
-    const result = await cloudinary.api.delete_resources(publicIds);
-    return result;
+    const results = [];
+    for (const filename of filenames) {
+      const result = await deleteImage(filename);
+      results.push(result);
+    }
+    return { deleted: results.length };
   } catch (error) {
-    console.error('Error deleting images from Cloudinary:', error);
+    console.error('Error deleting local files:', error);
     throw error;
   }
 };

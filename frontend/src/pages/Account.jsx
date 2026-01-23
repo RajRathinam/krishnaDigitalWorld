@@ -5,6 +5,7 @@ import { Footer } from "@/components/layout/Footer";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { User, Package, Heart, LogOut, ChevronRight, ShoppingBag, Truck, Check, X, Calendar, MapPin, Plus, Home, Briefcase, MapPin as MapPinIcon } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
 import { baseUrl } from '@/config/baseUrl';
 // Base API configuration
@@ -541,10 +542,28 @@ export default function Account() {
                 </button>
               </div>
 
-              {ordersLoading ? (<div className="text-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Loading orders...</p>
-              </div>) : (<>
+              {ordersLoading ? (
+                <div className="space-y-4">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="bg-card rounded-lg border border-border p-4 space-y-3">
+                      <div className="flex justify-between items-center border-b border-border pb-3">
+                        <div className="space-y-1">
+                          <Skeleton className="h-5 w-32" />
+                          <Skeleton className="h-3 w-24" />
+                        </div>
+                        <Skeleton className="h-6 w-24 rounded-full" />
+                      </div>
+                      <div className="flex gap-3">
+                        <Skeleton className="w-14 h-14 rounded-lg" />
+                        <div className="space-y-2 flex-1">
+                          <Skeleton className="h-4 w-3/4" />
+                          <Skeleton className="h-3 w-1/2" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (<>
                 {orders.map((order) => (<div key={order.id} className="bg-card rounded-lg border border-border p-4">
                   <div className="flex flex-row sm:flex-row sm:items-center justify-between gap-3 mb-3 pb-3 border-b border-border">
                     <div>
@@ -782,10 +801,12 @@ export default function Account() {
               <div className="mb-6">
                 <h3 className="font-medium text-foreground mb-3">Saved Addresses ({additionalAddresses.length})</h3>
 
-                {isLoadingAddresses ? (<div className="text-center py-4">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-accent mx-auto"></div>
-                  <p className="text-sm text-muted-foreground mt-2">Loading addresses...</p>
-                </div>) : additionalAddresses.length === 0 ? (<div className="text-center py-6 border border-dashed border-border rounded-lg">
+                {isLoadingAddresses ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Skeleton className="h-32 rounded-lg" />
+                    <Skeleton className="h-32 rounded-lg" />
+                  </div>
+                ) : additionalAddresses.length === 0 ? (<div className="text-center py-6 border border-dashed border-border rounded-lg">
                   <MapPin className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
                   <p className="text-muted-foreground mb-3">No saved addresses yet</p>
                   <p className="text-sm text-muted-foreground mb-4">Add addresses for faster checkout</p>
