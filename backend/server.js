@@ -106,8 +106,27 @@ app.use(helmet({
 // Apply CORS middleware
 app.use(cors(corsOptions));
 
-// Handle preflight requests
-app.options('*', cors(corsOptions));
+// FIXED: Handle preflight requests for all routes
+app.options('/*', (req, res) => {
+  const origin = req.headers.origin;
+  
+  // Check if origin is allowed
+  if (origin && allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+  } else if (!origin || process.env.NODE_ENV === 'development') {
+    // Allow in development or for server-to-server
+    res.header('Access-Control-Allow-Origin', '*');
+  }
+  
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Expose-Headers', 'Content-Range, X-Content-Range');
+  res.header('Access-Control-Max-Age', '86400');
+  
+  console.log('✅ Handled OPTIONS preflight for:', req.originalUrl, 'Origin:', origin);
+  return res.status(200).end();
+});
 
 // Additional CORS headers middleware
 app.use((req, res, next) => {
@@ -126,9 +145,9 @@ app.use((req, res, next) => {
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Expose-Headers', 'Content-Range, X-Content-Range');
   
-  // Handle preflight requests
+  // Handle preflight requests (backup)
   if (req.method === 'OPTIONS') {
-    console.log('🔄 Handling OPTIONS preflight request');
+    console.log('🔄 Handling OPTIONS preflight request in middleware');
     return res.status(200).end();
   }
   
