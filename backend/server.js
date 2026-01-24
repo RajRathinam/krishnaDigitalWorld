@@ -44,7 +44,7 @@ console.log(`   ADMIN_URL: ${process.env.ADMIN_URL}`);
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   process.env.ADMIN_URL
-].filter(Boolean); // Remove any undefined/null values
+].filter(Boolean);
 
 console.log('🌐 Allowed CORS Origins:', allowedOrigins);
 
@@ -79,13 +79,11 @@ app.use(helmet({
 // Apply CORS middleware
 app.use(cors(corsOptions));
 
-// Handle preflight OPTIONS requests
-app.options('*', cors(corsOptions));
-
-// Manual CORS headers as backup
+// Manual CORS headers and OPTIONS handling - NO app.options() call
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   
+  // Set CORS headers
   if (origin && allowedOrigins.includes(origin)) {
     res.header('Access-Control-Allow-Origin', origin);
   }
@@ -94,7 +92,7 @@ app.use((req, res, next) => {
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
   
-  // Handle preflight requests
+  // Handle preflight OPTIONS requests
   if (req.method === 'OPTIONS') {
     console.log(`🔄 OPTIONS preflight request from: ${origin}`);
     return res.status(204).end();
