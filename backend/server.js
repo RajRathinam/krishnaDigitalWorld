@@ -39,119 +39,67 @@ console.log(`   PORT: ${PORT}`);
 console.log(`   NODE_ENV: ${process.env.NODE_ENV}`);
 console.log(`   FRONTEND_URL: ${process.env.FRONTEND_URL}`);
 console.log(`   ADMIN_URL: ${process.env.ADMIN_URL}`);
-console.log(`   DB_HOST: ${process.env.DB_HOST}`);
-console.log(`   DB_NAME: ${process.env.DB_NAME}`);
 
-// CORS configuration - Allow both frontend and admin
+// CORS configuration - Allow ONLY your two domains
 const allowedOrigins = [
   process.env.FRONTEND_URL,
-  process.env.ADMIN_URL,
-  'http://localhost:3000', // Add localhost for development
-  'http://localhost:5173', // Vite dev server
-  'https://srikrishnadigitalworld.in',
-  'https://www.srikrishnadigitalworld.in',
-  'https://admin.srikrishnadigitalworld.in'
-].filter(Boolean);
+  process.env.ADMIN_URL
+].filter(Boolean); // Remove any undefined/null values
 
 console.log('🌐 Allowed CORS Origins:', allowedOrigins);
 
+// Simple CORS configuration
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps, curl, postman)
+    // Allow requests with no origin (server-to-server, curl, etc.)
     if (!origin) {
-      console.log('📨 Request with no origin (server-to-server)');
       return callback(null, true);
     }
 
     // Check if origin is in allowed list
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    if (allowedOrigins.includes(origin)) {
       console.log(`✅ CORS allowed for origin: ${origin}`);
       callback(null, true);
     } else {
       console.log(`❌ CORS blocked for origin: ${origin}`);
-      console.log(`   Allowed origins: ${allowedOrigins.join(', ')}`);
-      
-      // Still allow in development for debugging
-      if (process.env.NODE_ENV === 'development') {
-        console.log('⚠️  Development mode: Allowing anyway');
-        callback(null, true);
-      } else {
-        callback(new Error(`Not allowed by CORS. Origin: ${origin}`));
-      }
+      callback(new Error(`Not allowed by CORS. Origin: ${origin}`));
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: [
-    'Content-Type',
-    'Authorization',
-    'X-Requested-With',
-    'Accept',
-    'Origin',
-    'Access-Control-Request-Method',
-    'Access-Control-Request-Headers',
-    'X-CSRF-Token'
-  ],
-  exposedHeaders: ['Content-Range', 'X-Content-Range'],
-  maxAge: 86400, // 24 hours
-  optionsSuccessStatus: 200
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  optionsSuccessStatus: 204
 };
 
 // Security middleware
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" },
-  contentSecurityPolicy: false // Disable for API (adjust as needed)
+  crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 
 // Apply CORS middleware
 app.use(cors(corsOptions));
 
-// FIXED: Handle preflight requests for all routes
-app.options('/*', (req, res) => {
-  const origin = req.headers.origin;
-  
-  // Check if origin is allowed
-  if (origin && allowedOrigins.includes(origin)) {
-    res.header('Access-Control-Allow-Origin', origin);
-  } else if (!origin || process.env.NODE_ENV === 'development') {
-    // Allow in development or for server-to-server
-    res.header('Access-Control-Allow-Origin', '*');
-  }
-  
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Expose-Headers', 'Content-Range, X-Content-Range');
-  res.header('Access-Control-Max-Age', '86400');
-  
-  console.log('✅ Handled OPTIONS preflight for:', req.originalUrl, 'Origin:', origin);
-  return res.status(200).end();
-});
+// Handle preflight OPTIONS requests
+app.options('*', cors(corsOptions));
 
-// Additional CORS headers middleware
+// Manual CORS headers as backup
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   
-  // Set CORS headers dynamically
   if (origin && allowedOrigins.includes(origin)) {
     res.header('Access-Control-Allow-Origin', origin);
-  } else if (!origin || process.env.NODE_ENV === 'development') {
-    // Allow in development or for server-to-server
-    res.header('Access-Control-Allow-Origin', '*');
   }
   
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
   res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Expose-Headers', 'Content-Range, X-Content-Range');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
   
-  // Handle preflight requests (backup)
+  // Handle preflight requests
   if (req.method === 'OPTIONS') {
-    console.log('🔄 Handling OPTIONS preflight request in middleware');
-    return res.status(200).end();
+    console.log(`🔄 OPTIONS preflight request from: ${origin}`);
+    return res.status(204).end();
   }
   
-  // Log request info for debugging
   console.log(`${new Date().toISOString()} ${req.method} ${req.originalUrl} - Origin: ${origin || 'none'}`);
   next();
 });
@@ -166,20 +114,17 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 console.log('✅ Serving static files from /uploads directory');
 
-// Request logging middleware
+// Request logging
 app.use((req, res, next) => {
   const start = Date.now();
-  
   res.on('finish', () => {
     const duration = Date.now() - start;
     console.log(`${req.method} ${req.originalUrl} ${res.statusCode} - ${duration}ms`);
   });
-  
   next();
 });
 
-// Rate limiting for all API routes
-// Apply rate limiting only in production
+// Rate limiting for all API routes (production only)
 if (process.env.NODE_ENV === 'production') {
   app.use('/api', apiLimiter);
   console.log('✅ Rate limiting enabled for production');
@@ -209,11 +154,8 @@ app.get('/api/health', (req, res) => {
     message: 'Server is running',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV,
-    cors: {
-      allowedOrigins: allowedOrigins,
-      requestOrigin: req.headers.origin || 'none'
-    },
-    version: '1.0.0'
+    allowedOrigins: allowedOrigins,
+    requestOrigin: req.headers.origin || 'none'
   });
 });
 
@@ -223,7 +165,8 @@ app.get('/api/cors-test', (req, res) => {
     success: true,
     message: 'CORS test successful',
     origin: req.headers.origin || 'Not provided',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    allowed: allowedOrigins.includes(req.headers.origin || '')
   });
 });
 
@@ -233,53 +176,40 @@ app.get('/', (req, res) => {
     success: true,
     message: 'E-commerce Backend API',
     version: '1.0.0',
-    documentation: '/api/health',
-    endpoints: [
-      '/api/health - Server health check',
-      '/api/cors-test - CORS test endpoint',
-      '/api/auth - Authentication routes',
-      '/api/products - Product management',
-      '/api/categories - Category management',
-      '/api/users - User management',
-      '/api/orders - Order management'
-    ]
+    endpoints: {
+      health: '/api/health',
+      auth: '/api/auth',
+      products: '/api/products',
+      categories: '/api/categories',
+      users: '/api/users',
+      orders: '/api/orders'
+    }
   });
 });
 
 // 404 handler
 app.use((req, res) => {
-  console.log(`❌ 404: Route not found: ${req.method} ${req.originalUrl}`);
+  console.log(`❌ 404: ${req.method} ${req.originalUrl}`);
   res.status(404).json({
     success: false,
     message: 'API endpoint not found',
     requestedUrl: req.originalUrl,
-    method: req.method,
-    availableEndpoints: [
-      '/api/health',
-      '/api/products',
-      '/api/categories',
-      '/api/auth',
-      '/api/users'
-    ]
+    method: req.method
   });
 });
 
 // Global error handler
 app.use((err, req, res, next) => {
-  console.error('🔥 Global error handler:', err);
-  console.error('🔥 Error stack:', err.stack);
-  console.error('🔥 Request headers:', req.headers);
-  console.error('🔥 Request origin:', req.headers.origin);
+  console.error('🔥 Error:', err.message);
   
   // Handle CORS errors specifically
   if (err.message && err.message.includes('CORS')) {
     return res.status(403).json({
       success: false,
-      message: 'CORS error: Request not allowed',
+      message: 'CORS error',
       error: err.message,
       allowedOrigins: allowedOrigins,
-      requestOrigin: req.headers.origin || 'Not provided',
-      suggestion: 'Check if your origin is in the allowed list'
+      requestOrigin: req.headers.origin || 'Not provided'
     });
   }
   
@@ -290,7 +220,6 @@ app.use((err, req, res, next) => {
     success: false,
     message,
     error: process.env.NODE_ENV === 'development' ? err.message : undefined,
-    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
     timestamp: new Date().toISOString()
   });
 });
@@ -303,9 +232,9 @@ const startServer = async () => {
     await sequelize.authenticate();
     console.log('✅ Database connection established successfully.');
 
-    // Sync database (use force: true only in development)
+    // Sync database
     const syncOptions = process.env.NODE_ENV === 'development'
-      ? { alter: true, force: false } // Be careful with alter in production
+      ? { alter: true, force: false }
       : { alter: false, force: false };
 
     console.log('🔄 Synchronizing database...');
@@ -325,14 +254,11 @@ const startServer = async () => {
       console.log(`📝 Environment: ${process.env.NODE_ENV}`);
       console.log(`🔗 Local URL: http://localhost:${PORT}`);
       console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
-      console.log(`🔗 CORS test: http://localhost:${PORT}/api/cors-test`);
       console.log(`🌐 Allowed origins: ${allowedOrigins.join(', ')}`);
       console.log('='.repeat(60) + '\n');
     });
   } catch (error) {
     console.error('❌ Unable to start server:', error);
-    console.error('❌ Error details:', error.message);
-    console.error('❌ Error stack:', error.stack);
     process.exit(1);
   }
 };
@@ -360,7 +286,6 @@ const createDefaultAdmin = async () => {
         isVerified: true,
         slug: 'admin-user-' + Date.now().toString().slice(-6)
       });
-
       console.log('✅ Default admin user created:', admin.phone);
     } else {
       console.log('✅ Admin user already exists');
@@ -376,42 +301,31 @@ const startBirthdayScheduler = () => {
     try {
       console.log('🎂 Checking for birthdays...');
       const result = await checkBirthdaysAndSendWishes();
-
       if (result.count > 0) {
         console.log(`🎁 Sent birthday wishes to ${result.count} users`);
-      } else {
-        console.log('🎂 No birthdays today');
       }
     } catch (error) {
       console.error('❌ Error in birthday wish scheduler:', error);
     }
   };
 
-  // Run immediately on startup
+  // Run immediately
   checkAndSendBirthdayWishes();
 
-  // Schedule to run daily at 9:00 AM
+  // Schedule daily at 9:00 AM
   const now = new Date();
-  const nineAM = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
-    9, 0, 0, 0
-  );
-
-  if (now > nineAM) {
-    nineAM.setDate(nineAM.getDate() + 1);
-  }
-
+  const nineAM = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9, 0, 0, 0);
+  
+  if (now > nineAM) nineAM.setDate(nineAM.getDate() + 1);
+  
   const timeUntilNineAM = nineAM.getTime() - now.getTime();
-
+  
   setTimeout(() => {
     checkAndSendBirthdayWishes();
-    // Run every 24 hours
     setInterval(checkAndSendBirthdayWishes, 24 * 60 * 60 * 1000);
   }, timeUntilNineAM);
-
-  console.log(`🎂 Birthday scheduler started. Next check at: ${nineAM.toLocaleString()}`);
+  
+  console.log(`🎂 Birthday scheduler started. Next check: ${nineAM.toLocaleString()}`);
 };
 
 // Graceful shutdown
