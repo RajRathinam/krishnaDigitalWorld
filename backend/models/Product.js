@@ -174,16 +174,16 @@ const Product = sequelize.define('Product', {
     type: DataTypes.BOOLEAN,
     defaultValue: false
   },
-  isBestSeller: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false,
-    comment: 'Mark product as best seller'
-  },
-  isDealOfTheDay: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false,
-    comment: 'Mark product as deal of the day'
-  },
+isBestSeller: {
+  type: DataTypes.BOOLEAN,
+  defaultValue: false,
+  field: 'isBestSeller'  // Explicitly set the column name
+},
+isDealOfTheDay: {
+  type: DataTypes.BOOLEAN,
+  defaultValue: false,
+  field: 'isDealOfTheDay'  // Explicitly set the column name
+},
   isActive: {
     type: DataTypes.BOOLEAN,
     defaultValue: true
