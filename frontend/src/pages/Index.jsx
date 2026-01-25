@@ -1,20 +1,42 @@
+/**
+ * Index Page - E-Commerce Home Page
+ * 
+ * This is the main landing page of the e-commerce application.
+ * It displays various sections including hero slider, categories, deals, 
+ * best sellers, and featured products.
+ * 
+ * @component
+ * @returns {JSX.Element} The home page component
+ */
+
 import { useEffect } from "react";
 import AOS from "aos";
 import "aos/dist/aos.css";
+
+// Layout Components
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { HeroSlider } from "@/components/home/HeroSlider";
-import { CategoryGrid } from "@/components/home/CategoryGrid";
-import { DealOfTheDay } from "@/components/home/DealOfTheDay";
-import { BestSellers } from "@/components/home/BestSellers";
-import { PromoBanners } from "@/components/home/PromoBanners";
-import { ProductShowcase } from "@/components/home/ProductShowcase";
-import { TrustBadges } from "@/components/home/TrustBadges";
-import { BrandShowcase } from "@/components/home/BrandShowcase";
-import { BundleOffers } from "@/components/home/BundleOffers";
-import { FeaturedProjects } from "@/components/home/FeaturedProjects";
+
+// Home Page Components - Import from centralized index
+import {
+  HeroSlider,
+  CategoryGrid,
+  DealOfTheDay,
+  BestSellers,
+  PromoBanners,
+  ProductShowcase,
+  TrustBadges,
+  BrandShowcase,
+  BundleOffers,
+  FeaturedProjects
+} from "@/components/home";
+
 const Index = () => {
+  /**
+   * Initialize AOS (Animate On Scroll) library and handle signup modal
+   */
   useEffect(() => {
+    // Initialize AOS animations
     AOS.init({
       duration: 600,
       easing: "ease-out-cubic",
@@ -22,7 +44,8 @@ const Index = () => {
       offset: 50,
       disable: 'mobile' // Disable animations on mobile to prevent blank spaces
     });
-    // If the user hasn't seen the signup modal yet, ask the app to open it after a short delay
+
+    // Show signup modal after 5 seconds if user hasn't signed up
     const hasSignedUp = localStorage.getItem("hasSignedUp");
     if (!hasSignedUp) {
       const timer = setTimeout(() => {
@@ -31,47 +54,65 @@ const Index = () => {
       return () => clearTimeout(timer);
     }
   }, []);
-  return (<div className="min-h-screen bg-background overflow-x-hidden w-full">
-    <Header />
 
-    <main>
-      <HeroSlider />
-      <CategoryGrid />
+  return (
+    <div className="min-h-screen bg-background overflow-x-hidden w-full">
+      {/* Header Navigation */}
+      <Header />
 
-      <div data-aos="fade-up">
-        <DealOfTheDay />
-      </div>
+      {/* Main Content */}
+      <main className="relative">
+        {/* Hero Section - Full width banner with call-to-action */}
+        <HeroSlider />
 
-      <div data-aos="fade-up" data-aos-delay="100">
-        <BestSellers />
-      </div>
+        {/* Category Grid - Browse products by category */}
+        <CategoryGrid />
 
-      <div data-aos="fade-up" data-aos-delay="100">
-        <PromoBanners />
-      </div>
+        {/* Deal of the Day - Time-limited offers */}
+        <div data-aos="fade-up">
+          <DealOfTheDay />
+        </div>
 
-      <div data-aos="fade-up" data-aos-delay="100">
-        <ProductShowcase />
-      </div>
+        {/* Best Sellers - Most popular products */}
+        <div data-aos="fade-up" data-aos-delay="100">
+          <BestSellers />
+        </div>
 
-      <div data-aos="fade-up" data-aos-delay="100">
-        <FeaturedProjects />
-      </div>
+        {/* Promotional Banners - Marketing campaigns */}
+        <div data-aos="fade-up" data-aos-delay="100">
+          <PromoBanners />
+        </div>
 
-      <div data-aos="fade-up" data-aos-delay="100">
-        <BrandShowcase />
-      </div>
+        {/* Product Showcase - Featured/Recommended products */}
+        <div data-aos="fade-up" data-aos-delay="100">
+          <ProductShowcase />
+        </div>
 
-      <div data-aos="fade-up" data-aos-delay="100">
-        <BundleOffers />
-      </div>
+        {/* Featured Projects - Showcase installations/case studies */}
+        <div data-aos="fade-up" data-aos-delay="100">
+          <FeaturedProjects />
+        </div>
 
-      <div data-aos="fade-up" data-aos-delay="100">
-        <TrustBadges />
-      </div>
-    </main>
+        {/* Brand Showcase - Featured brands */}
+        <div data-aos="fade-up" data-aos-delay="100">
+          <BrandShowcase />
+        </div>
 
-    <Footer />
-  </div>);
+        {/* Bundle Offers - Special combo deals */}
+        <div data-aos="fade-up" data-aos-delay="100">
+          <BundleOffers />
+        </div>
+
+        {/* Trust Badges - Social proof and guarantees */}
+        <div data-aos="fade-up" data-aos-delay="100">
+          <TrustBadges />
+        </div>
+      </main>
+
+      {/* Footer */}
+      <Footer />
+    </div>
+  );
 };
+
 export default Index;

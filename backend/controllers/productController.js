@@ -23,7 +23,9 @@ export const getProducts = async (req, res) => {
       sortBy = 'created_at',
       sortOrder = 'desc',
       availability,
-      isFeatured
+      isFeatured,
+      isBestSeller,
+      isDealOfTheDay
     } = req.query;
 
     const offset = (page - 1) * limit;
@@ -368,6 +370,8 @@ export const getProductsByCategory = async (req, res) => {
     if (subcategory) where.subcategory = subcategory;
     if (brandId) where.brandId = brandId;
     if (availability !== undefined) where.availability = availability === 'true';
+    if (isBestSeller !== undefined) where.isBestSeller = isBestSeller === 'true';
+    if (isDealOfTheDay !== undefined) where.isDealOfTheDay = isDealOfTheDay === 'true';
 
     if (minPrice || maxPrice) {
       where.price = {};
@@ -545,6 +549,8 @@ export const createProduct = async (req, res) => {
       colorsAndImages,
       attributes,
       isFeatured,
+      isBestSeller,
+      isDealOfTheDay,
       metaTitle,
       metaDescription,
       keywords,
@@ -890,8 +896,10 @@ export const createProduct = async (req, res) => {
       });
     }
 
-    // Determine if featured
+    // Determine if featured, best seller, or deal of the day
     const isProductFeatured = isFeatured === true || isFeatured === 'true' || isFeatured === '1';
+    const isProductBestSeller = isBestSeller === true || isBestSeller === 'true' || isBestSeller === '1';
+    const isProductDealOfTheDay = isDealOfTheDay === true || isDealOfTheDay === 'true' || isDealOfTheDay === '1';
 
     // Handle sellerId
     const sellerIdValue = sellerId || req.user?.id || null;
@@ -918,6 +926,8 @@ export const createProduct = async (req, res) => {
       attributes: parsedAttributes,
       sellerId: sellerIdValue,
       isFeatured: isProductFeatured,
+      isBestSeller: isProductBestSeller,
+      isDealOfTheDay: isProductDealOfTheDay,
       metaTitle: metaTitle || null,
       metaDescription: metaDescription || null,
       keywords: parsedKeywords
@@ -1283,6 +1293,137 @@ export const getFeaturedProducts = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error while fetching featured products'
+    });
+  }
+};
+
+/**
+ * @desc    Get best seller products
+ * @route   GET /api/products/best-sellers
+ * @access  Public
+ */
+export const getBestSellers = async (req, res) => {
+  try {
+    const { limit = 20 } = req.query;
+    
+    const products = await Product.findAll({
+      where: {
+        isBestSeller: true,
+        isActive: true,
+        availability: true
+      },
+      limit: parseInt(limit),
+      order: [['rating', 'DESC'], ['totalReviews', 'DESC'], ['created_at', 'DESC']],
+      include: [
+        {
+          model: Category,
+          as: 'category',
+          attributes: ['id', 'name', 'slug']
+        },
+        {
+          model: Brand,
+          as: 'brand',
+          attributes: ['id', 'name', 'slug']
+        }
+      ]
+    });
+
+    res.status(200).json({
+      success: true,
+      data: products
+    });
+  } catch (error) {
+    console.error('Get best sellers error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching best sellers'
+    });
+  }
+};
+
+/**
+ * @desc    Get deal of the day products
+ * @route   GET /api/products/deal-of-the-day
+ * @access  Public
+ */
+export const getDealOfTheDay = async (req, res) => {
+  try {
+    const { limit = 20 } = req.query;
+    
+    const products = await Product.findAll({
+      where: {
+        isDealOfTheDay: true,
+        isActive: true,
+        availability: true
+      },
+      limit: parseInt(limit),
+      order: [['discountPercentage', 'DESC'], ['created_at', 'DESC']],
+      include: [
+        {
+          model: Category,
+          as: 'category',
+          attributes: ['id', 'name', 'slug']
+        },
+        {
+          model: Brand,
+          as: 'brand',
+          attributes: ['id', 'name', 'slug']
+        }
+      ]
+    });
+
+    res.status(200).json({
+      success: true,
+      data: products
+    });
+  } catch (error) {
+    console.error('Get deal of the day error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching deal of the day'
+    });
+  }
+};
+
+/**
+ * @desc    Get new arrivals (recently added products)
+ * @route   GET /api/products/new-arrivals
+ * @access  Public
+ */
+export const getNewArrivals = async (req, res) => {
+  try {
+    const { limit = 20 } = req.query;
+    
+    const products = await Product.findAll({
+      where: {
+        isActive: true,
+        availability: true
+      },
+      limit: parseInt(limit),
+      order: [['created_at', 'DESC']],
+      include: [
+        {
+          model: Category,
+          as: 'category',
+          attributes: ['id', 'name', 'slug']
+        },
+        {
+          model: Brand,
+          as: 'brand',
+          attributes: ['id', 'name', 'slug']
+        }
+      ]
+    });
+
+    res.status(200).json({
+      success: true,
+      data: products
+    });
+  } catch (error) {
+    console.error('Get new arrivals error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching new arrivals'
     });
   }
 };

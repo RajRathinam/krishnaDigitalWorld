@@ -1,6 +1,26 @@
+/**
+ * BundleOffers Component
+ * 
+ * Displays bundle/combo offers with special pricing.
+ * Shows product combinations with savings highlights.
+ * 
+ * Features:
+ * - Bundle product cards
+ * - Special pricing display
+ * - Discount badges
+ * - Hover effects
+ * - Responsive grid
+ * - Direct navigation to bundle products
+ * 
+ * @component
+ * @returns {JSX.Element} Bundle offers component
+ */
+
 import { Package, Percent, Gift, Sparkles, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { SplitHeading } from "@/components/ui/split-heading";
+
+// Bundle offers data - Can be moved to API/Config
 const bundleOffers = [
     {
         id: 1,
@@ -12,6 +32,7 @@ const bundleOffers = [
         image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop",
         gradient: "from-orange-500 to-red-500",
         icon: Sparkles,
+        category: "kitchen",
     },
     {
         id: 2,
@@ -23,6 +44,7 @@ const bundleOffers = [
         image: "https://images.unsplash.com/photo-1593062096033-9a26b09da705?w=400&h=300&fit=crop",
         gradient: "from-blue-500 to-cyan-500",
         icon: Gift,
+        category: "home-office",
     },
     {
         id: 3,
@@ -34,6 +56,7 @@ const bundleOffers = [
         image: "https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=400&h=300&fit=crop",
         gradient: "from-purple-500 to-pink-500",
         icon: Package,
+        category: "electronics",
     },
     {
         id: 4,
@@ -45,77 +68,140 @@ const bundleOffers = [
         image: "https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=400&h=300&fit=crop",
         gradient: "from-emerald-500 to-teal-500",
         icon: Percent,
+        category: "home-appliances",
     },
 ];
+
+/**
+ * Format price in INR currency
+ * @param {number} price - Price to format
+ * @returns {string} Formatted price string
+ */
+const formatPrice = (price) => {
+    return new Intl.NumberFormat("en-IN", {
+        style: "currency",
+        currency: "INR",
+        maximumFractionDigits: 0,
+    }).format(price);
+};
+
 export function BundleOffers() {
     const navigate = useNavigate();
-    const formatPrice = (price) => {
-        return new Intl.NumberFormat("en-IN", {
-            style: "currency",
-            currency: "INR",
-            maximumFractionDigits: 0,
-        }).format(price);
+
+    const handleBundleClick = (bundle) => {
+        navigate(`/products?bundle=${bundle.id}&category=${bundle.category}`);
     };
-    return (<section className="w-full py-12 md:py-16 bg-secondary/30">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-10">
-          <SplitHeading text="Bundle Offers" as="h2" className="text-2xl md:text-3xl font-heading mb-3"/>
-          <p className="text-muted-foreground">Save more when you buy together</p>
-        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {bundleOffers.map((bundle, index) => {
-            const IconComp = bundle.icon;
-            return (<div key={bundle.id} className="group relative bg-card rounded-2xl overflow-hidden border border-border/60 hover:border-accent/50 transition-all duration-500 hover:shadow-xl hover:shadow-accent/10 cursor-pointer animate-slide-up" style={{ animationDelay: `${index * 100}ms` }} onClick={() => navigate(`/products?bundle=${bundle.id}`)}>
-                {/* Discount Badge */}
-                <div className={`absolute top-4 right-4 z-10 bg-gradient-to-r ${bundle.gradient} text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg`}>
-                  {bundle.discount}% OFF
+    return (
+        <section className="w-full py-12 md:py-16 bg-secondary/30">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+                {/* Section Header */}
+                <div className="text-center mb-10">
+                    <SplitHeading 
+                        text="Bundle Offers" 
+                        as="h2" 
+                        className="text-2xl md:text-3xl font-heading mb-3"
+                    />
+                    <p className="text-muted-foreground">
+                        Save more when you buy together
+                    </p>
                 </div>
 
-                {/* Image */}
-                <div className="relative h-40 overflow-hidden">
-                  <img src={bundle.image} alt={bundle.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"/>
-                  <div className={`absolute inset-0 bg-gradient-to-t ${bundle.gradient} opacity-20 group-hover:opacity-30 transition-opacity`}/>
-                  
-                  {/* Floating Icon */}
-                  <div className={`absolute bottom-4 left-4 w-12 h-12 rounded-xl bg-gradient-to-br ${bundle.gradient} flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all duration-300`}>
-                    <IconComp className="w-6 h-6 text-white"/>
-                  </div>
-                </div>
+                {/* Bundles Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {bundleOffers.map((bundle, index) => {
+                        const IconComp = bundle.icon;
+                        const savings = bundle.originalPrice - bundle.bundlePrice;
+                        
+                        return (
+                            <div
+                                key={bundle.id}
+                                className="group relative bg-card rounded-2xl overflow-hidden border border-border/60 hover:border-accent/50 transition-all duration-500 hover:shadow-xl hover:shadow-accent/10 cursor-pointer animate-slide-up"
+                                style={{ animationDelay: `${index * 100}ms` }}
+                                onClick={() => handleBundleClick(bundle)}
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        handleBundleClick(bundle);
+                                    }
+                                }}
+                                aria-label={`${bundle.title} - Save ${formatPrice(savings)}`}
+                            >
+                                {/* Discount Badge */}
+                                <div 
+                                    className={`absolute top-4 right-4 z-10 bg-gradient-to-r ${bundle.gradient} text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg`}
+                                >
+                                    {bundle.discount}% OFF
+                                </div>
 
-                {/* Content */}
-                <div className="p-5">
-                  <h3 className="font-heading text-lg font-semibold text-foreground mb-1 group-hover:text-accent transition-colors">
-                    {bundle.title}
-                  </h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    {bundle.description}
-                  </p>
+                                {/* Image */}
+                                <div className="relative h-40 overflow-hidden">
+                                    <img 
+                                        src={bundle.image} 
+                                        alt={bundle.title} 
+                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                        loading="lazy"
+                                        onError={(e) => {
+                                            e.target.src = '/placeholder.svg';
+                                        }}
+                                    />
+                                    <div 
+                                        className={`absolute inset-0 bg-gradient-to-t ${bundle.gradient} opacity-20 group-hover:opacity-30 transition-opacity`}
+                                    />
+                                    
+                                    {/* Floating Icon */}
+                                    <div 
+                                        className={`absolute bottom-4 left-4 w-12 h-12 rounded-xl bg-gradient-to-br ${bundle.gradient} flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all duration-300`}
+                                    >
+                                        <IconComp className="w-6 h-6 text-white" />
+                                    </div>
+                                </div>
 
-                  {/* Pricing */}
-                  <div className="flex items-end justify-between">
-                    <div>
-                      <span className="text-xs text-muted-foreground line-through block">
-                        {formatPrice(bundle.originalPrice)}
-                      </span>
-                      <span className="text-xl font-bold text-foreground">
-                        {formatPrice(bundle.bundlePrice)}
-                      </span>
-                    </div>
-                    <button className={`flex items-center gap-1 text-sm font-medium bg-gradient-to-r ${bundle.gradient} text-white px-4 py-2 rounded-lg group-hover:shadow-lg transition-all duration-300`}>
-                      Shop
-                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform"/>
-                    </button>
-                  </div>
-                </div>
+                                {/* Content */}
+                                <div className="p-5">
+                                    <h3 className="font-heading text-lg font-semibold text-foreground mb-1 group-hover:text-accent transition-colors">
+                                        {bundle.title}
+                                    </h3>
+                                    <p className="text-sm text-muted-foreground mb-4">
+                                        {bundle.description}
+                                    </p>
 
-                {/* Shimmer effect on hover */}
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-500">
-                  <div className="absolute inset-0 animate-shimmer"/>
+                                    {/* Pricing */}
+                                    <div className="flex items-end justify-between">
+                                        <div>
+                                            <span className="text-xs text-muted-foreground line-through block">
+                                                {formatPrice(bundle.originalPrice)}
+                                            </span>
+                                            <span className="text-xl font-bold text-foreground">
+                                                {formatPrice(bundle.bundlePrice)}
+                                            </span>
+                                            <span className="text-xs text-green-600 font-medium block mt-1">
+                                                Save {formatPrice(savings)}
+                                            </span>
+                                        </div>
+                                        <button 
+                                            className={`flex items-center gap-1 text-sm font-medium bg-gradient-to-r ${bundle.gradient} text-white px-4 py-2 rounded-lg group-hover:shadow-lg transition-all duration-300`}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleBundleClick(bundle);
+                                            }}
+                                        >
+                                            Shop
+                                            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Shimmer effect on hover */}
+                                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-500">
+                                    <div className="absolute inset-0 animate-shimmer" />
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
-              </div>);
-        })}
-        </div>
-      </div>
-    </section>);
+            </div>
+        </section>
+    );
 }

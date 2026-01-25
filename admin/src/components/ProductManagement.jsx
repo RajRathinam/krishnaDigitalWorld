@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -49,7 +50,10 @@ export const ProductManagement = () => {
     modelCode: "",
     modelName: "",
     description: "",
+    rating: "0",
     isFeatured: false,
+    isBestSeller: false,
+    isDealOfTheDay: false,
     isActive: true,
   });
 
@@ -80,7 +84,10 @@ export const ProductManagement = () => {
       modelCode: "",
       modelName: "",
       description: "",
+      rating: "0",
       isFeatured: false,
+      isBestSeller: false,
+      isDealOfTheDay: false,
       isActive: true,
     });
     setColorsList([{ name: "", files: [], existingImages: [], stock: 0 }]);
@@ -226,7 +233,10 @@ export const ProductManagement = () => {
       modelCode: product.modelCode || "",
       modelName: product.modelName || "",
       description: product.description || "",
+      rating: product.rating ? String(product.rating) : "0",
       isFeatured: product.isFeatured || false,
+      isBestSeller: product.isBestSeller || false,
+      isDealOfTheDay: product.isDealOfTheDay || false,
       isActive: product.isActive ?? true,
     });
 
@@ -249,7 +259,19 @@ export const ProductManagement = () => {
     setIsSubmitting(true);
     try {
       const formData = new FormData();
-      Object.entries(form).forEach(([key, val]) => formData.append(key, val));
+      Object.entries(form).forEach(([key, val]) => {
+        // Convert rating to number if it's a valid number string
+        if (key === 'rating' && val !== undefined && val !== null && val !== '') {
+          const ratingValue = parseFloat(val);
+          if (!isNaN(ratingValue) && ratingValue >= 0 && ratingValue <= 5) {
+            formData.append(key, ratingValue);
+          } else {
+            formData.append(key, 0);
+          }
+        } else {
+          formData.append(key, val);
+        }
+      });
       formData.append("sellerId", currentUserId);
 
       // Complex Data Structures
@@ -333,61 +355,95 @@ export const ProductManagement = () => {
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       {/* Stats Overview */}
-  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-  {[
-    { label: "Total Products", val: stats.total, icon: Package, color: "text-primary", bg: "bg-primary/10" },
-    { label: "Active", val: stats.active, icon: CheckCircle, color: "text-green-600", bg: "bg-green-100" },
-    { label: "Out of Stock", val: stats.outOfStock, icon: AlertTriangle, color: "text-red-600", bg: "bg-red-100" },
-    { label: "Featured", val: stats.featured, icon: Star, color: "text-amber-500", bg: "bg-amber-100" },
-  ].map((s, i) => (
-    <Card key={i}>
-      <CardContent className="p-6">
-        <div className="flex items-center gap-4">
-          <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${s.bg} ${s.color}`}>
-            <s.icon className="h-6 w-6" />
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground">{s.label}</p>
-            <p className="text-2xl font-bold">{s.val}</p>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  ))}
-</div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+        {loading ? (
+          // Skeleton Stats Cards
+          Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <Skeleton className="w-12 h-12 rounded-lg" />
+                  <div className="space-y-2 flex-1">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-8 w-16" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          [
+            { label: "Total Products", val: stats.total, icon: Package, color: "text-primary", bg: "bg-primary/10" },
+            { label: "Active", val: stats.active, icon: CheckCircle, color: "text-green-600", bg: "bg-green-100" },
+            { label: "Out of Stock", val: stats.outOfStock, icon: AlertTriangle, color: "text-red-600", bg: "bg-red-100" },
+            { label: "Featured", val: stats.featured, icon: Star, color: "text-amber-500", bg: "bg-amber-100" },
+          ].map((s, i) => (
+            <Card key={i}>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${s.bg} ${s.color}`}>
+                    <s.icon className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">{s.label}</p>
+                    <p className="text-2xl font-bold">{s.val}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
       {/* Main Content */}
       <Card>
         <CardHeader className="flex flex-col sm:flex-row justify-between gap-4 space-y-0 pb-4">
-          <div>
-            <CardTitle>Product Inventory</CardTitle>
-            <CardDescription>Manage your catalog, prices, and stock levels</CardDescription>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search products..."
-                className="pl-8 w-full sm:w-[250px]"
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <Select value={filterCategory} onValueChange={setFilterCategory}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {[...new Set(categoriesList.map(c => c.name))].map(c => (
-                  <SelectItem key={c} value={c}>{c}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button onClick={handleOpenAdd}>
-              <Plus className="h-4 w-4 mr-2" /> Add Product
-            </Button>
-          </div>
+          {loading ? (
+            // Skeleton for header
+            <>
+              <div className="space-y-2">
+                <Skeleton className="h-6 w-48" />
+                <Skeleton className="h-4 w-64" />
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Skeleton className="h-10 w-full sm:w-[250px]" />
+                <Skeleton className="h-10 w-full sm:w-[180px]" />
+                <Skeleton className="h-10 w-full sm:w-[140px]" />
+              </div>
+            </>
+          ) : (
+            <>
+              <div>
+                <CardTitle>Product Inventory</CardTitle>
+                <CardDescription>Manage your catalog, prices, and stock levels</CardDescription>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search products..."
+                    className="pl-8 w-full sm:w-[250px]"
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <Select value={filterCategory} onValueChange={setFilterCategory}>
+                  <SelectTrigger className="w-full sm:w-[180px]">
+                    <Filter className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {[...new Set(categoriesList.map(c => c.name))].map(c => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button onClick={handleOpenAdd}>
+                  <Plus className="h-4 w-4 mr-2" /> Add Product
+                </Button>
+              </div>
+            </>
+          )}
         </CardHeader>
         <CardContent>
           {/* Added max-height and overflow-auto for vertical scrolling */}
@@ -589,7 +645,54 @@ export const ProductManagement = () => {
                     <Label>Description</Label>
                     <Textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Product details..." rows={4} />
                   </div>
-                  <div className="flex gap-6 pt-4">
+                  
+                  {/* Rating Input */}
+                  <div className="space-y-2">
+                    <Label htmlFor="rating">Product Rating (0-5)</Label>
+                    <div className="flex items-center gap-3">
+                      <Input
+                        id="rating"
+                        type="number"
+                        min="0"
+                        max="5"
+                        step="0.1"
+                        value={form.rating}
+                        onChange={e => {
+                          const value = e.target.value;
+                          // Validate: must be between 0 and 5
+                          if (value === "" || (parseFloat(value) >= 0 && parseFloat(value) <= 5)) {
+                            setForm({ ...form, rating: value });
+                          }
+                        }}
+                        placeholder="0.0"
+                        className="w-32"
+                      />
+                      <div className="flex items-center gap-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            className={`h-5 w-5 transition-colors ${
+                              parseFloat(form.rating || 0) >= star
+                                ? "text-yellow-500 fill-yellow-500"
+                                : parseFloat(form.rating || 0) >= star - 0.5
+                                ? "text-yellow-500 fill-yellow-500/50"
+                                : "text-gray-300"
+                            }`}
+                            onClick={() => setForm({ ...form, rating: String(star) })}
+                            style={{ cursor: "pointer" }}
+                          />
+                        ))}
+                      </div>
+                      <span className="text-sm text-muted-foreground">
+                        {form.rating ? `${form.rating} / 5.0` : "Not rated"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Set the initial product rating (0.0 to 5.0). This can be updated based on customer reviews.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 pt-4">
                     <div className="flex items-center gap-2">
                       <Switch checked={form.isActive} onCheckedChange={c => setForm({ ...form, isActive: c })} />
                       <Label>Active Product</Label>
@@ -597,6 +700,14 @@ export const ProductManagement = () => {
                     <div className="flex items-center gap-2">
                       <Switch checked={form.isFeatured} onCheckedChange={c => setForm({ ...form, isFeatured: c })} />
                       <Label>Featured Product</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Switch checked={form.isBestSeller} onCheckedChange={c => setForm({ ...form, isBestSeller: c })} />
+                      <Label>Best Seller</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Switch checked={form.isDealOfTheDay} onCheckedChange={c => setForm({ ...form, isDealOfTheDay: c })} />
+                      <Label>Deal of the Day</Label>
                     </div>
                   </div>
                 </TabsContent>

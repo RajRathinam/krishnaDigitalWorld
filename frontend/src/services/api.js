@@ -46,6 +46,24 @@ export const productApi = {
         });
         return response.data;
     },
+    getBestSellers: async (limit) => {
+        const response = await api.get('/products/best-sellers', {
+            params: { limit: limit || 10 }
+        });
+        return response.data;
+    },
+    getDealOfTheDay: async (limit) => {
+        const response = await api.get('/products/deal-of-the-day', {
+            params: { limit: limit || 10 }
+        });
+        return response.data;
+    },
+    getNewArrivals: async (limit) => {
+        const response = await api.get('/products/new-arrivals', {
+            params: { limit: limit || 10 }
+        });
+        return response.data;
+    },
     getProductsByCategory: async (categorySlug, params) => {
         const response = await api.get(`/products/category/${categorySlug}`, { params });
         return response.data;

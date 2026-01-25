@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Search, Filter, Eye, MapPin, Phone, Mail, Package, Truck, XCircle, CheckCircle, MoreVertical, Download, Clock, RefreshCw, ChevronLeft, ChevronRight, Loader2, User, CreditCard, Hash, Tag, } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -451,108 +452,134 @@ export const OrderManagement = () => {
     </div>
 
     {/* Stats Cards */}
-<div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-  {[
-    { 
-      label: "Total Orders", 
-      value: stats.total, 
-      icon: Package, 
-      color: "text-primary", 
-      bg: "bg-primary/10" 
-    },
-    { 
-      label: "Pending", 
-      value: stats.pending, 
-      icon: Clock, 
-      color: "text-yellow-600", 
-      bg: "bg-yellow-100" 
-    },
-    { 
-      label: "Processing", 
-      value: stats.processing, 
-      icon: RefreshCw, 
-      color: "text-blue-600", 
-      bg: "bg-blue-100" 
-    },
-    { 
-      label: "Shipped", 
-      value: stats.shipped, 
-      icon: Truck, 
-      color: "text-purple-600", 
-      bg: "bg-purple-100" 
-    },
-    { 
-      label: "Delivered", 
-      value: stats.delivered, 
-      icon: CheckCircle, 
-      color: "text-green-600", 
-      bg: "bg-green-100" 
-    },
-    { 
-      label: "Revenue", 
-      value: formatCurrency(stats.revenue), 
-      icon: CreditCard, 
-      color: "text-emerald-600", 
-      bg: "bg-emerald-100" 
-    },
-  ].map((stat, index) => (
-    <Card key={index}>
-      <CardContent className="p-4">
-        <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${stat.bg} ${stat.color}`}>
-            <stat.icon className="h-5 w-5" />
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground">{stat.label}</p>
-            <p className={`text-xl font-bold ${stat.label === "Total Orders" || stat.label === "Revenue" ? "" : stat.color}`}>
-              {stat.value}
-            </p>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  ))}
-</div>
+    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+      {loading ? (
+        // Skeleton Stats Cards
+        Array.from({ length: 6 }).map((_, i) => (
+          <Card key={i}>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <Skeleton className="w-10 h-10 rounded-lg" />
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-3 w-20" />
+                  <Skeleton className="h-6 w-16" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))
+      ) : (
+        [
+          { 
+            label: "Total Orders", 
+            value: stats.total, 
+            icon: Package, 
+            color: "text-primary", 
+            bg: "bg-primary/10" 
+          },
+          { 
+            label: "Pending", 
+            value: stats.pending, 
+            icon: Clock, 
+            color: "text-yellow-600", 
+            bg: "bg-yellow-100" 
+          },
+          { 
+            label: "Processing", 
+            value: stats.processing, 
+            icon: RefreshCw, 
+            color: "text-blue-600", 
+            bg: "bg-blue-100" 
+          },
+          { 
+            label: "Shipped", 
+            value: stats.shipped, 
+            icon: Truck, 
+            color: "text-purple-600", 
+            bg: "bg-purple-100" 
+          },
+          { 
+            label: "Delivered", 
+            value: stats.delivered, 
+            icon: CheckCircle, 
+            color: "text-green-600", 
+            bg: "bg-green-100" 
+          },
+          { 
+            label: "Revenue", 
+            value: formatCurrency(stats.revenue), 
+            icon: CreditCard, 
+            color: "text-emerald-600", 
+            bg: "bg-emerald-100" 
+          },
+        ].map((stat, index) => (
+          <Card key={index}>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${stat.bg} ${stat.color}`}>
+                  <stat.icon className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">{stat.label}</p>
+                  <p className={`text-xl font-bold ${stat.label === "Total Orders" || stat.label === "Revenue" ? "" : stat.color}`}>
+                    {stat.value}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))
+      )}
+    </div>
     {/* Filters and Search */}
     <Card>
       <CardContent className="p-6">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search orders, customers, tracking IDs..." className="pl-9" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === "Enter" && fetchOrders()} />
+        {loading ? (
+          // Skeleton for filters
+          <div className="flex flex-col md:flex-row gap-4">
+            <Skeleton className="h-10 flex-1" />
+            <div className="flex gap-2">
+              <Skeleton className="h-10 w-[180px]" />
+              <Skeleton className="h-10 w-[100px]" />
             </div>
           </div>
+        ) : (
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Search orders, customers, tracking IDs..." className="pl-9" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === "Enter" && fetchOrders()} />
+              </div>
+            </div>
 
-          <div className="flex flex-wrap gap-2">
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-[180px]">
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="processing">Processing</SelectItem>
-                <SelectItem value="shipped">Shipped</SelectItem>
-                <SelectItem value="delivered">Delivered</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex flex-wrap gap-2">
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="w-[180px]">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="processing">Processing</SelectItem>
+                  <SelectItem value="shipped">Shipped</SelectItem>
+                  <SelectItem value="delivered">Delivered</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
 
-            <Button onClick={() => fetchOrders()} disabled={loading} className="min-w-[100px]">
-              {loading ? (<>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Loading...
-              </>) : (<>
-                <Search className="h-4 w-4 mr-2" />
-                Search
-              </>)}
-            </Button>
+              <Button onClick={() => fetchOrders()} disabled={loading} className="min-w-[100px]">
+                {loading ? (<>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Loading...
+                </>) : (<>
+                  <Search className="h-4 w-4 mr-2" />
+                  Search
+                </>)}
+              </Button>
+            </div>
           </div>
-        </div>
-
-
+        )}
       </CardContent>
     </Card>
 

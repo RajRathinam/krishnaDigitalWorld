@@ -616,7 +616,7 @@ export default function ProductDetail() {
     </>)}
 
     {/* Breadcrumb */}
-    <div className="bg-card border-b md:mt-4 mt-1 border-border">
+    <div className="bg-card border-b border-border">
       <div className="container py-2 px-3 md:px-4">
         <nav className="text-xs md:text-sm text-muted-foreground overflow-x-auto whitespace-nowrap scrollbar-hide">
           <Link to="/" className="hover:text-accent">Home</Link>
@@ -689,9 +689,6 @@ export default function ProductDetail() {
                 <span className="font-medium text-accent">{rating}</span>
                 <Star className="w-4 h-4 text-accent fill-accent" />
               </div>
-              <span className="text-sm text-muted-foreground">
-                {reviewsCount.toLocaleString()} reviews
-              </span>
             </div>
           </div>
 

@@ -637,7 +637,7 @@ export function ProductCard({ product, variant = "default", selectedColor }) {
             {/* Rating */}
             <div className="flex items-center gap-1.5 mb-2">
                 {renderStars(rating)}
-                <span className="text-[10px] text-muted-foreground">({isValidNumber(reviews) ? reviews.toLocaleString() : 0})</span>
+                {/* <span className="text-[10px] text-muted-foreground">({isValidNumber(reviews) ? reviews.toLocaleString() : 0})</span> */}
             </div>
 
             {/* Price section - Push to bottom of flex container */}

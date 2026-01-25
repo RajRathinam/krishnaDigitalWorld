@@ -7,6 +7,9 @@ import {
   updateProduct,
   deleteProduct,
   getFeaturedProducts,
+  getBestSellers,
+  getDealOfTheDay,
+  getNewArrivals,
   getRelatedProducts,
   updateProductStock
 } from '../controllers/productController.js';
@@ -19,6 +22,9 @@ const router = express.Router();
 // Public routes
 router.get('/', getProducts);
 router.get('/featured', getFeaturedProducts);
+router.get('/best-sellers', getBestSellers);
+router.get('/deal-of-the-day', getDealOfTheDay);
+router.get('/new-arrivals', getNewArrivals);
 router.get('/category/:categorySlug', getProductsByCategory);
 router.get('/:identifier', getProduct);
 router.get('/:id/related', getRelatedProducts);

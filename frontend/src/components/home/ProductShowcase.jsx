@@ -1,8 +1,27 @@
+/**
+ * ProductShowcase Component
+ * 
+ * Displays featured/recommended products in a showcase layout.
+ * Shows personalized product recommendations with horizontal scroll on mobile.
+ * 
+ * Features:
+ * - Horizontal scroll on mobile
+ * - Grid layout on desktop
+ * - Product cards with add-to-cart
+ * - Swipe indicators
+ * - Loading states
+ * - Error handling
+ * 
+ * @component
+ * @returns {JSX.Element} Product showcase component
+ */
+
 import { ProductCard } from "@/components/product/ProductCard";
 import { Link } from "react-router-dom";
 import { useRef, useState, useEffect } from "react";
 import { SplitHeading } from "@/components/ui/split-heading";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AlertCircle } from "lucide-react";
 import api from "@/lib/api";
 
 // Product API functions
@@ -17,113 +36,183 @@ const productApi = {
         const response = await api.get("/products", { params });
         return response.data;
     },
-    getProduct: async (identifier) => {
-        const response = await api.get(`/products/${identifier}`);
-        return response.data;
-    }
 };
+
 export function ProductShowcase() {
     const scrollRef = useRef(null);
     const [activeIndex, setActiveIndex] = useState(0);
-    const totalDots = 4;
     const [featuredProducts, setFeaturedProducts] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const totalDots = 4;
 
+    /**
+     * Fetch featured products
+     */
     useEffect(() => {
         let cancelled = false;
+        
         const fetchFeaturedProducts = async () => {
             try {
                 const response = await productApi.getFeaturedProducts();
                 const fetched = response.data || response.products || response.data?.data || response;
+                
                 if (!cancelled) {
-                    setFeaturedProducts(Array.isArray(fetched) ? fetched : fetched.data || fetched.products || []);
+                    setFeaturedProducts(
+                        Array.isArray(fetched) 
+                            ? fetched 
+                            : fetched.data || fetched.products || []
+                    );
+                }
+            } catch (err) {
+                console.error('Failed to load featured products', err);
+                if (!cancelled) {
+                    setError('Failed to load products');
+                }
+            } finally {
+                if (!cancelled) {
+                    setLoading(false);
                 }
             }
-            catch (err) {
-                // silently fail; product showcase is optional
-                console.error('Failed to load featured products', err);
-            } finally {
-                if (!cancelled) setLoading(false);
-            }
         };
+        
         fetchFeaturedProducts();
         return () => {
             cancelled = true;
         };
     }, []);
+
+    /**
+     * Handle scroll to update active indicator
+     */
     useEffect(() => {
         const scrollContainer = scrollRef.current;
-        if (!scrollContainer)
-            return;
+        if (!scrollContainer) return;
+
         const handleScroll = () => {
             const scrollLeft = scrollContainer.scrollLeft;
-            const cardWidth = 220;
+            const cardWidth = 240; // Approximate card width with gap
             const index = Math.round(scrollLeft / (cardWidth * 2));
             setActiveIndex(Math.min(index, totalDots - 1));
         };
+
         scrollContainer.addEventListener("scroll", handleScroll);
         return () => scrollContainer.removeEventListener("scroll", handleScroll);
-    }, []);
+    }, [featuredProducts.length]);
+
+    /**
+     * Scroll to specific index
+     */
     const scrollToIndex = (index) => {
         const scrollContainer = scrollRef.current;
-        if (!scrollContainer)
-            return;
-        const cardWidth = 220;
+        if (!scrollContainer) return;
+        
+        const cardWidth = 240;
         scrollContainer.scrollTo({
             left: index * cardWidth * 2,
             behavior: "smooth",
         });
     };
-    return (<section className="w-full mt-6 px-3 md:px-4 lg:px-8">
-        <div className="bg-card rounded-xl p-4 md:p-5 border border-border/50 relative overflow-hidden">
-            {/* Colorful accent */}
-            <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-accent/10 to-transparent rounded-full blur-2xl pointer-events-none" />
 
-            <div className="flex items-center justify-between mb-4 relative">
-                <SplitHeading text="Top Picks For You" className="text-lg md:text-xl font-bold" />
-                <Link to="/products" className="text-accent hover:underline text-sm font-medium flex items-center gap-1 group">
-                    See all <span className="group-hover:translate-x-1 transition-transform">→</span>
-                </Link>
-            </div>
+    const displayProducts = featuredProducts.length > 0 ? featuredProducts.slice(0, 8) : [];
 
-            {loading ? (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5">
-                    {Array.from({ length: 4 }).map((_, i) => (
-                        <div key={i} className="space-y-3">
-                            <Skeleton className="w-full h-40 md:h-48 rounded-lg" />
-                            <div className="space-y-2">
-                                <Skeleton className="h-4 w-3/4" />
-                                <Skeleton className="h-4 w-1/2" />
+    return (
+        <section className="w-full mt-6 px-3 md:px-4 lg:px-8">
+            <div className="bg-card rounded-xl p-4 md:p-5 border border-border/50 relative overflow-hidden">
+                {/* Colorful accent */}
+                <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-accent/10 to-transparent rounded-full blur-2xl pointer-events-none" />
+
+                {/* Section Header */}
+                <div className="flex items-center justify-between mb-4 relative">
+                    <SplitHeading 
+                        text="Top Picks For You" 
+                        className="text-lg md:text-xl font-bold" 
+                    />
+                    <Link 
+                        to="/products" 
+                        className="text-accent hover:underline text-sm font-medium flex items-center gap-1 group"
+                    >
+                        See all 
+                        <span className="group-hover:translate-x-1 transition-transform">→</span>
+                    </Link>
+                </div>
+
+                {/* Content */}
+                {loading ? (
+                    // Loading State
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5">
+                        {Array.from({ length: 4 }).map((_, i) => (
+                            <div key={i} className="space-y-3">
+                                <Skeleton className="w-full h-40 md:h-48 rounded-lg" />
+                                <div className="space-y-2">
+                                    <Skeleton className="h-4 w-3/4" />
+                                    <Skeleton className="h-4 w-1/2" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : error ? (
+                    // Error State
+                    <div className="flex flex-col items-center justify-center py-12">
+                        <AlertCircle className="w-12 h-12 text-muted-foreground mb-4" />
+                        <p className="text-muted-foreground text-center">{error}</p>
+                    </div>
+                ) : displayProducts.length === 0 ? (
+                    // Empty State
+                    <div className="flex flex-col items-center justify-center py-12">
+                        <p className="text-muted-foreground">No products available at the moment.</p>
+                    </div>
+                ) : (
+                    <>
+                        {/* Mobile: Horizontal scroll with indicators */}
+                        <div className="md:hidden">
+                            <div 
+                                ref={scrollRef} 
+                                className="flex gap-4 overflow-x-auto scrollbar-hide pb-4 -mx-1 px-1 snap-x snap-mandatory"
+                                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                            >
+                                {displayProducts.map((product) => (
+                                    <div 
+                                        key={product.id} 
+                                        className="flex-shrink-0 w-[240px] snap-center first:pl-2 last:pr-2"
+                                    >
+                                        <ProductCard product={product} variant="compact" />
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Swipe Indicators */}
+                            <div className="flex justify-center gap-2 mt-2">
+                                {Array.from({ length: totalDots }).map((_, index) => (
+                                    <button
+                                        key={index}
+                                        onClick={() => scrollToIndex(index)}
+                                        className={`h-1.5 rounded-full transition-all duration-300 ${
+                                            activeIndex === index
+                                                ? "w-8 bg-accent"
+                                                : "w-2 bg-muted-foreground/20"
+                                        }`}
+                                        aria-label={`Go to slide ${index + 1}`}
+                                    />
+                                ))}
                             </div>
                         </div>
-                    ))}
-                </div>
-            ) : (
-                <>
-                    {/* Mobile: Horizontal scroll with indicators */}
-                    <div className="md:hidden">
-                        <div ref={scrollRef} className="flex gap-4 overflow-x-auto scrollbar-hide pb-4 -mx-1 px-1 snap-x snap-mandatory">
-                            {(featuredProducts.length ? featuredProducts.slice(0, 8) : []).map((product) => (<div key={product.id} className="flex-shrink-0 w-[240px] snap-center first:pl-2 last:pr-2">
-                                <ProductCard product={product} variant="compact" />
-                            </div>))}
-                        </div>
 
-                        {/* Swipe Indicators */}
-                        <div className="flex justify-center gap-2 mt-2">
-                            {Array.from({ length: totalDots }).map((_, index) => (<button key={index} onClick={() => scrollToIndex(index)} className={`h-1.5 rounded-full transition-all duration-300 ${activeIndex === index
-                                ? "w-8 bg-accent"
-                                : "w-2 bg-muted-foreground/20"}`} aria-label={`Go to slide ${index + 1}`} />))}
+                        {/* Desktop Grid - 4 columns */}
+                        <div className="hidden md:grid md:grid-cols-4 gap-4 md:gap-5 relative">
+                            {displayProducts.map((product, index) => (
+                                <div 
+                                    key={product.id} 
+                                    className="animate-slide-up" 
+                                    style={{ animationDelay: `${index * 50}ms` }}
+                                >
+                                    <ProductCard product={product} variant="default" />
+                                </div>
+                            ))}
                         </div>
-                    </div>
-
-                    {/* Desktop Grid - 4 columns for better density */}
-                    <div className="hidden md:grid md:grid-cols-4 gap-4 md:gap-5 relative">
-                        {(featuredProducts.length ? featuredProducts.slice(0, 8) : []).map((product, index) => (<div key={product.id} className="animate-slide-up" style={{ animationDelay: `${index * 50}ms` }}>
-                            <ProductCard product={product} variant="default" />
-                        </div>))}
-                    </div>
-                </>
-            )}
-        </div>
-    </section>);
+                    </>
+                )}
+            </div>
+        </section>
+    );
 }
