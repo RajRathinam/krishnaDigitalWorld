@@ -333,27 +333,28 @@ export const ProductManagement = () => {
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: "Total Products", val: stats.total, icon: Package, color: "text-primary", bg: "bg-primary/10" },
-          { label: "Active", val: stats.active, icon: CheckCircle, color: "text-green-600", bg: "bg-green-100" },
-          { label: "Out of Stock", val: stats.outOfStock, icon: AlertTriangle, color: "text-red-600", bg: "bg-red-100" },
-          { label: "Featured", val: stats.featured, icon: Star, color: "text-amber-500", bg: "bg-amber-100" },
-        ].map((s, i) => (
-          <Card key={i} className="border-l-4" style={{ borderLeftColor: s.color.includes('red') ? 'red' : s.color.includes('green') ? 'green' : s.color.includes('amber') ? 'orange' : 'currentColor' }}>
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">{s.label}</p>
-                <p className="text-2xl font-bold">{s.val}</p>
-              </div>
-              <div className={`p-2 rounded-full ${s.bg}`}>
-                <s.icon className={`h-5 w-5 ${s.color}`} />
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
+  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+  {[
+    { label: "Total Products", val: stats.total, icon: Package, color: "text-primary", bg: "bg-primary/10" },
+    { label: "Active", val: stats.active, icon: CheckCircle, color: "text-green-600", bg: "bg-green-100" },
+    { label: "Out of Stock", val: stats.outOfStock, icon: AlertTriangle, color: "text-red-600", bg: "bg-red-100" },
+    { label: "Featured", val: stats.featured, icon: Star, color: "text-amber-500", bg: "bg-amber-100" },
+  ].map((s, i) => (
+    <Card key={i}>
+      <CardContent className="p-6">
+        <div className="flex items-center gap-4">
+          <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${s.bg} ${s.color}`}>
+            <s.icon className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">{s.label}</p>
+            <p className="text-2xl font-bold">{s.val}</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  ))}
+</div>
       {/* Main Content */}
       <Card>
         <CardHeader className="flex flex-col sm:flex-row justify-between gap-4 space-y-0 pb-4">

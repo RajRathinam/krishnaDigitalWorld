@@ -451,92 +451,68 @@ export const OrderManagement = () => {
     </div>
 
     {/* Stats Cards */}
-    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">Total Orders</p>
-              <p className="text-2xl font-bold">{stats.total}</p>
-            </div>
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <Package className="h-5 w-5 text-primary" />
-            </div>
+<div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+  {[
+    { 
+      label: "Total Orders", 
+      value: stats.total, 
+      icon: Package, 
+      color: "text-primary", 
+      bg: "bg-primary/10" 
+    },
+    { 
+      label: "Pending", 
+      value: stats.pending, 
+      icon: Clock, 
+      color: "text-yellow-600", 
+      bg: "bg-yellow-100" 
+    },
+    { 
+      label: "Processing", 
+      value: stats.processing, 
+      icon: RefreshCw, 
+      color: "text-blue-600", 
+      bg: "bg-blue-100" 
+    },
+    { 
+      label: "Shipped", 
+      value: stats.shipped, 
+      icon: Truck, 
+      color: "text-purple-600", 
+      bg: "bg-purple-100" 
+    },
+    { 
+      label: "Delivered", 
+      value: stats.delivered, 
+      icon: CheckCircle, 
+      color: "text-green-600", 
+      bg: "bg-green-100" 
+    },
+    { 
+      label: "Revenue", 
+      value: formatCurrency(stats.revenue), 
+      icon: CreditCard, 
+      color: "text-emerald-600", 
+      bg: "bg-emerald-100" 
+    },
+  ].map((stat, index) => (
+    <Card key={index}>
+      <CardContent className="p-4">
+        <div className="flex items-center gap-3">
+          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${stat.bg} ${stat.color}`}>
+            <stat.icon className="h-5 w-5" />
           </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">Pending</p>
-              <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
-            </div>
-            <div className="p-2 bg-yellow-100 rounded-lg">
-              <Clock className="h-5 w-5 text-yellow-600" />
-            </div>
+          <div>
+            <p className="text-sm text-muted-foreground">{stat.label}</p>
+            <p className={`text-xl font-bold ${stat.label === "Total Orders" || stat.label === "Revenue" ? "" : stat.color}`}>
+              {stat.value}
+            </p>
           </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">Processing</p>
-              <p className="text-2xl font-bold text-blue-600">{stats.processing}</p>
-            </div>
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <RefreshCw className="h-5 w-5 text-blue-600" />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">Shipped</p>
-              <p className="text-2xl font-bold text-purple-600">{stats.shipped}</p>
-            </div>
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <Truck className="h-5 w-5 text-purple-600" />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">Delivered</p>
-              <p className="text-2xl font-bold text-green-600">{stats.delivered}</p>
-            </div>
-            <div className="p-2 bg-green-100 rounded-lg">
-              <CheckCircle className="h-5 w-5 text-green-600" />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">Revenue</p>
-              <p className="text-2xl font-bold">{formatCurrency(stats.revenue)}</p>
-            </div>
-            <div className="p-2 bg-emerald-100 rounded-lg">
-              <CreditCard className="h-5 w-5 text-emerald-600" />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-
+        </div>
+      </CardContent>
+    </Card>
+  ))}
+</div>
     {/* Filters and Search */}
     <Card>
       <CardContent className="p-6">

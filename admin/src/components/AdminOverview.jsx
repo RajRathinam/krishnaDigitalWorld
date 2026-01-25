@@ -205,29 +205,27 @@ export const AdminOverview = () => {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {statCards.map((stat) => (
-          <Card key={stat.title} className="hover:shadow-lg transition-all duration-300 border-l-4" style={{ borderLeftColor: stat.color.replace('text-', '').replace('-600', '-500') }}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{stat.title}</p>
-                  <p className="text-3xl font-bold mt-2">{stat.value}</p>
-                  <div className={`flex items-center gap-1 mt-2 text-sm font-medium ${stat.trend === "up" ? "text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full w-fit" : "text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full w-fit"
-                    }`}>
-                    {stat.trend === "up" ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                    {stat.change}
-                  </div>
-                </div>
-                <div className={`p-3 rounded-xl bg-opacity-10 ${stat.color.replace('text-', 'bg-')} ${stat.color}`}>
-                  <stat.icon className="h-6 w-6" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
+   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+  {statCards.map((stat) => (
+    <Card key={stat.title}>
+      <CardContent className="p-6">
+        <div className="flex items-center gap-4">
+          <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${stat.color.replace('text-', 'bg-').replace('-600', '-100')} ${stat.color}`}>
+            <stat.icon className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">{stat.title}</p>
+            <p className="text-2xl font-bold">{stat.value}</p>
+            {/* <div className={`flex items-center gap-1 mt-1 text-xs ${stat.trend === "up" ? "text-emerald-600" : "text-rose-600"}`}>
+              {stat.trend === "up" ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+              {stat.change}
+            </div> */}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  ))}
+</div>
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Recent Orders */}
         <Card className="lg:col-span-2 shadow-sm">
@@ -236,7 +234,7 @@ export const AdminOverview = () => {
               <CardTitle className="text-xl">Recent Orders</CardTitle>
               <p className="text-sm text-muted-foreground">Latest transactions from store</p>
             </div>
-            <Button variant="outline" size="sm" onClick={() => navigate("/admin/orders")} className="gap-2">
+            <Button variant="outline" size="sm" onClick={() => navigate("/orders")} className="gap-2">
               View All <ArrowRight className="h-4 w-4" />
             </Button>
           </CardHeader>
@@ -255,7 +253,7 @@ export const AdminOverview = () => {
                   </thead>
                   <tbody className="divide-y">
                     {stats.recentOrders.map((order) => (
-                      <tr key={order.id} className="hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => navigate('/admin/orders')}>
+                      <tr key={order.id} className="hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => navigate('/orders')}>
                         <td className="p-3 font-medium">{order.orderNumber}</td>
                         <td className="p-3">
                           <div className="flex flex-col">
@@ -296,19 +294,19 @@ export const AdminOverview = () => {
               <CardTitle className="text-lg">Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-3">
-              <Button variant="outline" className="h-20 flex flex-col gap-2 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => navigate("/admin/products")}>
+              <Button variant="outline" className="h-20 flex flex-col gap-2 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => navigate("/products")}>
                 <Package className="h-6 w-6 text-primary" />
                 <span className="text-xs font-medium">Add Product</span>
               </Button>
-              <Button variant="outline" className="h-20 flex flex-col gap-2 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => navigate("/admin/orders")}>
+              <Button variant="outline" className="h-20 flex flex-col gap-2 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => navigate("/orders")}>
                 <Eye className="h-6 w-6 text-blue-600" />
                 <span className="text-xs font-medium">View Orders</span>
               </Button>
-              <Button variant="outline" className="h-20 flex flex-col gap-2 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => navigate("/admin/analytics")}>
+              <Button variant="outline" className="h-20 flex flex-col gap-2 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => navigate("/analytics")}>
                 <Users className="h-6 w-6 text-purple-600" />
                 <span className="text-xs font-medium">Customers</span>
               </Button>
-              <Button variant="outline" className="h-20 flex flex-col gap-2 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => navigate("/admin/birthdays")}>
+              <Button variant="outline" className="h-20 flex flex-col gap-2 hover:border-primary hover:bg-primary/5 transition-all" onClick={() => navigate("/birthdays")}>
                 <Calendar className="h-6 w-6 text-pink-600" />
                 <span className="text-xs font-medium">Birthdays</span>
               </Button>

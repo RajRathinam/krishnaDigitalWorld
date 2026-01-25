@@ -150,12 +150,12 @@ export function Header() {
         {/* Logo */}
         <Link to="/" className="flex items-center shrink-0">
           <div className="flex items-center gap-2">
-            <img src="/SK_Logo.png" alt="Krishna Stores" className="h-8 lg:h-12 w-auto" />
+            <img src="/SK_Logo.png" alt="Krishna Stores" className="h-10 w-auto lg:h-12" />
             <div className="flex flex-col">
-              <span className="text-lg lg:text-2xl font-bold text-foreground tracking-wide leading-tight">
+              <span className="text-xl lg:text-2xl font-bold text-foreground tracking-wide leading-tight">
                 <span className="text-accent">Sri</span> Krishna
               </span>
-              <span className="text-[10px] lg:text-sm font-medium text-muted-foreground tracking-wide hidden sm:block">
+              <span className="text-xs lg:text-sm font-medium text-muted-foreground tracking-wide">
                 Digital World
               </span>
             </div>
@@ -163,13 +163,13 @@ export function Header() {
         </Link>
 
         {/* Mobile Search Trigger  */}
-        <div className="lg:hidden flex-1 flex justify-end">
+        {/* <div className="lg:hidden flex-1 flex justify-end">
           <SearchModal data={searchData}>
             <button className="p-2 text-foreground hover:text-accent">
               <Search className="w-5 h-5" />
             </button>
           </SearchModal>
-        </div>
+        </div> */}
 
         {/* Desktop Navigation */}
         <nav className="hidden lg:flex items-center gap-0.5 ml-4">

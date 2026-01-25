@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import api from "@/lib/api";
-
+import { CheckCircle, Clock } from "lucide-react";
 export const BirthdayManagement = () => {
   const [customers, setCustomers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -361,45 +361,54 @@ export const BirthdayManagement = () => {
     </Card>)}
 
     {/* Stats */}
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <Card className="border-primary/20 bg-primary/5">
-        <CardContent className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-              <Cake className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Today's Birthdays</p>
-              <p className="text-2xl font-bold">{todayBirthdays.length}</p>
-            </div>
+<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+  {[
+    {
+      label: "Today's Birthdays",
+      value: todayBirthdays.length,
+      icon: Cake,
+      color: "text-primary",
+      bg: "bg-primary/20"
+    },
+    {
+      label: "Wishes Sent",
+      value: todayBirthdays.filter(c => c.wishesSent).length,
+      icon: CheckCircle,
+      color: "text-green-600",
+      bg: "bg-green-100"
+    },
+    {
+      label: "Offers Sent",
+      value: todayBirthdays.filter(c => c.offerSent).length,
+      icon: Gift,
+      color: "text-blue-600",
+      bg: "bg-blue-100"
+    },
+    {
+      label: "Pending",
+      value: todayBirthdays.filter(c => !c.wishesSent).length,
+      icon: Clock,
+      color: "text-orange-600",
+      bg: "bg-orange-100"
+    }
+  ].map((stat, index) => (
+    <Card key={index}>
+      <CardContent className="p-6">
+        <div className="flex items-center gap-4">
+          <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${stat.bg} ${stat.color}`}>
+            <stat.icon className="h-6 w-6" />
           </div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent className="p-4">
-          <p className="text-sm text-muted-foreground">Wishes Sent</p>
-          <p className="text-2xl font-bold text-green-600">
-            {todayBirthdays.filter(c => c.wishesSent).length}
-          </p>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent className="p-4">
-          <p className="text-sm text-muted-foreground">Offers Sent</p>
-          <p className="text-2xl font-bold text-blue-600">
-            {todayBirthdays.filter(c => c.offerSent).length}
-          </p>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent className="p-4">
-          <p className="text-sm text-muted-foreground">Pending</p>
-          <p className="text-2xl font-bold text-orange-600">
-            {todayBirthdays.filter(c => !c.wishesSent).length}
-          </p>
-        </CardContent>
-      </Card>
-    </div>
+          <div>
+            <p className="text-sm text-muted-foreground">{stat.label}</p>
+            <p className={`text-2xl font-bold ${index === 0 ? "" : stat.color}`}>
+              {stat.value}
+            </p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  ))}
+</div>
 
     {/* Quick Actions */}
     {todayBirthdays.length > 0 && todayBirthdays.some(c => !c.wishesSent) && (<Card className="border-primary/30 bg-gradient-to-r from-primary/5 to-transparent">

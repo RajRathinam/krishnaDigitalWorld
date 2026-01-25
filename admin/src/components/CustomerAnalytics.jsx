@@ -136,7 +136,7 @@ export const CustomerAnalytics = () => {
     }
   };
   const handleViewCustomer = (customerId) => {
-    navigate(`/admin/analytics/customers/${customerId}`);
+    navigate(`/analytics/customers/${customerId}`);
   };
   const handleSendEmail = (customerEmail) => {
     if (customerEmail && customerEmail !== "No email") {

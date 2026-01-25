@@ -65,7 +65,7 @@ export const CustomerDetails = () => {
           description: response.data.message || "Failed to load customer details",
           variant: "destructive",
         });
-        navigate("/admin/analytics");
+        navigate("/analytics");
       }
     }
     catch (error) {
@@ -75,7 +75,7 @@ export const CustomerDetails = () => {
         description: error.message || "Failed to load customer details",
         variant: "destructive",
       });
-      navigate("/admin/analytics");
+      navigate("/analytics");
     }
     finally {
       setLoading(false);
@@ -130,7 +130,7 @@ export const CustomerDetails = () => {
       <p className="mt-2 text-muted-foreground">
         The customer you're looking for doesn't exist.
       </p>
-      <Button onClick={() => navigate("/admin/analytics")} className="mt-4">
+      <Button onClick={() => navigate("/analytics")} className="mt-4">
         <ArrowLeft className="mr-2 h-4 w-4" /> Back to Customers
       </Button>
     </div>);
@@ -160,7 +160,7 @@ export const CustomerDetails = () => {
     {/* Header */}
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-4">
-        <Button variant="outline" size="icon" onClick={() => navigate("/admin/analytics")}>
+        <Button variant="outline" size="icon" onClick={() => navigate("/analytics")}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
@@ -419,7 +419,7 @@ export const CustomerDetails = () => {
                     <TableCell>
                       <Button variant="ghost" size="sm" onClick={(e) => {
                         e.stopPropagation();
-                        navigate(`/admin/orders/${order.id}`);
+                        navigate(`/orders/${order.id}`);
                       }}>
                         <Eye className="h-4 w-4" />
                       </Button>
@@ -494,7 +494,7 @@ export const CustomerDetails = () => {
                       <div className="flex items-center gap-2">
                         <Button variant="ghost" size="sm" onClick={(e) => {
                           e.stopPropagation();
-                          navigate(`/admin/orders/${order.id}`);
+                          navigate(`/orders/${order.id}`);
                         }}>
                           <Eye className="h-4 w-4" />
                         </Button>

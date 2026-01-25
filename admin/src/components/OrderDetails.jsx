@@ -37,7 +37,7 @@ export const OrderDetails = () => {
                     description: response.data.message || "Failed to load order details",
                     variant: "destructive",
                 });
-                navigate("/admin/orders");
+                navigate("/orders");
             }
         } catch (error) {
             console.error("Error fetching order:", error);
@@ -244,7 +244,7 @@ export const OrderDetails = () => {
                                     <span>{order.user?.phone || "N/A"}</span>
                                 </div>
                             </div>
-                            <Button variant="outline" className="w-full" onClick={() => navigate(`/admin/analytics/customers/${order.userId}`)}>
+                            <Button variant="outline" className="w-full" onClick={() => navigate(`/analytics/customers/${order.userId}`)}>
                                 View Profile
                             </Button>
                         </CardContent>

@@ -75,7 +75,7 @@ export function MobileBottomNav() {
             {/* Spacer removed - handled by Footer padding */}
 
             <div className={cn(
-                "fixed bottom-0 left-0 right-0 z-50 md:hidden transition-transform duration-500 ease-in-out pb-safe-bottom",
+                "fixed bottom-0 left-0 right-0 z-50 md:hidden transition-transform duration-500 ease-in-out pb-1",
                 isVisible ? "translate-y-0" : "translate-y-full"
             )}>
                 <div className="absolute inset-0 bg-background/80 backdrop-blur-xl border-t border-border/50 shadow-[0_-5px_20px_rgba(0,0,0,0.05)] dark:bg-black/80" />

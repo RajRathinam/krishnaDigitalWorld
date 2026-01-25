@@ -34,7 +34,7 @@ export default function NewArrivals() {
     return (<div className="min-h-screen bg-background overflow-x-hidden pb-20 md:pb-0">
       <Header />
       
-      <div className="bg-card border-b mt-4 border-border">
+      <div className="bg-card border-b border-border">
         <div className="container py-2 px-3 md:px-4">
           <nav className="text-xs md:text-sm text-muted-foreground">
             <Link to="/" className="hover:text-accent">Home</Link>
