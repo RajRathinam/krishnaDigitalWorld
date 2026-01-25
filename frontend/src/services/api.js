@@ -304,6 +304,14 @@ export const cartApi = {
         return response.data;
     },
 };
+// ============= Shop Info API =============
+export const shopInfoApi = {
+    getShopInfo: async () => {
+        const response = await api.get('/shop-info');
+        return response.data;
+    }
+};
+
 export const orderApi = {
     createOrder: async (data) => {
         const response = await api.post('/orders', data);

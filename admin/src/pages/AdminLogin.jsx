@@ -43,9 +43,9 @@ const AdminLogin = () => {
         try {
             setIsProcessing(true);
             const user = await loginWithOtp(phone, otp);
-            if (user.role !== "admin") {
-                // non-admin must not be allowed in admin area
-                toast({ title: "Unauthorized", description: "You are not an admin." });
+            if (user.role !== "admin" && user.role !== "subadmin") {
+                // non-admin/subadmin must not be allowed in admin area
+                toast({ title: "Unauthorized", description: "You are not authorized to access this area." });
                 // logout client side
                 localStorage.removeItem("authToken");
                 localStorage.removeItem("user");

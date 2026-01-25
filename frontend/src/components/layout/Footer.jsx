@@ -2,6 +2,7 @@ import { ChevronUp, MapPin, Phone, Mail, Shield, FileText, Truck, RefreshCcw, Ho
 import { Link } from "react-router-dom";
 import { useEffect, useState } from 'react';
 import { categoryApi } from '@/services/api';
+import { useShopInfo } from '@/contexts/ShopInfoContext';
 const footerLinks = {
     "Company": [
         { name: "About Us", path: "/about-us", icon: Home },
@@ -29,6 +30,7 @@ const footerLinks = {
     ]
 };
 export function Footer() {
+    const { shopInfo } = useShopInfo();
     const [categories, setCategories] = useState([]);
     useEffect(() => {
         let canceled = false;
@@ -80,32 +82,49 @@ export function Footer() {
           {/* Contact Information */}
           <div className="mt-8 pt-8 border-t border-primary-foreground/10">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="flex items-center gap-3">
-                <MapPin className="w-5 h-5 text-accent"/>
-                <div>
-                  <p className="font-medium text-primary-foreground">Store Location</p>
-                  <p className="text-sm text-primary-foreground/60">Sri Krishna Home Appliances, Nagapattinam</p>
-                  <p className="text-xs text-primary-foreground/40">Delivery within 30km radius</p>
-                </div>
-              </div>
+             
               <div className="flex items-center gap-3">
                 <Phone className="w-5 h-5 text-accent"/>
                 <div>
                   <p className="font-medium text-primary-foreground">Call Us</p>
-                  <a href="tel:+91XXXXXXXXXX" className="text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors">
-                    +91 XXXXXXXXXX
-                  </a>
-                  <p className="text-xs text-primary-foreground/40">For sales & support</p>
+                  {shopInfo?.phone ? (
+                    <a href={`tel:${shopInfo.phone}`} className="text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors">
+                      {shopInfo.phone}
+                    </a>
+                  ) : (
+                    <span className="text-sm text-primary-foreground/60">+91 XXXXXXXXXX</span>
+                  )}
+                  {shopInfo?.supportPhone && (
+                    <p className="text-xs text-primary-foreground/40">Support: {shopInfo.supportPhone}</p>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <Mail className="w-5 h-5 text-accent"/>
                 <div>
                   <p className="font-medium text-primary-foreground">Email Us</p>
-                  <a href="mailto:support@srikrishnahomeappliances.com" className="text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors">
-                    support@srikrishnahomeappliances.com
-                  </a>
-                  <p className="text-xs text-primary-foreground/40">For careers: careers@srikrishnahomeappliances.com</p>
+                  {shopInfo?.email ? (
+                    <a href={`mailto:${shopInfo.email}`} className="text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors">
+                      {shopInfo.email}
+                    </a>
+                  ) : (
+                    <span className="text-sm text-primary-foreground/60">support@srikrishnahomeappliances.com</span>
+                  )}
+                  {shopInfo?.supportEmail && (
+                    <p className="text-xs text-primary-foreground/40">Support: {shopInfo.supportEmail}</p>
+                  )}
+                </div>
+              </div>
+               <div className="flex items-center gap-3">
+                <MapPin className="w-5 h-5 text-accent"/>
+                <div>
+                  <p className="font-medium text-primary-foreground">Store Location</p>
+                  <p className="text-sm text-primary-foreground/60">
+                    {shopInfo?.address || shopInfo?.city 
+                      ? `${shopInfo.address || ''}${shopInfo.city ? `, ${shopInfo.city}` : ''}${shopInfo.state ? `, ${shopInfo.state}` : ''}${shopInfo.pincode ? ` - ${shopInfo.pincode}` : ''}`
+                      : 'Sri Krishna Home Appliances, Nagapattinam'}
+                  </p>
+                  <p className="text-xs text-primary-foreground/40">Delivery within 30km radius</p>
                 </div>
               </div>
             </div>
@@ -122,7 +141,9 @@ export function Footer() {
             <div className="flex items-center gap-4 text-primary-foreground/60 text-sm">
               <span className="flex items-center gap-1">
                 <MapPin className="w-3.5 h-3.5"/> 
-                Nagapattinam, Tamil Nadu
+                {shopInfo?.city && shopInfo?.state 
+                  ? `${shopInfo.city}, ${shopInfo.state}`
+                  : 'Nagapattinam, Tamil Nadu'}
               </span>
             </div>
           </div>
@@ -133,7 +154,7 @@ export function Footer() {
       <div className="bg-secondary/50">
         <div className="container py-6 px-4">  
           <div className="text-center text-xs text-muted-foreground">
-            <span>© {new Date().getFullYear()} Sri Krishna Home Appliances. All rights reserved.</span>
+            <span>© {new Date().getFullYear()} {shopInfo?.shopName || 'Sri Krishna Home Appliances'}. All rights reserved.</span>
           </div>
         </div>
       </div>

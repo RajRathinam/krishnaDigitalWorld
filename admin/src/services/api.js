@@ -174,6 +174,31 @@ export const adminApi = {
     deleteBrand: async (id) => {
         const response = await api.delete(`/brands/${id}`);
         return response.data;
+    },
+    // Settings management
+    getSubadmins: async () => {
+        const response = await api.get('/admin/settings/subadmins');
+        return response.data;
+    },
+    createSubadmin: async (data) => {
+        const response = await api.post('/admin/settings/subadmins', data);
+        return response.data;
+    },
+    updateSubadmin: async (id, data) => {
+        const response = await api.put(`/admin/settings/subadmins/${id}`, data);
+        return response.data;
+    },
+    deleteSubadmin: async (id) => {
+        const response = await api.delete(`/admin/settings/subadmins/${id}`);
+        return response.data;
+    },
+    getShopInfo: async () => {
+        const response = await api.get('/admin/settings/shop-info');
+        return response.data;
+    },
+    updateShopInfo: async (data) => {
+        const response = await api.put('/admin/settings/shop-info', data);
+        return response.data;
     }
 };
 // ... rest of the file remains the same

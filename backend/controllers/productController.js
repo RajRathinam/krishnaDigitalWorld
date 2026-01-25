@@ -1008,7 +1008,7 @@ export const updateProduct = async (req, res) => {
     }
 
     // Check ownership (admin or seller)
-    if (req.user.role !== 'admin' && product.sellerId !== req.user.id) {
+    if ((req.user.role !== 'admin' && product.sellerId !== req.user.id)) {
       await transaction.rollback();
       return res.status(403).json({
         success: false,

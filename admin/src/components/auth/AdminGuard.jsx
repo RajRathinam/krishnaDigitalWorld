@@ -8,8 +8,8 @@ export default function AdminGuard() {
     if (loading) {
         return <PageSkeleton />;
     }
-    // If no user or user is not admin, redirect to login
-    if (!user || user.role !== "admin") {
+    // If no user or user is not admin/subadmin, redirect to login
+    if (!user || (user.role !== "admin" && user.role !== "subadmin")) {
         return <Navigate to="/login" replace state={{ from: location.pathname }} />;
     }
     // Allow access to admin routes

@@ -16,13 +16,13 @@ import {
   getCustomerAnalytics,
   testStats // Add this
 } from '../controllers/adminController.js';
-import { authenticate, requireAdmin } from '../middleware/auth.js';
+import { authenticate, requireAdmin, requireAdminOrSubadmin } from '../middleware/auth.js';
 import { adminLimiter, exportLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
 
-// Apply admin authentication and rate limiting to all routes
-router.use(authenticate, requireAdmin, adminLimiter);
+// Apply admin/subadmin authentication and rate limiting to all routes
+router.use(authenticate, requireAdminOrSubadmin, adminLimiter);
 
 // Dashboard routes
 router.get('/stats', getDashboardStats);

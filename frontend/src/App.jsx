@@ -22,6 +22,7 @@ import { MobileBottomNav } from "./components/layout/MobileBottomNav";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { SignupDialog } from "@/components/home/SignupDialog";
 import { CartProvider } from '@/contexts/CartContext';
+import { ShopInfoProvider } from '@/contexts/ShopInfoContext';
 
 // Import new policy pages
 import Careers from "@/components/contentPages/Careers";
@@ -61,7 +62,8 @@ const App = () => {
           <ScrollToTop />
           <CartProvider>
             <AuthProvider>
-              <Routes>
+              <ShopInfoProvider>
+                <Routes>
                 {/* Customer-only routes */}
                 <Route element={<CustomerGuard />}>
                   <Route path="/" element={<Index />} />
@@ -95,6 +97,7 @@ const App = () => {
               </Routes>
               <MobileBottomNav />
               <SignupDialog open={showSignup} onOpenChange={handleSignupOpenChange} />
+              </ShopInfoProvider>
             </AuthProvider>
           </CartProvider>
         </BrowserRouter>

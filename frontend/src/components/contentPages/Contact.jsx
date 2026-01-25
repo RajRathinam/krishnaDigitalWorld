@@ -1,10 +1,14 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { MapPin, Phone, Mail, Clock, MessageCircle, Home, Truck, Shield, Users, Target } from "lucide-react";
+import { useShopInfo } from '@/contexts/ShopInfoContext';
+
 const Contact = () => {
+    const { shopInfo } = useShopInfo();
+    
     useEffect(() => {
         AOS.init({
             duration: 800,
@@ -13,45 +17,70 @@ const Contact = () => {
             offset: 50,
         });
     }, []);
-    const contactInfo = [
-        {
-            icon: MapPin,
-            title: "Store Address",
-            details: [
-                "Sri Krishna Home Appliances",
-                "Nagapattinam, Tamil Nadu",
-                "Delivery within 30km radius"
-            ],
-            color: "from-blue-500 to-cyan-500"
-        },
-        {
-            icon: Phone,
-            title: "Phone Numbers",
-            details: [
-                "Sales & Enquiries: +91 XXXXXXXXXX",
-                "Service & Support: +91 XXXXXXXXXX"
-            ],
-            color: "from-green-500 to-emerald-500"
-        },
-        {
-            icon: Mail,
-            title: "Email Addresses",
-            details: [
-                "General: support@srikrishnahomeappliances.com",
-                "Careers: careers@srikrishnahomeappliances.com"
-            ],
-            color: "from-purple-500 to-violet-500"
-        },
-        {
-            icon: Clock,
-            title: "Store Timings",
-            details: [
-                "Monday - Saturday: 9:00 AM - 8:00 PM",
-                "Sunday: 10:00 AM - 6:00 PM"
-            ],
-            color: "from-orange-500 to-amber-500"
+
+    const contactInfo = useMemo(() => {
+        const address = shopInfo?.address 
+            ? `${shopInfo.address}${shopInfo.city ? `, ${shopInfo.city}` : ''}${shopInfo.state ? `, ${shopInfo.state}` : ''}${shopInfo.pincode ? ` - ${shopInfo.pincode}` : ''}`
+            : 'Sri Krishna Home Appliances, Nagapattinam, Tamil Nadu';
+        
+        const phoneDetails = [];
+        if (shopInfo?.phone) phoneDetails.push(`Sales & Enquiries: ${shopInfo.phone}`);
+        if (shopInfo?.alternatePhone) phoneDetails.push(`Alternate: ${shopInfo.alternatePhone}`);
+        if (shopInfo?.supportPhone) phoneDetails.push(`Service & Support: ${shopInfo.supportPhone}`);
+        if (phoneDetails.length === 0) phoneDetails.push('Sales & Enquiries: +91 XXXXXXXXXX', 'Service & Support: +91 XXXXXXXXXX');
+
+        const emailDetails = [];
+        if (shopInfo?.email) emailDetails.push(`General: ${shopInfo.email}`);
+        if (shopInfo?.supportEmail) emailDetails.push(`Support: ${shopInfo.supportEmail}`);
+        if (emailDetails.length === 0) emailDetails.push('General: support@srikrishnahomeappliances.com', 'Careers: careers@srikrishnahomeappliances.com');
+
+        const timings = [];
+        if (shopInfo?.businessHours) {
+            const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+            const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+            const hours = days.map(day => {
+                const hours = shopInfo.businessHours[day];
+                if (hours && hours.open && hours.close) {
+                    return `${dayNames[days.indexOf(day)]}: ${hours.open} - ${hours.close}`;
+                }
+                return null;
+            }).filter(Boolean);
+            if (hours.length > 0) {
+                timings.push(...hours);
+            } else {
+                timings.push('Monday - Saturday: 9:00 AM - 8:00 PM', 'Sunday: 10:00 AM - 6:00 PM');
+            }
+        } else {
+            timings.push('Monday - Saturday: 9:00 AM - 8:00 PM', 'Sunday: 10:00 AM - 6:00 PM');
         }
-    ];
+
+        return [
+            {
+                icon: MapPin,
+                title: "Store Address",
+                details: [shopInfo?.shopName || 'Sri Krishna Home Appliances', address, 'Delivery within 30km radius'],
+                color: "from-blue-500 to-cyan-500"
+            },
+            {
+                icon: Phone,
+                title: "Phone Numbers",
+                details: phoneDetails,
+                color: "from-green-500 to-emerald-500"
+            },
+            {
+                icon: Mail,
+                title: "Email Addresses",
+                details: emailDetails,
+                color: "from-purple-500 to-violet-500"
+            },
+            {
+                icon: Clock,
+                title: "Store Timings",
+                details: timings,
+                color: "from-orange-500 to-amber-500"
+            }
+        ];
+    }, [shopInfo]);
     const services = [
         {
             icon: Home,
@@ -164,102 +193,151 @@ const Contact = () => {
           </div>
         </section>
 
-        {/* Map & Directions */}
-        <section className="py-20">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-14" data-aos="fade-up">
-              <h2 className="font-heading text-3xl md:text-4xl font-bold text-foreground mb-4">
-                Visit Our <span className="text-accent">Store</span>
-              </h2>
-              <p className="text-muted-foreground max-w-xl mx-auto">
-                Find us easily with these directions
-              </p>
-            </div>
+     
+{/* Map & Directions */}
+<section className="py-20">
+  <div className="container mx-auto px-4">
+    <div className="text-center mb-14" data-aos="fade-up">
+      <h2 className="font-heading text-3xl md:text-4xl font-bold text-foreground mb-4">
+        Visit Our <span className="text-accent">Store</span>
+      </h2>
+      <p className="text-muted-foreground max-w-xl mx-auto">
+        Find us easily with these directions
+      </p>
+    </div>
 
-            <div className="max-w-4xl mx-auto" data-aos="fade-up">
-              <div className="bg-card rounded-2xl p-6 md:p-8 border border-border">
-                <div className="grid md:grid-cols-2 gap-8">
-                  <div>
-                    <h3 className="font-heading text-xl font-bold text-foreground mb-6 flex items-center justify-center md:justify-start gap-2">
-                      <MapPin className="w-6 h-6 text-accent"/>
-                      Store Location
-                    </h3>
-                    <div className="space-y-6">
-                      <div className="flex items-start gap-4">
-                        <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-accent/10">
-                          <Target className="w-5 h-5 text-accent"/>
-                        </div>
-                        <div>
-                          <p className="font-heading font-semibold text-foreground mb-1">Address</p>
-                          <p className="text-muted-foreground text-sm">
-                            Sri Krishna Home Appliances<br />
-                            Main Road, Nagapattinam<br />
-                            Tamil Nadu - 611001
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-start gap-4">
-                        <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-blue-500/10">
-                          <Truck className="w-5 h-5 text-blue-500"/>
-                        </div>
-                        <div>
-                          <p className="font-heading font-semibold text-foreground mb-1">Delivery Area</p>
-                          <p className="text-muted-foreground text-sm">
-                            We deliver within 30km radius of Nagapattinam
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="font-heading text-xl font-bold text-foreground mb-6 flex items-center justify-center md:justify-start gap-2">
-                      <Users className="w-6 h-6 text-accent"/>
-                      Getting Here
-                    </h3>
-                    <div className="space-y-3 text-xs">
-                      <div className="flex items-start gap-2">
-                        <div className="w-2 h-2 bg-accent rounded-full mt-2"></div>
-                        <p className="text-foreground text-sm">
-                          Located on the main road, easily accessible by public transport
-                        </p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="w-2 h-2 bg-accent rounded-full mt-2"></div>
-                        <p className="text-foreground text-sm">
-                          Ample parking space available near the store
-                        </p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="w-2 h-2 bg-accent rounded-full mt-2"></div>
-                        <p className="text-foreground text-sm">
-                          Well-connected by bus routes and auto-rickshaws
-                        </p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="w-2 h-2 bg-accent rounded-full mt-2"></div>
-                        <p className="text-foreground text-sm">
-                          Wheelchair accessible entrance
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+    <div className="max-w-4xl mx-auto" data-aos="fade-up">
+      <div className="bg-card rounded-2xl p-6 md:p-8 border border-border">
+        <div className="grid md:grid-cols-2 gap-8">
+          <div>
+            <h3 className="font-heading text-xl font-bold text-foreground mb-6 flex items-center justify-center md:justify-start gap-2">
+              <MapPin className="w-6 h-6 text-accent"/>
+              Store Location
+            </h3>
+            <div className="space-y-6">
+              <div className="flex items-start gap-4">
+                <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-accent/10">
+                  <Target className="w-5 h-5 text-accent"/>
                 </div>
-
-                {/* Map Placeholder */}
-                <div className="mt-10 bg-gradient-to-br from-accent/5 to-background rounded-xl md:p-8 p-4 border border-border flex flex-col items-center justify-center">
-                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-accent/10 mb-5">
-                    <MapPin className="w-7 h-7 text-accent"/>
-                  </div>
-                  <p className="font-heading text-lg font-semibold text-foreground">Sri Krishna Home Appliances</p>
-                  <p className="text-muted-foreground text-sm">Nagapattinam, Tamil Nadu</p>
-                  <p className="text-accent flex items-center gap-1 text-sm font-medium mt-4"><MapPin /> Click for Google Maps directions</p>
+                <div>
+                  <p className="font-heading font-semibold text-foreground mb-1">Address</p>
+                  <p className="text-muted-foreground text-sm">
+                    {shopInfo?.shopName || 'Sri Krishna Home Appliances'}<br />
+                    {shopInfo?.address || 'Main Road, Nagapattinam'}<br />
+                    {shopInfo?.city && shopInfo?.state 
+                      ? `${shopInfo.city}, ${shopInfo.state}`
+                      : 'Nagapattinam, Tamil Nadu'}
+                    {shopInfo?.pincode && ` - ${shopInfo.pincode}`}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-4">
+                <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-blue-500/10">
+                  <Truck className="w-5 h-5 text-blue-500"/>
+                </div>
+                <div>
+                  <p className="font-heading font-semibold text-foreground mb-1">Delivery Area</p>
+                  <p className="text-muted-foreground text-sm">
+                    We deliver within 30km radius of Nagapattinam
+                  </p>
                 </div>
               </div>
             </div>
           </div>
-        </section>
+
+          <div>
+            <h3 className="font-heading text-xl font-bold text-foreground mb-6 flex items-center justify-center md:justify-start gap-2">
+              <Users className="w-6 h-6 text-accent"/>
+              Getting Here
+            </h3>
+            <div className="space-y-3 text-xs">
+              <div className="flex items-start gap-2">
+                <div className="w-2 h-2 bg-accent rounded-full mt-2"></div>
+                <p className="text-foreground text-sm">
+                  Located on the main road, easily accessible by public transport
+                </p>
+              </div>
+              <div className="flex items-start gap-2">
+                <div className="w-2 h-2 bg-accent rounded-full mt-2"></div>
+                <p className="text-foreground text-sm">
+                  Ample parking space available near the store
+                </p>
+              </div>
+              <div className="flex items-start gap-2">
+                <div className="w-2 h-2 bg-accent rounded-full mt-2"></div>
+                <p className="text-foreground text-sm">
+                  Well-connected by bus routes and auto-rickshaws
+                </p>
+              </div>
+              <div className="flex items-start gap-2">
+                <div className="w-2 h-2 bg-accent rounded-full mt-2"></div>
+                <p className="text-foreground text-sm">
+                  Wheelchair accessible entrance
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Map Section - Updated with clickable link */}
+        <div className="mt-10">
+          {/* Map Preview */}
+          {shopInfo?.mapEmbedUrl ? (
+            <div className="mb-6 rounded-xl overflow-hidden border border-border shadow-lg">
+              <iframe 
+                src={shopInfo.mapEmbedUrl}
+                width="100%"
+                height="300"
+                style={{ border: 0 }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title="Store Location Map"
+                className="w-full"
+              />
+            </div>
+          ) : (
+            <div className="bg-gradient-to-br from-accent/5 to-background rounded-xl md:p-8 p-4 border border-border flex flex-col items-center justify-center mb-6">
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-accent/10 mb-5">
+                <MapPin className="w-7 h-7 text-accent"/>
+              </div>
+              <p className="font-heading text-lg font-semibold text-foreground">
+                {shopInfo?.shopName || 'Sri Krishna Home Appliances'}
+              </p>
+              <p className="text-muted-foreground text-sm">
+                {shopInfo?.city && shopInfo?.state 
+                  ? `${shopInfo.city}, ${shopInfo.state}`
+                  : 'Nagapattinam, Tamil Nadu'}
+              </p>
+            </div>
+          )}
+
+          {/* Directions Button */}
+          <div className="text-center">
+            <button 
+              onClick={() => {
+                // Generate Google Maps URL based on address
+                const address = encodeURIComponent(
+                  `${shopInfo?.shopName || 'Sri Krishna Home Appliances'} ${shopInfo?.address || 'Main Road'}, ${shopInfo?.city || 'Nagapattinam'}, ${shopInfo?.state || 'Tamil Nadu'}`
+                );
+                const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${address}`;
+                window.open(mapsUrl, '_blank', 'noopener,noreferrer');
+              }}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-accent text-accent-foreground font-semibold rounded-xl hover:bg-accent/90 hover:scale-105 transition-all duration-300 shadow-lg"
+            >
+              <MapPin className="w-5 h-5"/>
+              Get Directions on Google Maps
+            </button>
+            <p className="text-muted-foreground text-sm mt-3">
+              Click to open directions in Google Maps
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 
         {/* Quick Contact */}
         <section className="py-20 md:py-28 relative overflow-hidden">
@@ -275,14 +353,18 @@ const Contact = () => {
                 Call us now for quick help with product selection, pricing, or any other queries.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="tel:+91XXXXXXXXXX" className="px-8 py-4 bg-foreground text-background font-semibold rounded-xl hover:bg-foreground/90 hover:scale-105 transition-all duration-300 shadow-xl flex items-center gap-3 justify-center">
-                  <Phone className="w-5 h-5"/>
-                  Call Now: +91 XXXXXXXXXX
-                </a>
-                <a href="mailto:support@srikrishnahomeappliances.com" className="px-8 py-4 bg-transparent border-2 border-foreground text-foreground font-semibold rounded-xl hover:bg-foreground/10 transition-all duration-300 flex items-center gap-3 justify-center">
-                  <Mail className="w-5 h-5"/>
-                  Send Email
-                </a>
+                {shopInfo?.phone && (
+                  <a href={`tel:${shopInfo.phone}`} className="px-8 py-4 bg-foreground text-background font-semibold rounded-xl hover:bg-foreground/90 hover:scale-105 transition-all duration-300 shadow-xl flex items-center gap-3 justify-center">
+                    <Phone className="w-5 h-5"/>
+                    Call Now: {shopInfo.phone}
+                  </a>
+                )}
+                {shopInfo?.email && (
+                  <a href={`mailto:${shopInfo.email}`} className="px-8 py-4 bg-transparent border-2 border-foreground text-foreground font-semibold rounded-xl hover:bg-foreground/10 transition-all duration-300 flex items-center gap-3 justify-center">
+                    <Mail className="w-5 h-5"/>
+                    Send Email
+                  </a>
+                )}
               </div>
             </div>
           </div>

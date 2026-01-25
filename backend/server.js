@@ -18,7 +18,8 @@ import {
   couponRoutes,
   categoryRoutes,
   brandRoutes,
-  modelRoutes
+  modelRoutes,
+  settingsRoutes
 } from './routes/index.js';
 import { apiLimiter } from './middleware/rateLimiter.js';
 import { checkBirthdaysAndSendWishes } from './utils/birthdayWish.js';
@@ -146,6 +147,8 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/brands', brandRoutes);
 app.use('/api/models', modelRoutes);
 app.use('/api/birthdays', birthdayRoutes);
+app.use('/api/admin/settings', settingsRoutes);
+app.use('/api', settingsRoutes); // Public shop info route
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -233,9 +236,7 @@ const startServer = async () => {
     console.log('✅ Database connection established successfully.');
 
     // Sync database
-    const syncOptions = process.env.NODE_ENV === 'development'
-      ? { alter: true, force: false }
-      : { alter: false, force: false };
+const syncOptions = { alter: false, force: false };
 
     console.log('🔄 Synchronizing database...');
     await sequelize.sync(syncOptions);

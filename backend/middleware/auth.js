@@ -215,3 +215,17 @@ export const requireAdmin = (req, res, next) => {
   }
   next();
 };
+
+/**
+ * Admin or Subadmin middleware
+ * Checks if user has admin or subadmin role
+ */
+export const requireAdminOrSubadmin = (req, res, next) => {
+  if (!req.user || (req.user.role !== 'admin' && req.user.role !== 'subadmin')) {
+    return res.status(403).json({
+      success: false,
+      message: 'Access denied. Admin or Subadmin privileges required.'
+    });
+  }
+  next();
+};

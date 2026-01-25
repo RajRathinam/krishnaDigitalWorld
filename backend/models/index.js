@@ -11,6 +11,7 @@ import Review from './Review.js';
 import Coupon from './Coupon.js';
 import UserCoupon from './UserCoupon.js';
 import Model from './Model.js';
+import ShopInfo from './ShopInfo.js';
 import Sequelize from 'sequelize';
 
 // Define associations - ONLY ONCE PER ASSOCIATION
@@ -82,5 +83,6 @@ export {
   Review,
   Coupon,
   UserCoupon,
-  Model
+  Model,
+  ShopInfo
 };
