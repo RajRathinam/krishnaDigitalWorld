@@ -43,7 +43,9 @@ console.log(`   ADMIN_URL: ${process.env.ADMIN_URL}`);
 // CORS configuration - Allow ONLY your two domains
 const allowedOrigins = [
   process.env.FRONTEND_URL,
-  process.env.ADMIN_URL
+  process.env.ADMIN_URL,
+    process.env.FRONTEND_URL_1,
+  process.env.ADMIN_URL_1,
 ].filter(Boolean);
 
 console.log('🌐 Allowed CORS Origins:', allowedOrigins);
