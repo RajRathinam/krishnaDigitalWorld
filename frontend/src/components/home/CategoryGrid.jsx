@@ -23,16 +23,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SplitHeading } from "@/components/ui/split-heading";
 import { AlertCircle } from "lucide-react";
 
-// Category placeholder images - rotates through these for visual variety
+// Category images - 4 images for 4 categories
 const CATEGORY_IMAGES = [
-  'https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=600&h=600&fit=crop&auto=format',
-  'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=600&h=600&fit=crop&auto=format',
-  'https://images.unsplash.com/photo-1563089145-599997674d42?w=600&h=600&fit=crop&auto=format',
-  'https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?w=600&h=600&fit=crop&auto=format',
+  '/categories/electronic.PNG',
+  '/categories/furniture.PNG',
+  '/categories/home.PNG',
+  '/categories/plastic.PNG',
 ];
 
 // Maximum number of categories to display
-const MAX_CATEGORIES = 8;
+const MAX_CATEGORIES = 4;
 
 /**
  * Get category image by index (rotates through available images)
@@ -60,7 +60,7 @@ export function CategoryGrid() {
         const data = res?.data || [];
         
         if (!canceled && Array.isArray(data)) {
-          // Take only first N categories and assign images
+          // Take only first 4 categories and assign images
           const categoriesWithImages = data
             .slice(0, MAX_CATEGORIES)
             .map((cat, index) => ({
@@ -106,8 +106,8 @@ export function CategoryGrid() {
         {/* Categories Grid */}
         <div className="max-w-7xl mx-auto">
           {loading ? (
-            // Loading Skeletons
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-6">
+            // Loading Skeletons - 4 skeletons for 4 categories
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
               {Array.from({ length: MAX_CATEGORIES }).map((_, i) => (
                 <div key={i} className="flex flex-col items-center">
                   <Skeleton className="w-full aspect-square rounded-lg mb-3" />
@@ -129,8 +129,8 @@ export function CategoryGrid() {
               </p>
             </div>
           ) : (
-            // Categories Grid
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-6">
+            // Categories Grid - 2 cols on mobile, 4 cols on desktop
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
               {categories.map((cat, index) => (
                 <div key={cat.id || index} className="group">
                   <Link
@@ -149,6 +149,7 @@ export function CategoryGrid() {
                           loading="lazy"
                           onError={(e) => {
                             // Fallback to placeholder if image fails to load
+                            e.target.onerror = null;
                             e.target.src = getCategoryImage(index);
                           }}
                         />
@@ -175,7 +176,7 @@ export function CategoryGrid() {
         </div>
 
         {/* View All Categories Link (if more than MAX_CATEGORIES exist) */}
-        {!loading && !error && categories.length > 0 && (
+        {!loading && !error && categories.length > 0 && categories.length >= MAX_CATEGORIES && (
           <div className="text-center mt-8">
             <Link
               to="/products"

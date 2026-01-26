@@ -37,16 +37,11 @@ const Gallery4 = ({ title = "Case Studies", description = "Discover how leading 
             carouselApi.scrollNext();
         }
     };
-    return (<section className="py-16 lg:py-24 w-full">
+    return (<section className="lg:py-10 w-full">
       <div className="w-full px-4 md:px-8">
         <div className="mb-8 flex flex-col justify-between md:mb-14 md:flex-row md:items-end">
-          <div>
-            <SplitHeading text={title} className="mb-3 text-3xl font-bold md:mb-4 md:text-4xl lg:mb-6"/>
-            <p className="text-muted-foreground md:text-lg lg:text-xl max-w-2xl">
-              {description}
-            </p>
-          </div>
-          <div className="mt-8 flex shrink-0 items-center justify-center gap-2">
+        
+          <div className="md:mt-4 flex shrink-0 items-center justify-start gap-2">
             <Button type="button" size="icon" variant="outline" onClick={handlePrev} disabled={!canScrollPrev} className="disabled:pointer-events-auto disabled:opacity-50" aria-label="Previous slide">
               <ArrowLeft className="size-5"/>
             </Button>

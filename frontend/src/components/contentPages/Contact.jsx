@@ -207,7 +207,7 @@ const Contact = () => {
     </div>
 
     <div className="max-w-4xl mx-auto" data-aos="fade-up">
-      <div className="bg-card rounded-2xl p-6 md:p-8 border border-border">
+      <div className="bg-card rounded-2xl p-5 md:p-8 border border-border">
         <div className="grid md:grid-cols-2 gap-8">
           <div>
             <h3 className="font-heading text-xl font-bold text-foreground mb-6 flex items-center justify-center md:justify-start gap-2">
@@ -302,7 +302,7 @@ const Contact = () => {
               <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-accent/10 mb-5">
                 <MapPin className="w-7 h-7 text-accent"/>
               </div>
-              <p className="font-heading text-lg font-semibold text-foreground">
+              <p className="font-heading text-sm text-center md:text-lg font-semibold text-foreground">
                 {shopInfo?.shopName || 'Sri Krishna Home Appliances'}
               </p>
               <p className="text-muted-foreground text-sm">
@@ -324,14 +324,12 @@ const Contact = () => {
                 const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${address}`;
                 window.open(mapsUrl, '_blank', 'noopener,noreferrer');
               }}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-accent text-accent-foreground font-semibold rounded-xl hover:bg-accent/90 hover:scale-105 transition-all duration-300 shadow-lg"
+              className="inline-flex items-center gap-2 px-6 py-3 text-xs bg-accent text-accent-foreground font-semibold rounded-xl hover:bg-accent/90 hover:scale-105 transition-all duration-300 shadow-lg"
             >
               <MapPin className="w-5 h-5"/>
               Get Directions on Google Maps
             </button>
-            <p className="text-muted-foreground text-sm mt-3">
-              Click to open directions in Google Maps
-            </p>
+
           </div>
         </div>
       </div>

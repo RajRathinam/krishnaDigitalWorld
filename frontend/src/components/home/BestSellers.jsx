@@ -9,7 +9,6 @@
  * - Trending indicator
  * - Product cards with ratings
  * - Responsive design
- * - Can fetch from API or use static data
  * 
  * @component
  * @returns {JSX.Element} Best sellers component
@@ -17,96 +16,141 @@
 
 import { Gallery4 } from "@/components/ui/gallery4";
 import { SplitHeading } from "@/components/ui/split-heading";
-import { TrendingUp, Star } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { productApi } from '@/services/api';
+import { getImageUrl } from "@/lib/utils";
 
-// Static best seller items (can be replaced with API call)
-const staticBestSellerItems = [
-    {
-        id: "ceiling-fan",
-        title: "Bajaj 1200mm Ceiling Fan",
-        description: "High-performance ceiling fan with energy-efficient motor and elegant design. Perfect for any room.",
-        href: "/product/5",
-        image: "https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=600&h=400&fit=crop",
-    },
-    {
-        id: "led-bulb",
-        title: "Philips 9W LED Bulb Pack",
-        description: "Energy-saving LED bulbs with bright white light. Pack of 4 for complete home lighting.",
-        href: "/product/6",
-        image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=400&fit=crop",
-    },
-    {
-        id: "induction",
-        title: "Prestige Induction Cooktop",
-        description: "Advanced induction cooking with precise temperature control and safety features.",
-        href: "/product/7",
-        image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=400&fit=crop",
-    },
-    {
-        id: "otg",
-        title: "Morphy Richards OTG 25L",
-        description: "Versatile oven toaster griller for baking, grilling, and toasting. Perfect for modern kitchens.",
-        href: "/product/8",
-        image: "https://images.unsplash.com/photo-1585659722983-3a675dabf23d?w=600&h=400&fit=crop",
-    },
-    {
-        id: "mixer",
-        title: "Butterfly Mixer Grinder 750W",
-        description: "Powerful mixer grinder with multiple jars for all your blending and grinding needs.",
-        href: "/product/9",
-        image: "https://images.unsplash.com/photo-1570222094114-d054a817e56b?w=600&h=400&fit=crop",
-    },
-    {
-        id: "water-heater",
-        title: "Havells Instant Water Heater",
-        description: "3L instant water heater with advanced safety features and quick heating technology.",
-        href: "/product/10",
-        image: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=600&h=400&fit=crop",
-    },
-    {
-        id: "iron",
-        title: "Philips Dry Iron",
-        description: "Lightweight dry iron with non-stick coating and uniform heating.",
-        href: "/product/11",
-        image: "https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=600&h=400&fit=crop",
+// Helper function to parse product data (similar to ProductCard)
+const parseProductData = (productData) => {
+    if (!productData) return productData;
+    
+    const parsed = { ...productData };
+    
+    // Parse colorsAndImages if it's a string
+    if (typeof parsed.colorsAndImages === 'string') {
+        try {
+            const cleanedData = parsed.colorsAndImages.replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+            parsed.colorsAndImages = JSON.parse(cleanedData);
+        } catch (error) {
+            parsed.colorsAndImages = {};
+        }
     }
-];
+    
+    // Parse images if it's a string
+    if (typeof parsed.images === 'string') {
+        try {
+            const cleanedData = parsed.images.replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+            parsed.images = JSON.parse(cleanedData);
+        } catch (error) {
+            parsed.images = [];
+        }
+    }
+    
+    return parsed;
+};
+
+// Helper function to get product image (similar to ProductCard's getProductImageAndColor)
+const getProductImage = (parsedProduct) => {
+    let imageUrl = '/placeholder.svg';
+    
+    // First, try to get image from colorsAndImages (same logic as ProductCard)
+    if (parsedProduct.colorsAndImages && typeof parsedProduct.colorsAndImages === 'object') {
+        const colorKeys = Object.keys(parsedProduct.colorsAndImages);
+        if (colorKeys.length > 0) {
+            const firstColor = colorKeys[0];
+            const colorImages = parsedProduct.colorsAndImages[firstColor];
+            if (Array.isArray(colorImages) && colorImages.length > 0) {
+                const firstImg = colorImages[0];
+                if (firstImg) {
+                    imageUrl = typeof firstImg === 'string' ? firstImg : (firstImg.url || firstImg);
+                }
+            }
+        }
+    }
+    
+    // Fallback to images array
+    if (imageUrl === '/placeholder.svg' && Array.isArray(parsedProduct.images) && parsedProduct.images.length > 0) {
+        const firstImg = parsedProduct.images[0];
+        if (firstImg) {
+            imageUrl = typeof firstImg === 'string' ? firstImg : (firstImg.url || firstImg);
+        }
+    }
+    
+    // Fallback to featuredImage
+    if (imageUrl === '/placeholder.svg' && parsedProduct.featuredImage) {
+        imageUrl = parsedProduct.featuredImage;
+    }
+    
+    // Fallback to image field
+    if (imageUrl === '/placeholder.svg' && parsedProduct.image) {
+        imageUrl = typeof parsedProduct.image === 'string' 
+            ? parsedProduct.image 
+            : (parsedProduct.image.url || '/placeholder.svg');
+    }
+    
+    return getImageUrl(imageUrl);
+};
 
 /**
  * Fetch best sellers from API
  */
 const fetchBestSellers = async () => {
     try {
-        const response = await productApi.getBestSellers(7);
-        const data = response.data || response.products || response.data?.data || response;
+        const response = await productApi.getBestSellers(8);
+        console.log('Best Sellers API Response:', response);
         
-        // Transform API data to match component format
-        const products = Array.isArray(data) ? data : (data.data || data.products || []);
-        return products.map(product => {
-            // Get first image from colorsAndImages or images array
-            let image = '/placeholder.svg';
-            if (product.colorsAndImages && typeof product.colorsAndImages === 'object') {
-                const firstColor = Object.keys(product.colorsAndImages)[0];
-                if (firstColor && product.colorsAndImages[firstColor]?.[0]) {
-                    const firstImg = product.colorsAndImages[firstColor][0];
-                    image = typeof firstImg === 'string' ? firstImg : (firstImg.url || firstImg);
-                }
-            } else if (product.images && Array.isArray(product.images) && product.images.length > 0) {
-                const firstImg = product.images[0];
-                image = typeof firstImg === 'string' ? firstImg : (firstImg.url || firstImg);
-            }
+        // Handle different response formats
+        let data = [];
+        
+        if (response.success && response.data) {
+            data = response.data;
+        } else if (response.products) {
+            data = response.products;
+        } else if (Array.isArray(response)) {
+            data = response;
+        } else if (response.data && Array.isArray(response.data)) {
+            data = response.data;
+        } else {
+            console.error('Unexpected API response format:', response);
+            return [];
+        }
+        
+        // Transform API data to match Gallery4 component format
+        const products = data.map((product, index) => {
+            // Parse product data first (same as ProductCard)
+            const parsedProduct = parseProductData(product);
             
+            // Extract product ID
+            const productId = parsedProduct.id || parsedProduct._id || parsedProduct.productId || `product-${index}`;
+            
+            // Get product name/title
+            const title = parsedProduct.name || parsedProduct.title || parsedProduct.productName || "Unnamed Product";
+            
+            // Get description
+            const description = parsedProduct.description || parsedProduct.shortDescription || 
+                               parsedProduct.productDescription || "No description available";
+            
+            // Get image using the same logic as ProductCard
+            const image = getProductImage(parsedProduct);
+            
+            // Create slug from title or ID
+            const slug = parsedProduct.slug || productId || title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+            
+            // Return formatted product object for Gallery4
             return {
-                id: product.id || product._id,
-                title: product.name || product.title,
-                description: product.description || product.shortDescription,
-                href: `/product/${product.slug || product.id}`,
+                id: productId,
+                title: title,
+                description: description.substring(0, 80) + (description.length > 80 ? '...' : ''),
+                href: `/product/${slug}`,
                 image: image
             };
-        });
+        }).filter(product => product.id); // Filter out items without ID
+        
+        console.log('Processed best sellers for Gallery4:', products);
+        return products;
+        
     } catch (error) {
         console.error('Failed to fetch best sellers:', error);
         return [];
@@ -114,25 +158,25 @@ const fetchBestSellers = async () => {
 };
 
 export function BestSellers() {
-    const [bestSellerItems, setBestSellerItems] = useState(staticBestSellerItems);
+    const [bestSellerItems, setBestSellerItems] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [useApi, setUseApi] = useState(false); // Toggle to use API
 
     useEffect(() => {
-        if (useApi) {
-            const loadBestSellers = async () => {
-                setLoading(true);
+        const loadBestSellers = async () => {
+            setLoading(true);
+            try {
                 const items = await fetchBestSellers();
-                if (items.length > 0) {
-                    setBestSellerItems(items);
-                }
+                setBestSellerItems(items);
+            } catch (error) {
+                console.error('Error loading best sellers:', error);
+                setBestSellerItems([]);
+            } finally {
                 setLoading(false);
-            };
-            loadBestSellers();
-        } else {
-            setLoading(false);
-        }
-    }, [useApi]);
+            }
+        };
+        
+        loadBestSellers();
+    }, []);
 
     return (
         <section className="py-12 md:py-20 relative overflow-hidden bg-muted/30">
@@ -153,7 +197,7 @@ export function BestSellers() {
                             text="Best Sellers" 
                             className="text-2xl md:text-3xl font-bold" 
                         />
-                        <p className="text-sm text-muted-foreground mt-1">
+                        <p className="text-xs text-muted-foreground mt-1">
                             Our most popular products this week
                         </p>
                     </div>
@@ -162,7 +206,7 @@ export function BestSellers() {
                 {/* Products Gallery */}
                 {loading ? (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                        {Array.from({ length: 7 }).map((_, i) => (
+                        {Array.from({ length: 4 }).map((_, i) => (
                             <div key={i} className="space-y-3">
                                 <Skeleton className="w-full aspect-[4/3] rounded-lg" />
                                 <Skeleton className="h-4 w-3/4" />
@@ -172,7 +216,15 @@ export function BestSellers() {
                     </div>
                 ) : bestSellerItems.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-12">
-                        <p className="text-muted-foreground">No best sellers available at the moment.</p>
+                        <div className="p-4 bg-purple-100 dark:bg-purple-900/20 rounded-full mb-4">
+                            <TrendingUp className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-foreground mb-2">
+                            No Best Sellers Available
+                        </h3>
+                        <p className="text-muted-foreground text-center max-w-md">
+                            Best selling products will appear here. Check back soon for our top-rated items!
+                        </p>
                     </div>
                 ) : (
                     <Gallery4

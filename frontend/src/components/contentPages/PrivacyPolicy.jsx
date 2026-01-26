@@ -3,8 +3,12 @@ import AOS from "aos";
 import "aos/dist/aos.css";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { Shield, Lock, Database, Eye, Cookie, Link as LinkIcon, Mail, Phone, FileText, AlertCircle, CheckCircle } from "lucide-react";
+import { useShopInfo } from '@/contexts/ShopInfoContext';
+import { Shield, Lock, Database, Eye, Cookie, Link as LinkIcon, Mail, Phone, FileText, AlertCircle, CheckCircle, MapPin, ExternalLink } from "lucide-react";
+
 const PrivacyPolicy = () => {
+    const { shopInfo } = useShopInfo();
+    
     useEffect(() => {
         AOS.init({
             duration: 800,
@@ -13,6 +17,7 @@ const PrivacyPolicy = () => {
             offset: 50,
         });
     }, []);
+
     const policySections = [
         {
             icon: Database,
@@ -36,7 +41,8 @@ const PrivacyPolicy = () => {
                 "Order Processing - To process orders and service requests",
                 "Customer Support - To contact you regarding products, offers, or support",
                 "Service Improvement - To improve our services and customer experience",
-                "Query Response - To respond to your queries and feedback"
+                "Query Response - To respond to your queries and feedback",
+                "Legal Compliance - To comply with applicable laws and regulations"
             ]
         },
         {
@@ -48,7 +54,8 @@ const PrivacyPolicy = () => {
                 "Secure Storage - Encrypted storage of sensitive information",
                 "Access Control - Limited access to authorized personnel only",
                 "Regular Security Updates - Keeping our systems protected",
-                "Employee Training - On data privacy and security practices"
+                "Employee Training - On data privacy and security practices",
+                "Data Retention - We retain your information only as long as necessary for business purposes or as required by law"
             ]
         },
         {
@@ -61,14 +68,15 @@ const PrivacyPolicy = () => {
         },
         {
             icon: Cookie,
-            title: "Cookies",
+            title: "Cookies & Tracking",
             color: "from-pink-500 to-rose-500",
             content: "Our website may use cookies to enhance user experience:",
             items: [
                 "Cookies help us understand website usage and improve functionality",
                 "They enable personalized browsing experience",
                 "You can disable cookies in your browser settings if you prefer",
-                "No personally identifiable information is stored in cookies"
+                "No personally identifiable information is stored in cookies",
+                "We may use analytics tools to understand user behavior and improve our website"
             ]
         },
         {
@@ -77,179 +85,279 @@ const PrivacyPolicy = () => {
             color: "from-indigo-500 to-blue-500",
             content: "Our website may contain links to third-party websites. Please note:",
             warning: "Disclaimer: We are not responsible for the privacy practices or content of those external sites. We recommend reviewing their privacy policies before sharing any personal information."
+        },
+        {
+            icon: Shield,
+            title: "Your Rights",
+            color: "from-teal-500 to-emerald-500",
+            content: "You have the following rights regarding your personal information:",
+            items: [
+                "Access - You can request access to your personal information",
+                "Correction - You can request correction of inaccurate information",
+                "Deletion - You can request deletion of your personal information, subject to legal requirements",
+                "Opt-out - You can opt-out of marketing communications at any time",
+                "Data Portability - You can request a copy of your data in a structured format"
+            ]
         }
     ];
-    return (<div className="min-h-screen bg-background overflow-x-hidden">
-      <Header />
 
-      <main>
-        {/* Hero Section */}
-        <section className="relative pt-24 pb-20 md:pt-32 md:pb-28 overflow-hidden">
-          {/* Animated Background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-accent/10 via-background to-accent/5"/>
-          <div className="absolute top-20 left-10 w-72 h-72 bg-accent/20 rounded-full blur-3xl animate-float"/>
-          <div className="absolute bottom-10 right-10 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-float" style={{ animationDelay: "1s" }}/>
-          
-          <div className="container mx-auto px-4 relative z-10">
-            <div className="max-w-4xl mx-auto text-center">
-              <div data-aos="fade-up">
-                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent font-medium text-sm mb-6">
-                  <Shield className="w-4 h-4"/>
-                  Privacy & Security
-                </span>
-              </div>
-              <h1 data-aos="fade-up" data-aos-delay="100" className="font-heading text-3xl md:text-6xl font-bold text-foreground mb-6 leading-tight">
-                Privacy <span className="text-accent">Policy</span>
-              </h1>
-              <p data-aos="fade-up" data-aos-delay="200" className="text-sm md:text-xl text-muted-foreground max-w-2xl mx-auto">
-                At Sri Krishna Home Appliances, we value your trust and are committed to protecting 
-                your privacy. This policy explains how we collect, use, and safeguard your information.
-              </p>
-            </div>
-          </div>
-        </section>
+    // Get current date for "Last Updated"
+    const getCurrentDate = () => {
+        const now = new Date();
+        const day = String(now.getDate()).padStart(2, '0');
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const year = now.getFullYear();
+        return `${day}-${month}-${year}`;
+    };
 
-        {/* Last Updated */}
-        <section className="py-8 bg-background">
-          <div className="container mx-auto px-4">
-            <div className="max-w-4xl mx-auto">
-              <div className="bg-card rounded-2xl p-6 border border-border hover:border-accent/50 transition-all duration-300" data-aos="fade-up">
-                <div className="flex items-start gap-4">
-                  <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-accent/10">
-                    <AlertCircle className="w-5 h-5 text-accent"/>
-                  </div>
-                  <div>
-                    <p className="text-foreground text-justify">
-                      <strong className="font-heading">Last Updated:</strong> This Privacy Policy was last updated on [15-01-2026]. 
-                      We may update this policy from time to time. Any changes will be posted on this page.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+    // Handle email click
+    const handleEmailClick = () => {
+        const email = shopInfo?.supportEmail || shopInfo?.email;
+        if (email) {
+            const subject = encodeURIComponent("Privacy Policy Inquiry");
+            const body = encodeURIComponent(`Dear Privacy Team,\n\nI have a question regarding your privacy policy:\n\n[Please describe your inquiry here]\n\nThank you.`);
+            window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+        } else {
+            alert("Email address not available. Please contact us via phone or visit our store.");
+        }
+    };
 
-        {/* Policy Sections */}
-        <section className="py-10 md:py-20">
-          <div className="container mx-auto px-4">
-            <div className="max-w-4xl mx-auto space-y-12">
-              {policySections.map((section, index) => {
-            const Icon = section.icon;
-            return (<div key={section.title} data-aos="fade-up" data-aos-delay={index * 100} className="group relative bg-card rounded-2xl p-6 md:p-8 border border-border hover:border-transparent hover:shadow-2xl transition-all duration-500 overflow-hidden">
-                    {/* Gradient overlay on hover */}
-                    <div className={`absolute inset-0 bg-gradient-to-br ${section.color} opacity-0 group-hover:opacity-5 transition-opacity duration-500`}/>
+    // Handle phone click
+    const handlePhoneClick = () => {
+        const phoneNumber = (shopInfo?.supportPhone || shopInfo?.phone)?.replace(/[^\d+]/g, '');
+        if (phoneNumber) {
+            window.location.href = `tel:${phoneNumber}`;
+        } else {
+            alert("Phone number not available. Please send us an email or visit our store.");
+        }
+    };
+
+    // Handle contact page navigation
+    const handleContactClick = () => {
+        window.location.href = '/contact';
+    };
+
+    // Get primary location
+    const primaryLocation = Array.isArray(shopInfo?.locations) && shopInfo.locations.length > 0 
+        ? shopInfo.locations[0] 
+        : null;
+
+    return (
+        <div className="min-h-screen bg-background overflow-x-hidden">
+            <Header />
+
+            <main>
+                {/* Hero Section */}
+                <section className="relative pt-24 pb-20 md:pt-32 md:pb-28 overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-accent/10 via-background to-accent/5"/>
+                    <div className="absolute top-20 left-10 w-72 h-72 bg-accent/20 rounded-full blur-3xl animate-float"/>
+                    <div className="absolute bottom-10 right-10 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-float" style={{ animationDelay: "1s" }}/>
                     
-                    <div className="flex items-center gap-4 mb-6">
-                      <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br ${section.color}`}>
-                        <Icon className="w-6 h-6 text-white"/>
-                      </div>
-                      <h2 className="font-heading text-xl md:text-2xl font-bold text-foreground group-hover:text-accent transition-colors">
-                        {section.title}
-                      </h2>
+                    <div className="container mx-auto px-4 relative z-10">
+                        <div className="max-w-4xl mx-auto text-center">
+                            <div data-aos="fade-up">
+                                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent font-medium text-sm mb-6">
+                                    <Shield className="w-4 h-4"/>
+                                    Privacy & Security
+                                </span>
+                            </div>
+                            <h1 data-aos="fade-up" data-aos-delay="100" className="font-heading text-3xl md:text-6xl font-bold text-foreground mb-6 leading-tight">
+                                Privacy <span className="text-accent">Policy</span>
+                            </h1>
+                            <p data-aos="fade-up" data-aos-delay="200" className="text-sm md:text-xl text-muted-foreground max-w-2xl mx-auto">
+                                At {shopInfo?.shopName || "Sri Krishna Home Appliances"}, we value your trust and are committed to protecting 
+                                your privacy. This policy explains how we collect, use, and safeguard your information.
+                            </p>
+                        </div>
                     </div>
+                </section>
+
+                {/* Last Updated */}
+                <section className="py-8 bg-background">
+                    <div className="container mx-auto px-4">
+                        <div className="max-w-4xl mx-auto">
+                            <div className="bg-card rounded-2xl p-6 border border-border hover:border-accent/50 transition-all duration-300" data-aos="fade-up">
+                                <div className="flex items-start gap-4">
+                                    <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-accent/10">
+                                        <AlertCircle className="w-5 h-5 text-accent"/>
+                                    </div>
+                                    <div>
+                                        <p className="text-foreground text-justify">
+                                            <strong className="font-heading">Last Updated:</strong> This Privacy Policy was last updated on {getCurrentDate()}. 
+                                            We may update this policy from time to time. Any changes will be posted on this page.
+                                        </p>
+                                        <p className="text-sm text-muted-foreground mt-2">
+                                            For the most current version of our privacy policy, please visit this page regularly.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* Policy Sections */}
+                <section className="py-10 md:py-20">
+                    <div className="container mx-auto px-4">
+                        <div className="max-w-4xl mx-auto space-y-12">
+                            {policySections.map((section, index) => {
+                                const Icon = section.icon;
+                                return (
+                                    <div key={section.title} data-aos="fade-up" data-aos-delay={index * 100} 
+                                         className="group relative bg-card rounded-2xl p-6 md:p-8 border border-border hover:border-transparent hover:shadow-2xl transition-all duration-500 overflow-hidden">
+                                        <div className={`absolute inset-0 bg-gradient-to-br ${section.color} opacity-0 group-hover:opacity-5 transition-opacity duration-500`}/>
+                                        
+                                        <div className="flex items-center gap-4 mb-6">
+                                            <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br ${section.color}`}>
+                                                <Icon className="w-6 h-6 text-white"/>
+                                            </div>
+                                            <h2 className="font-heading text-xl md:text-2xl font-bold text-foreground group-hover:text-accent transition-colors">
+                                                {section.title}
+                                            </h2>
+                                        </div>
+                                        
+                                        <p className="text-muted-foreground text-sm mb-6">{section.content}</p>
+                                        
+                                        {section.items && (
+                                            <ul className="space-y-3 text-sm">
+                                                {section.items.map((item, i) => (
+                                                    <li key={i} className="flex items-start gap-3">
+                                                        <CheckCircle className="w-5 h-5 text-accent flex-shrink-0 mt-0.5"/>
+                                                        <span className="text-foreground">{item}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                        
+                                        {section.warning && (
+                                            <div className="mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
+                                                <p className="text-foreground text-sm text-justify">
+                                                    <strong className="font-heading text-red-500">Important:</strong> {section.warning}
+                                                </p>
+                                            </div>
+                                        )}
+                                        
+                                        {section.note && (
+                                            <div className="mt-4 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+                                                <p className="text-foreground text-sm text-justify">
+                                                    <strong className="font-heading text-blue-500">Note:</strong> {section.note}
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </section>
+
+                {/* Contact Information */}
+                <section className="py-10 md:py-20 bg-secondary/30">
+                    <div className="container mx-auto px-4">
+                        <div className="max-w-4xl mx-auto">
+                            <div data-aos="fade-up" className="bg-card rounded-2xl p-5 md:p-8 border border-border">
+                                <div className="text-center mb-10">
+                                    <h2 className="font-heading text-3xl font-bold text-foreground mb-4">
+                                        Contact <span className="text-accent">Our Privacy Team</span>
+                                    </h2>
+                                    <p className="text-muted-foreground max-w-xl mx-auto">
+                                        If you have any questions about this Privacy Policy or your personal data, please contact us:
+                                    </p>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                                    <button 
+                                        onClick={handleEmailClick}
+                                        className="flex items-center gap-4 p-4 bg-background rounded-xl border border-border hover:border-accent/50 transition-all duration-300 cursor-pointer text-left"
+                                    >
+                                        <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-accent/10">
+                                            <Mail className="w-5 h-5 text-accent"/>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-heading font-semibold text-foreground">Email</h4>
+                                            <p className="text-accent text-sm hover:text-accent/80 transition-colors truncate">
+                                                {shopInfo?.supportEmail || shopInfo?.email || "Email Us"}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground mt-1">Click to send an email</p>
+                                        </div>
+                                    </button>
+                                    
+                                    <button 
+                                        onClick={handlePhoneClick}
+                                        className="flex items-center gap-4 p-4 bg-background rounded-xl border border-border hover:border-accent/50 transition-all duration-300 cursor-pointer text-left"
+                                    >
+                                        <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-accent/10">
+                                            <Phone className="w-5 h-5 text-accent"/>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-heading font-semibold text-foreground">Phone</h4>
+                                            <p className="text-accent text-sm hover:text-accent/80 transition-colors">
+                                                {shopInfo?.supportPhone || shopInfo?.phone || "Call Us"}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground mt-1">Click to make a call</p>
+                                        </div>
+                                    </button>
+                                    
+                                    <div className="flex items-center gap-4 p-4 bg-background rounded-xl border border-border">
+                                        <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-accent/10">
+                                            <MapPin className="w-5 h-5 text-accent"/>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-heading font-semibold text-foreground">Location</h4>
+                                            <p className="text-sm text-foreground">
+                                                {primaryLocation?.name || shopInfo?.city || "Nagapattinam"}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground mt-1">
+                                                {primaryLocation?.address || shopInfo?.address || "Tamil Nadu, India"}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                             
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* CTA Section */}
+                <section className="py-20 md:py-28 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-r from-accent via-accent/80 to-accent/60"/>
+                    <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=%2260%22 height=%2260%22 viewBox=%220 0 60 60%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill=%22none%22 fill-rule=%22evenodd%22%3E%3Cg fill=%22%23ffffff%22 fill-opacity=%220.1%22%3E%3Cpath d=%22M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20"/>
                     
-                    <p className="text-muted-foreground text-sm mb-6">{section.content}</p>
-                    
-                    {section.items && (<ul className="space-y-3 text-sm">
-                        {section.items.map((item, i) => (<li key={i} className="flex items-start gap-3">
-                            <CheckCircle className="w-5 h-5 text-accent flex-shrink-0 mt-0.5"/>
-                            <span className="text-foreground">{item}</span>
-                          </li>))}
-                      </ul>)}
-                    
-                    {section.warning && (<div className="mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
-                        <p className="text-foreground text-sm text-justify">
-                          <strong className="font-heading text-red-500">Important:</strong> {section.warning}
-                        </p>
-                      </div>)}
-                    
-                    {section.note && (<div className="mt-4 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
-                        <p className="text-foreground text-sm text-justify">
-                          <strong className="font-heading text-blue-500">Note:</strong> {section.note}
-                        </p>
-                      </div>)}
-                  </div>);
-        })}
-            </div>
-          </div>
-        </section>
-
-        {/* Contact Information */}
-        <section className="py-10 md:py-20 bg-secondary/30">
-          <div className="container mx-auto px-4">
-            <div className="max-w-4xl mx-auto">
-              <div data-aos="fade-up" className="bg-card rounded-2xl p-6 md:p-8 border border-border">
-                <div className="text-center mb-10">
-                  <h2 className="font-heading text-3xl font-bold text-foreground mb-4">
-                    Contact <span className="text-accent">Us</span>
-                  </h2>
-                  <p className="text-muted-foreground max-w-xl mx-auto">
-                    If you have any questions about this Privacy Policy or your personal data, please contact us:
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                  <div className="flex items-center gap-2 md:gap-4 p-2 md:p-4 bg-background rounded-xl border border-border">
-                    <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-accent/10">
-                      <Mail className="w-5 h-5 text-accent"/>
+                    <div className="container mx-auto px-4 relative z-10">
+                        <div className="max-w-3xl mx-auto text-center" data-aos="zoom-in">
+                            <h2 className="font-heading text-3xl md:text-5xl font-bold text-accent-foreground mb-6">
+                                Your Privacy Matters
+                            </h2>
+                            <p className="text-accent-foreground/80 text-sm md:text-lg mb-8 max-w-xl mx-auto">
+                                At {shopInfo?.shopName || "Sri Krishna Home Appliances"}, we are committed to protecting 
+                                your personal information and maintaining your trust.
+                            </p>
+                            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                                <button 
+                                    onClick={handleContactClick}
+                                    className="px-8 py-4 bg-foreground text-background font-semibold rounded-xl hover:bg-foreground/90 hover:scale-105 transition-all duration-300 shadow-xl flex items-center justify-center gap-2"
+                                >
+                                    <Mail className="w-5 h-5" />
+                                    Contact Our Privacy Team
+                                </button>
+                                <button 
+                                    onClick={() => window.location.href = '/'}
+                                    className="px-8 py-4 bg-transparent border-2 border-foreground text-foreground font-semibold rounded-xl hover:bg-foreground/10 transition-all duration-300 flex items-center justify-center gap-2"
+                                >
+                                    <Shield className="w-5 h-5" />
+                                    Return to Home
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                      <h4 className="font-heading font-semibold text-foreground">Email</h4>
-                      <a href="mailto:support@srikrishnahomeappliances.com" className="text-accent text-xs hover:text-accent/80 transition-colors">
-                        support@srikrishnahomeappliances.com
-                      </a>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-2 md:gap-4 p-4 bg-background rounded-xl border border-border">
-                    <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-accent/10">
-                      <Phone className="w-5 h-5 text-accent"/>
-                    </div>
-                    <div>
-                      <h4 className="font-heading font-semibold text-foreground">Phone</h4>
-                      <a href="tel:+91XXXXXXXXXX" className="text-accent text-xs hover:text-accent/80 transition-colors">
-                        +91 XXXXXXXXXX
-                      </a>
-                    </div>
-                  </div>
-                </div>
+                </section>
+            </main>
 
-                <p className="text-muted-foreground text-center text-xs md:text-sm">
-                  We typically respond to privacy-related inquiries within 24-48 hours.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* CTA Section */}
-        <section className="py-20 md:py-28 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-accent via-accent/80 to-accent/60"/>
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=%2260%22 height=%2260%22 viewBox=%220 0 60 60%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill=%22none%22 fill-rule=%22evenodd%22%3E%3Cg fill=%22%23ffffff%22 fill-opacity=%220.1%22%3E%3Cpath d=%22M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20"/>
-          
-          <div className="container mx-auto px-4 relative z-10">
-            <div className="max-w-3xl mx-auto text-center" data-aos="zoom-in">
-              <h2 className="font-heading text-3xl md:text-5xl font-bold text-accent-foreground mb-6">
-                Your Privacy Matters
-              </h2>
-              <p className="text-accent-foreground/80 text-sm md:text-lg mb-8 max-w-xl mx-auto">
-                We are committed to protecting your personal information and maintaining your trust.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <button onClick={() => window.location.href = '/contact'} className="px-8 py-4 bg-foreground text-background font-semibold rounded-xl hover:bg-foreground/90 hover:scale-105 transition-all duration-300 shadow-xl">
-                  Contact Our Privacy Team
-                </button>
-                <button onClick={() => window.location.href = '/'} className="px-8 py-4 bg-transparent border-2 border-foreground text-foreground font-semibold rounded-xl hover:bg-foreground/10 transition-all duration-300">
-                  Return to Home
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
-      </main>
-
-      <Footer />
-    </div>);
+            <Footer />
+        </div>
+    );
 };
+
 export default PrivacyPolicy;
