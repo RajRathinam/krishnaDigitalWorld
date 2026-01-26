@@ -197,7 +197,7 @@ export function BestSellers() {
                             text="Best Sellers" 
                             className="text-2xl md:text-3xl font-bold" 
                         />
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="text-xs md:text-md text-muted-foreground mt-1">
                             Our most popular products this week
                         </p>
                     </div>

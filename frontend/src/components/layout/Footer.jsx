@@ -82,13 +82,24 @@ export function Footer() {
           {/* Contact Information */}
           <div className="mt-8 pt-8 border-t border-primary-foreground/10">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-             
+               <div className="flex items-center gap-3">
+                <MapPin className="w-12 h-12 md:w-10 md:h-10 text-accent"/>
+                <div>
+                  <p className="font-medium text-primary-foreground">Store Location</p>
+                  <p className="text-xs md:text-sm text-primary-foreground/60">
+                    {shopInfo?.address || shopInfo?.city 
+                      ? `${shopInfo.address || ''}${shopInfo.city ? `, ${shopInfo.city}` : ''}${shopInfo.state ? `, ${shopInfo.state}` : ''}${shopInfo.pincode ? ` - ${shopInfo.pincode}` : ''}`
+                      : 'Sri Krishna Home Appliances, Nagapattinam'}
+                  </p>
+                  <p className="text-xs text-primary-foreground/40">Delivery within 30km radius</p>
+                </div>
+              </div>
               <div className="flex items-center gap-3">
                 <Phone className="w-5 h-5 text-accent"/>
                 <div>
                   <p className="font-medium text-primary-foreground">Call Us</p>
                   {shopInfo?.phone ? (
-                    <a href={`tel:${shopInfo.phone}`} className="text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors">
+                    <a href={`tel:${shopInfo.phone}`} className="text-xs md:text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors">
                       {shopInfo.phone}
                     </a>
                   ) : (
@@ -108,25 +119,14 @@ export function Footer() {
                       {shopInfo.email}
                     </a>
                   ) : (
-                    <span className="text-sm text-primary-foreground/60">support@srikrishnahomeappliances.com</span>
+                    <span className="text-xs md:text-sm text-primary-foreground/60">support@srikrishnahomeappliances.com</span>
                   )}
                   {shopInfo?.supportEmail && (
                     <p className="text-xs text-primary-foreground/40">Support: {shopInfo.supportEmail}</p>
                   )}
                 </div>
               </div>
-               <div className="flex items-center gap-3">
-                <MapPin className="w-5 h-5 text-accent"/>
-                <div>
-                  <p className="font-medium text-primary-foreground">Store Location</p>
-                  <p className="text-sm text-primary-foreground/60">
-                    {shopInfo?.address || shopInfo?.city 
-                      ? `${shopInfo.address || ''}${shopInfo.city ? `, ${shopInfo.city}` : ''}${shopInfo.state ? `, ${shopInfo.state}` : ''}${shopInfo.pincode ? ` - ${shopInfo.pincode}` : ''}`
-                      : 'Sri Krishna Home Appliances, Nagapattinam'}
-                  </p>
-                  <p className="text-xs text-primary-foreground/40">Delivery within 30km radius</p>
-                </div>
-              </div>
+             
             </div>
           </div>
         </div>

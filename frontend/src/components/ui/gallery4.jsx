@@ -109,7 +109,7 @@ const Gallery4 = ({
                                                 src={item.image} 
                                                 alt={item.title} 
                                                 loading="lazy" 
-                                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                                className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-110"
                                                 onError={(e) => {
                                                     e.target.onerror = null;
                                                     e.target.src = '/placeholder.svg';

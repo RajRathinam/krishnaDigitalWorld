@@ -72,7 +72,7 @@ const Gallery6 = ({ heading = "Gallery", demoUrl = "/products", items = [
     return (<section className="py-12 md:py-16">
       <div className="container">
         <div className="mb-8 flex flex-col justify-between gap-4 md:mb-12 md:flex-row md:items-end">
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 md:ml-5">
             <SplitHeading text={heading} className="text-2xl md:text-3xl lg:text-4xl font-bold"/>
             <Link to={demoUrl} className="group flex items-center gap-1 text-accent font-medium hover:underline">
               View All
@@ -97,7 +97,7 @@ const Gallery6 = ({ heading = "Gallery", demoUrl = "/products", items = [
                 },
             },
         }}>
-          <CarouselContent className="ml-0 md:ml-[max(1rem,calc((100vw-80rem)/2+1rem))] 2xl:ml-[max(1rem,calc((100vw-80rem)/2+1rem))]">
+          <CarouselContent className="ml-1 md:ml-5">
             {items.map((item) => (<CarouselItem key={item.id} className="max-w-[320px] pl-4 lg:max-w-[400px]">
                 <Link to={item.url} className="group block">
                   <div className="flex flex-col gap-4">

@@ -19,94 +19,124 @@
 import { Link } from "react-router-dom";
 import { SplitHeading } from "@/components/ui/split-heading";
 
-// Brand data - Can be moved to API/Config
+// Brand data using local logos from public/logos/
 const brands = [
     { 
         id: 1,
         name: "Samsung", 
-        logo: "https://cdn-icons-png.flaticon.com/512/882/882747.png",
+        logo: "/logos/samsung logo.png",
         slug: "samsung"
     },
     { 
         id: 2,
         name: "LG", 
-        logo: "https://cdn-icons-png.flaticon.com/512/5969/5969267.png",
+        logo: "/logos/LG-Logo-PNG-Clipart.png",
         slug: "lg"
     },
     { 
         id: 3,
         name: "Sony", 
-        logo: "https://cdn-icons-png.flaticon.com/512/731/731935.png",
+        logo: "/logos/Sony-Logo.png",
         slug: "sony"
     },
     { 
         id: 4,
         name: "Whirlpool", 
-        logo: "https://cdn-icons-png.flaticon.com/512/5969/5969059.png",
+        logo: "/logos/whirlpool.png",
         slug: "whirlpool"
     },
     { 
         id: 5,
         name: "Panasonic", 
-        logo: "https://cdn-icons-png.flaticon.com/512/5969/5969183.png",
+        logo: "/logos/panasonic-logo-2.png",
         slug: "panasonic"
     },
     { 
         id: 6,
-        name: "Philips", 
-        logo: "https://cdn-icons-png.flaticon.com/512/882/882726.png",
-        slug: "philips"
+        name: "Daikin", 
+        logo: "/logos/Daikin-Logo-1963.png",
+        slug: "daikin"
     },
     { 
         id: 7,
-        name: "Bosch", 
-        logo: "https://cdn-icons-png.flaticon.com/512/5969/5969125.png",
-        slug: "bosch"
+        name: "Haier", 
+        logo: "/logos/haier-logo.png",
+        slug: "haier"
     },
 ];
 
 const brands2 = [
     { 
         id: 8,
-        name: "Daikin", 
-        logo: "https://cdn-icons-png.flaticon.com/512/5968/5968854.png",
-        slug: "daikin"
-    },
-    { 
-        id: 9,
         name: "Voltas", 
-        logo: "https://cdn-icons-png.flaticon.com/512/732/732221.png",
+        logo: "/logos/voltas-logo-scaled.png",
         slug: "voltas"
     },
     { 
-        id: 10,
-        name: "Bajaj", 
-        logo: "https://cdn-icons-png.flaticon.com/512/733/733609.png",
-        slug: "bajaj"
-    },
-    { 
-        id: 11,
-        name: "Prestige", 
-        logo: "https://cdn-icons-png.flaticon.com/512/732/732084.png",
-        slug: "prestige"
-    },
-    { 
-        id: 12,
-        name: "Havells", 
-        logo: "https://cdn-icons-png.flaticon.com/512/733/733585.png",
-        slug: "havells"
-    },
-    { 
-        id: 13,
+        id: 9,
         name: "Crompton", 
-        logo: "https://cdn-icons-png.flaticon.com/512/281/281763.png",
+        logo: "/logos/Crompton-Logo-Vector.svg-.png",
         slug: "crompton"
     },
     { 
+        id: 10,
+        name: "Havells", 
+        logo: "/logos/Havells-Logo.png",
+        slug: "havells"
+    },
+    { 
+        id: 11,
+        name: "IFB", 
+        logo: "/logos/IFBIND.NS_BIG.png",
+        slug: "ifb"
+    },
+    { 
+        id: 12,
+        name: "Intex", 
+        logo: "/logos/Intex Technologies.png",
+        slug: "intex"
+    },
+    { 
+        id: 13,
+        name: "Godrej", 
+        logo: "/logos/godrej-logo-png-8-removebg-preview.png",
+        slug: "godrej"
+    },
+    { 
         id: 14,
-        name: "Orient", 
-        logo: "https://cdn-icons-png.flaticon.com/512/888/888879.png",
-        slug: "orient"
+        name: "Blue Star", 
+        logo: "/logos/BLUESTARCO.NS_BIG-4cacecc3.png",
+        slug: "blue-star"
+    },
+    { 
+        id: 15,
+        name: "V-Guard", 
+        logo: "/logos/vguard-logo.png",
+        slug: "v-guard"
+    },
+    { 
+        id: 16,
+        name: "TCL", 
+        logo: "/logos/tcl.png",
+        slug: "tcl"
+    },
+    { 
+        id: 17,
+        name: "Cello", 
+        logo: "/logos/cello-logo-png_seeklogo-305045.png",
+        slug: "cello"
+    },
+    { 
+        id: 18,
+        name: "Preethi", 
+        logo: "/logos/preethi.jpg",
+        slug: "preethi"
+    },
+    { 
+        id: 19,
+        name: "Butterfly", 
+        logo: "/logos/butterfly.png",
+        slug: "butterfly"
     },
 ];
 
@@ -123,7 +153,7 @@ const repeatedBrands = (items, repeat = 4) => {
 export function BrandShowcase() {
     return (
         <section className="w-full py-12 md:py-16 bg-background overflow-hidden">
-            <div className="mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
                 {/* Section Header */}
                 <div className="text-center mb-10">
                     <SplitHeading 
@@ -141,17 +171,18 @@ export function BrandShowcase() {
                     <div className="mb-8 flex w-max animate-scroll-left gap-12 md:gap-16">
                         {repeatedBrands(brands, 4).map((brand, i) => (
                             <Link
-                                key={`${brand.name}-${i}`}
+                                key={`${brand.slug}-${i}`}
                                 to={`/products?brand=${brand.slug}`}
-                                className="flex h-14 w-14 md:h-16 md:w-16 shrink-0 items-center justify-center transition-opacity duration-300 hover:opacity-70 hover:scale-110"
+                                className="flex h-20 w-20 md:h-24 md:w-24 shrink-0 items-center justify-center p-2 transition-all duration-300 hover:scale-110 bg-white rounded-lg shadow-sm hover:shadow-md"
                                 aria-label={`Browse ${brand.name} products`}
                             >
                                 <img 
                                     src={brand.logo} 
                                     alt={brand.name} 
-                                    className="h-full w-full object-contain filter grayscale hover:grayscale-0 transition-all duration-300"
+                                    className="h-full w-full object-contain transition-all duration-300 hover:opacity-100"
                                     loading="lazy"
                                     onError={(e) => {
+                                        console.error(`Failed to load logo for ${brand.name}: ${brand.logo}`);
                                         e.target.style.display = 'none';
                                     }}
                                 />
@@ -163,17 +194,18 @@ export function BrandShowcase() {
                     <div className="flex w-max animate-scroll-right gap-12 md:gap-16">
                         {repeatedBrands(brands2, 4).map((brand, i) => (
                             <Link
-                                key={`${brand.name}-${i}`}
+                                key={`${brand.slug}-${i}`}
                                 to={`/products?brand=${brand.slug}`}
-                                className="flex h-14 w-14 md:h-16 md:w-16 shrink-0 items-center justify-center transition-opacity duration-300 hover:opacity-70 hover:scale-110"
+                                className="flex h-20 w-20 md:h-24 md:w-24 shrink-0 items-center justify-center p-2 transition-all duration-300 hover:scale-110 bg-white rounded-lg shadow-sm hover:shadow-md"
                                 aria-label={`Browse ${brand.name} products`}
                             >
                                 <img 
                                     src={brand.logo} 
                                     alt={brand.name} 
-                                    className="h-full w-full object-contain filter grayscale hover:grayscale-0 transition-all duration-300"
+                                    className="h-full w-full object-contain transition-all duration-300 hover:opacity-100"
                                     loading="lazy"
                                     onError={(e) => {
+                                        console.error(`Failed to load logo for ${brand.name}: ${brand.logo}`);
                                         e.target.style.display = 'none';
                                     }}
                                 />
@@ -198,10 +230,10 @@ export function BrandShowcase() {
                     100% { transform: translateX(0); }
                 }
                 .animate-scroll-left {
-                    animation: scroll-left 25s linear infinite;
+                    animation: scroll-left 30s linear infinite;
                 }
                 .animate-scroll-right {
-                    animation: scroll-right 25s linear infinite;
+                    animation: scroll-right 30s linear infinite;
                 }
             `}</style>
         </section>

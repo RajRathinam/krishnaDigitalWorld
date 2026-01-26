@@ -165,7 +165,7 @@ export function CategoryGrid() {
                         </h3>
                         
                         {/* Hover Indicator */}
-                        <div className="w-8 h-1 bg-accent mx-auto mt-2 sm:mt-3 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
+                        <div className="w-8 h-1 hidden md:block bg-accent mx-auto mt-2 sm:mt-3 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
                       </div>
                     </div>
                   </Link>
