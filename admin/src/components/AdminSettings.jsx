@@ -88,6 +88,21 @@ export const AdminSettings = () => {
     mapUrl: ''
   });
 
+  // Helper function to ensure array
+  const ensureArray = (data) => {
+    if (Array.isArray(data)) return data;
+    if (data === null || data === undefined) return [];
+    if (typeof data === 'string') {
+      try {
+        const parsed = JSON.parse(data);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  };
+
   // Load subadmins
   useEffect(() => {
     if (isAdmin) {
@@ -123,12 +138,13 @@ export const AdminSettings = () => {
       setLoadingShopInfo(true);
       const response = await adminApi.getShopInfo();
       if (response.success && response.data) {
+        const data = response.data;
         setShopInfo(prev => ({
           ...prev,
-          ...response.data,
-          socialMedia: response.data.socialMedia || prev.socialMedia,
-          businessHours: response.data.businessHours || prev.businessHours,
-          locations: response.data.locations || []
+          ...data,
+          socialMedia: data.socialMedia || prev.socialMedia,
+          businessHours: data.businessHours || prev.businessHours,
+          locations: ensureArray(data.locations) // Use helper function here
         }));
       }
     } catch (error) {
@@ -234,7 +250,7 @@ export const AdminSettings = () => {
     }
     setShopInfo(prev => ({
       ...prev,
-      locations: [...prev.locations, { ...newLocation, id: Date.now() }]
+      locations: [...ensureArray(prev.locations), { ...newLocation, id: Date.now() }]
     }));
     setNewLocation({ name: '', address: '', phone: '', mapUrl: '' });
   };
@@ -242,9 +258,12 @@ export const AdminSettings = () => {
   const removeLocation = (index) => {
     setShopInfo(prev => ({
       ...prev,
-      locations: prev.locations.filter((_, i) => i !== index)
+      locations: ensureArray(prev.locations).filter((_, i) => i !== index)
     }));
   };
+
+  // Get locations array safely
+  const locationsArray = ensureArray(shopInfo.locations);
 
   return (
     <div className="space-y-6">
@@ -526,13 +545,13 @@ export const AdminSettings = () => {
                     Add Location
                   </Button>
                 </div>
-                {shopInfo.locations && shopInfo.locations.length > 0 && (
+                {locationsArray.length > 0 && (
                   <div className="space-y-2">
-                    {shopInfo.locations.map((location, index) => (
+                    {locationsArray.map((location, index) => (
                       <div key={location.id || index} className="border rounded-lg p-4 flex items-start justify-between">
                         <div className="flex-1">
-                          <h4 className="font-semibold">{location.name}</h4>
-                          <p className="text-sm text-muted-foreground">{location.address}</p>
+                          <h4 className="font-semibold">{location.name || 'Unnamed Location'}</h4>
+                          <p className="text-sm text-muted-foreground">{location.address || 'No address provided'}</p>
                           {location.phone && (
                             <p className="text-sm text-muted-foreground">Phone: {location.phone}</p>
                           )}

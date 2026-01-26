@@ -7,7 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import AdminGuard from "./components/auth/AdminGuard";
 import Admin from "./pages/Admin";
 import AdminLogin from "./pages/AdminLogin";
-
+import NotFound from "./pages/NotFound";
 // Import admin components (they're in /components not /components/admin)
 import { AdminOverview } from "@/components/AdminOverview";
 import { CustomerAnalytics } from "@/components/CustomerAnalytics";
@@ -48,6 +48,7 @@ function App() {
                   <Route path="categories" element={<AddCategory />} />
                 </Route>
               </Route>
+                 <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>
         </BrowserRouter>
