@@ -7,12 +7,12 @@ import {
   getOrderStats,
   searchOrders
 } from '../controllers/adminOrderController.js';
-import { authenticate, requireAdmin } from '../middleware/auth.js';
+import { authenticate, requireAdminOrSubadmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
 // All routes require admin authentication
-router.use(authenticate, requireAdmin);
+router.use(authenticate, requireAdminOrSubadmin);
 
 router.get('/', getAllOrders);
 router.get('/stats', getOrderStats);

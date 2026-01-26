@@ -4,13 +4,13 @@ import {
   sendBirthdayWish,
   sendBirthdayOffer
 } from '../controllers/birthdayController.js';
-import { authenticate, requireAdmin } from '../middleware/auth.js';
+import { authenticate, requireAdminOrSubadmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
 // Public routes (with authentication)
-router.get('/today', authenticate, requireAdmin, getTodayBirthdays);
-router.post('/:userId/wish', authenticate, requireAdmin, sendBirthdayWish);
-router.post('/:userId/offer', authenticate, requireAdmin, sendBirthdayOffer);
+router.get('/today', authenticate, requireAdminOrSubadmin, getTodayBirthdays);
+router.post('/:userId/wish', authenticate, requireAdminOrSubadmin, sendBirthdayWish);
+router.post('/:userId/offer', authenticate, requireAdminOrSubadmin, sendBirthdayOffer);
 
 export default router;

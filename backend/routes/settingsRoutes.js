@@ -8,7 +8,7 @@ import {
   updateShopInfo,
   getShopInfoPublic
 } from '../controllers/settingsController.js';
-import { authenticate, requireAdmin } from '../middleware/auth.js';
+import { authenticate, requireAdmin,requireAdminOrSubadmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -20,7 +20,7 @@ router.use(authenticate);
 
 // Shop info routes (admin and subadmin can access)
 router.get('/shop-info', getShopInfo);
-router.put('/shop-info', updateShopInfo);
+router.put('/shop-info',requireAdminOrSubadmin, updateShopInfo);
 
 // Subadmin management routes (admin only)
 router.post('/subadmins', requireAdmin, createSubadmin);
