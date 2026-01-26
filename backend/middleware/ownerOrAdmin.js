@@ -13,7 +13,7 @@ export const ownerOrAdmin = (resourceGetter) => {
       }
 
       // Admin can access everything
-      if (req.user.role === 'admin') {
+      if (req.user.role === 'admin' || req.user.role === 'subadmin') {
         return next();
       }
 

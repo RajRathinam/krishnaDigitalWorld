@@ -13,7 +13,7 @@ import {
   getRelatedProducts,
   updateProductStock
 } from '../controllers/productController.js';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate,requireAdminOrSubadmin } from '../middleware/auth.js';
 import { uploadProductImages, processUploadedFiles, validateProductImages, handleUploadError } from '../middleware/upload.js';
 import { productOwnerOrAdmin } from '../middleware/ownerOrAdmin.js';
 
@@ -33,6 +33,7 @@ router.get('/:id/related', getRelatedProducts);
 router.post(
   '/',
   authenticate,
+  requireAdminOrSubadmin,
   uploadProductImages(),
   handleUploadError,
   processUploadedFiles,
@@ -43,7 +44,8 @@ router.post(
 router.put(
   '/:id',
   authenticate,
-  productOwnerOrAdmin,
+  requireAdminOrSubadmin,
+  productOwnerOrAdmin, // Add this middleware
   uploadProductImages(),
   handleUploadError,
   processUploadedFiles,

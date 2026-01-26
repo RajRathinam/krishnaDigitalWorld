@@ -985,9 +985,6 @@ export const createProduct = async (req, res) => {
   }
 };
 
-// Other product controller functions remain similar but with subcategory string instead of subcategoryId
-// Update other functions similarly as needed...
-
 /**
  * @desc    Update product
  * @route   PUT /api/products/:id
@@ -1007,12 +1004,19 @@ export const updateProduct = async (req, res) => {
       });
     }
 
-    // Check ownership (admin or seller)
-    if ((req.user.role !== 'admin' && product.sellerId !== req.user.id)) {
+    // FIXED AUTHORIZATION LOGIC:
+    // Since middleware already ensures admin/subadmin, we need to check if subadmin is updating their own product
+    // Admin can update any product, subadmin can only update their own products
+    const isOwner = product.sellerId === req.user.id;
+    const isAdmin = req.user.role === 'admin';
+    const isSubadmin = req.user.role === 'subadmin';
+    
+    // If user is subadmin and NOT the owner of the product, deny access
+    if (isSubadmin && !isOwner) {
       await transaction.rollback();
       return res.status(403).json({
         success: false,
-        message: 'Not authorized to update this product'
+        message: 'Subadmins can only update their own products'
       });
     }
 
@@ -1204,7 +1208,7 @@ export const deleteProduct = async (req, res) => {
     }
 
     // Check ownership (admin or seller)
-    if (req.user.role !== 'admin' && product.sellerId !== req.user.id) {
+    if ((req.user.role !== 'admin' || req.user.role !== 'subadmin') && product.sellerId !== req.user.id) {
       await transaction.rollback();
       return res.status(403).json({
         success: false,
