@@ -1010,15 +1010,16 @@ export const updateProduct = async (req, res) => {
     const isOwner = product.sellerId === req.user.id;
     const isAdmin = req.user.role === 'admin';
     const isSubadmin = req.user.role === 'subadmin';
-    
+
     // If user is subadmin and NOT the owner of the product, deny access
-    if (isSubadmin && !isOwner) {
-      await transaction.rollback();
-      return res.status(403).json({
-        success: false,
-        message: 'Subadmins can only update their own products'
-      });
-    }
+    // ALLOW SUBADMINS to edit any product (Relaxed for this use case)
+    // if (isSubadmin && !isOwner) {
+    //   await transaction.rollback();
+    //   return res.status(403).json({
+    //     success: false,
+    //     message: 'Subadmins can only update their own products'
+    //   });
+    // }
 
     const updateData = { ...req.body };
 
@@ -1208,7 +1209,8 @@ export const deleteProduct = async (req, res) => {
     }
 
     // Check ownership (admin or seller)
-    if ((req.user.role !== 'admin' || req.user.role !== 'subadmin') && product.sellerId !== req.user.id) {
+    // Fixed logic: AND instead of OR. If NOT admin AND NOT subadmin, then check owner.
+    if ((req.user.role !== 'admin' && req.user.role !== 'subadmin') && product.sellerId !== req.user.id) {
       await transaction.rollback();
       return res.status(403).json({
         success: false,
@@ -1309,7 +1311,7 @@ export const getFeaturedProducts = async (req, res) => {
 export const getBestSellers = async (req, res) => {
   try {
     const { limit = 20 } = req.query;
-    
+
     const products = await Product.findAll({
       where: {
         isBestSeller: true,
@@ -1353,7 +1355,7 @@ export const getBestSellers = async (req, res) => {
 export const getDealOfTheDay = async (req, res) => {
   try {
     const { limit = 20 } = req.query;
-    
+
     const products = await Product.findAll({
       where: {
         isDealOfTheDay: true,
@@ -1397,7 +1399,7 @@ export const getDealOfTheDay = async (req, res) => {
 export const getNewArrivals = async (req, res) => {
   try {
     const { limit = 20 } = req.query;
-    
+
     const products = await Product.findAll({
       where: {
         isActive: true,

@@ -14,7 +14,7 @@ import { createOTP } from '../services/otpService.js';
  */
 export const createSubadmin = async (req, res) => {
   const transaction = await sequelize.transaction();
-  
+
   try {
     // Verify that the current user is admin (not subadmin)
     if (req.user.role !== 'admin') {
@@ -89,7 +89,7 @@ export const createSubadmin = async (req, res) => {
 
     // COMMIT THE TRANSACTION BEFORE CREATING OTP
     await transaction.commit();
-    
+
     console.log('✅ User created successfully, committing transaction');
 
     // Generate OTP for initial login (OUTSIDE transaction to avoid locks)
@@ -121,9 +121,9 @@ export const createSubadmin = async (req, res) => {
       await transaction.rollback();
       console.log('❌ Transaction rolled back due to error');
     }
-    
+
     console.error('Create subadmin error:', error.message);
-    
+
     // Handle specific error types
     if (error.name === 'SequelizeDatabaseError' && error.parent?.code === 'ER_LOCK_WAIT_TIMEOUT') {
       return res.status(503).json({
@@ -132,7 +132,7 @@ export const createSubadmin = async (req, res) => {
         suggestion: 'Wait 30 seconds and retry'
       });
     }
-    
+
     res.status(500).json({
       success: false,
       message: 'Server error while creating subadmin',
@@ -158,20 +158,21 @@ export const getSubadmins = async (req, res) => {
 
     const subadmins = await User.findAll({
       where: {
-        role: 'subadmin'
+        role: 'subadmin',
+        isActive: true
       },
       attributes: [
-        'id', 
-        'name', 
-        'phone', 
-        'email', 
-        'role', 
-        'is_active',  // Use snake_case
-        'is_verified', // Use snake_case
-        'created_at',  // Use snake_case
-        'updated_at'   // Use snake_case
+        'id',
+        'name',
+        'phone',
+        'email',
+        'role',
+        'isActive',
+        'isVerified',
+        'createdAt',
+        'updatedAt'
       ],
-      order: [['created_at', 'DESC']]  // Use snake_case
+      order: [['createdAt', 'DESC']]
     });
 
     res.status(200).json({

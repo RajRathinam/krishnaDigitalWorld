@@ -147,19 +147,31 @@ const User = sequelize.define('User', {
   },
   isVerified: {
     type: DataTypes.BOOLEAN,
-    defaultValue: false
+    defaultValue: false,
+    field: 'is_verified'
   },
   isActive: {
     type: DataTypes.BOOLEAN,
-    defaultValue: true
+    defaultValue: true,
+    field: 'is_active'
   },
   giftReceived: {
     type: DataTypes.BOOLEAN,
-    defaultValue: false
+    defaultValue: false,
+    field: 'gift_received'
+  },
+  createdAt: {
+    type: DataTypes.DATE,
+    field: 'created_at'
+  },
+  updatedAt: {
+    type: DataTypes.DATE,
+    field: 'updated_at'
   }
 }, {
   tableName: 'users',
   timestamps: true,
+  underscored: true,
   hooks: {
     beforeCreate: async (user) => {
       // Generate slug if not provided

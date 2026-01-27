@@ -313,13 +313,38 @@ export const ProductManagement = () => {
         formData.append("attributes", "{}");
       }
 
+      const safeParse = (val, defaultVal) => {
+        if (!val) return defaultVal;
+        if (typeof val === 'object') return val;
+        try { return JSON.parse(val); } catch { return defaultVal; }
+      };
+
       if (isEditing && editingProductId) {
         const res = await api.put(`/products/${editingProductId}`, formData, { headers: { "Content-Type": "multipart/form-data" } });
-        setProducts(prev => prev.map(p => String(p.id) === String(editingProductId) ? { ...p, ...res.data.data } : p));
+        setProducts(prev => prev.map(p => {
+          if (String(p.id) === String(editingProductId)) {
+            const updated = res.data.data;
+            return {
+              ...p,
+              ...updated,
+              colorsAndImages: safeParse(updated.colorsAndImages, {}),
+              stock: safeParse(updated.stock, {}),
+              attributes: safeParse(updated.attributes, {}),
+            };
+          }
+          return p;
+        }));
         toast({ title: "Success", description: "Product updated successfully" });
       } else {
         const res = await api.post("/products", formData, { headers: { "Content-Type": "multipart/form-data" } });
-        setProducts(prev => [res.data.data, ...prev]);
+        const newProd = res.data.data;
+        const parsedProd = {
+          ...newProd,
+          colorsAndImages: safeParse(newProd.colorsAndImages, {}),
+          stock: safeParse(newProd.stock, {}),
+          attributes: safeParse(newProd.attributes, {}),
+        };
+        setProducts(prev => [parsedProd, ...prev]);
         toast({ title: "Success", description: "Product created successfully" });
       }
       setIsDialogOpen(false);
@@ -645,7 +670,7 @@ export const ProductManagement = () => {
                     <Label>Description</Label>
                     <Textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Product details..." rows={4} />
                   </div>
-                  
+
                   {/* Rating Input */}
                   <div className="space-y-2">
                     <Label htmlFor="rating">Product Rating (0-5)</Label>
@@ -671,13 +696,12 @@ export const ProductManagement = () => {
                         {[1, 2, 3, 4, 5].map((star) => (
                           <Star
                             key={star}
-                            className={`h-5 w-5 transition-colors ${
-                              parseFloat(form.rating || 0) >= star
+                            className={`h-5 w-5 transition-colors ${parseFloat(form.rating || 0) >= star
                                 ? "text-yellow-500 fill-yellow-500"
                                 : parseFloat(form.rating || 0) >= star - 0.5
-                                ? "text-yellow-500 fill-yellow-500/50"
-                                : "text-gray-300"
-                            }`}
+                                  ? "text-yellow-500 fill-yellow-500/50"
+                                  : "text-gray-300"
+                              }`}
                             onClick={() => setForm({ ...form, rating: String(star) })}
                             style={{ cursor: "pointer" }}
                           />
