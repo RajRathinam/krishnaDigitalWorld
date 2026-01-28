@@ -1,15 +1,18 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { productApi, categoryApi } from "@/services/api";
 import { toast } from "sonner";
 import { Search, ShoppingCart, User, Menu, Heart, X, ChevronDown, ChevronRight } from "lucide-react";
 import { SearchModal } from "@/components/ui/search-modal";
 import { Link } from "react-router-dom";
 import { useCart } from '@/contexts/CartContext';
+
 const quickLinks = [
   { label: "Today's Deals", href: "/deals", highlight: true },
-  { label: "New Arrivals", href: "/new-arrivals" },
-  { label: "Best Sellers", href: "/best-sellers" }
+  { label: "New Arrivals", href: "/new-arrivals", highlight: true },
+  { label: "Best Sellers", href: "/best-sellers", highlight: true }
 ];
+
 // Helper function to ensure something is an array
 const ensureArray = (value) => {
   if (Array.isArray(value))
@@ -31,7 +34,9 @@ const ensureArray = (value) => {
   }
   return [];
 };
+
 export function Header() {
+  const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [openCategory, setOpenCategory] = useState(null);
@@ -39,6 +44,27 @@ export function Header() {
   const [searchData, setSearchData] = useState([]);
   const [categories, setCategories] = useState([]);
   const { cartCount, cartTotal, isLoading } = useCart();
+
+  // Check if a category is active
+  const isCategoryActive = (categorySlug) => {
+    const params = new URLSearchParams(location.search);
+    const currentCategory = params.get('category');
+    return currentCategory === categorySlug;
+  };
+
+  // Check if a quick link is active
+  const isQuickLinkActive = (href) => {
+    return location.pathname === href;
+  };
+
+  // Check if subcategory is active
+  const isSubcategoryActive = (categorySlug, subcategory) => {
+    const params = new URLSearchParams(location.search);
+    const currentCategory = params.get('category');
+    const currentSubcategory = params.get('subcategory');
+    return currentCategory === categorySlug && currentSubcategory === encodeURIComponent(subcategory);
+  };
+
   // Fetch categories for header menu
   useEffect(() => {
     let cancelled = false;
@@ -46,13 +72,13 @@ export function Header() {
       try {
         const res = await categoryApi.getCategories();
         const data = res?.data || [];
-        console.log('Raw categories data:', data); // Debug
-        // Transform the backend data with safe array handling
+        console.log('Raw categories data:', data);
+        
         const transformedCategories = ensureArray(data).map(cat => {
-          // Ensure subcategories is always an array of strings
           const subcategoriesArray = ensureArray(cat.subcategories)
             .map(item => String(item).trim())
             .filter(item => item.length > 0);
+          
           return {
             id: cat.id || cat._id || Math.random().toString(36).substr(2, 9),
             name: cat.name || 'Unnamed Category',
@@ -60,7 +86,7 @@ export function Header() {
             subcategories: subcategoriesArray
           };
         });
-        console.log('Transformed categories:', transformedCategories); // Debug
+        
         if (!cancelled) {
           setCategories(transformedCategories);
         }
@@ -72,6 +98,7 @@ export function Header() {
     })();
     return () => { cancelled = true; };
   }, []);
+
   // Fetch products for search
   useEffect(() => {
     let cancelled = false;
@@ -97,6 +124,7 @@ export function Header() {
     })();
     return () => { cancelled = true; };
   }, []);
+
   // Load user from localStorage
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -109,6 +137,7 @@ export function Header() {
       }
     }
   }, []);
+
   const handleCloseMenu = () => {
     setIsClosing(true);
     setTimeout(() => {
@@ -116,8 +145,9 @@ export function Header() {
       setIsClosing(false);
     }, 300);
   };
+
   const openSignup = () => window.dispatchEvent(new Event('openSignup'));
-  // Close on escape key
+
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === 'Escape' && isMenuOpen) {
@@ -127,6 +157,7 @@ export function Header() {
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isMenuOpen]);
+
   return (<>
     <header className="sticky top-0 left-0 right-0 z-40 bg-card/80 backdrop-blur-md border-b border-border transition-all duration-200">
       {/* Top Bar - Hidden on mobile to save space */}
@@ -162,42 +193,75 @@ export function Header() {
           </div>
         </Link>
 
-        {/* Mobile Search Trigger  */}
-        {/* <div className="lg:hidden flex-1 flex justify-end">
-          <SearchModal data={searchData}>
-            <button className="p-2 text-foreground hover:text-accent">
-              <Search className="w-5 h-5" />
-            </button>
-          </SearchModal>
-        </div> */}
-
         {/* Desktop Navigation */}
         <nav className="hidden lg:flex items-center gap-0.5 ml-4">
-          {categories.map((cat) => (<div key={cat.id} className="relative group">
-            <Link to={`/products?category=${cat.slug}`} className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-foreground/80 hover:text-accent transition-colors whitespace-nowrap">
-              {cat.name}
-              <ChevronDown className="w-3.5 h-3.5 opacity-50 group-hover:rotate-180 transition-transform duration-200" />
-            </Link>
-            {/* Dropdown - FIXED with safe array */}
-            <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-              <div className="bg-card/95 backdrop-blur-md rounded-lg border border-border shadow-lg p-3 min-w-[200px] animate-fade-up">
-                {ensureArray(cat.subcategories).map((sub, index) => (<Link key={`${cat.id}-sub-${index}`} to={`/products?category=${cat.slug}&subcategory=${encodeURIComponent(sub)}`} className="block px-3 py-2 text-sm text-foreground/80 hover:text-accent hover:bg-accent/5 rounded-md transition-colors">
-                  {sub}
-                </Link>))}
-                <div className="border-t border-border mt-2 pt-2">
-                  <Link to={`/products?category=${cat.slug}`} className="block px-3 py-2 text-sm font-medium text-accent hover:bg-accent/10 rounded-md transition-colors">
-                    View All
-                  </Link>
+          {categories.map((cat) => (
+            <div key={cat.id} className="relative group">
+              <Link 
+                to={`/products?category=${cat.slug}`} 
+                className={`flex items-center gap-1 px-3 py-2 text-sm font-medium whitespace-nowrap rounded-md transition-all duration-200 ${
+                  isCategoryActive(cat.slug) 
+                    ? 'text-accent font-semibold'  // Only change text color for active category
+                    : 'text-foreground/80 hover:text-accent'
+                }`}
+              >
+                {cat.name}
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                  isCategoryActive(cat.slug) 
+                    ? 'text-accent opacity-100' 
+                    : 'opacity-50 group-hover:rotate-180'
+                }`} />
+              </Link>
+              
+              {/* Dropdown */}
+              <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                <div className="bg-card/95 backdrop-blur-md rounded-lg border border-border shadow-lg p-3 min-w-[200px] animate-fade-up">
+                  {ensureArray(cat.subcategories).map((sub, index) => (
+                    <Link 
+                      key={`${cat.id}-sub-${index}`} 
+                      to={`/products?category=${cat.slug}&subcategory=${encodeURIComponent(sub)}`} 
+                      className={`block px-3 py-2 text-sm rounded-md transition-colors ${
+                        isSubcategoryActive(cat.slug, sub)
+                          ? 'text-accent font-semibold'  // Only text color for active subcategory
+                          : 'text-foreground/80 hover:text-accent hover:bg-accent/5'
+                      }`}
+                    >
+                      {sub}
+                    </Link>
+                  ))}
+                  
+                  <div className="border-t border-border mt-2 pt-2">
+                    <Link 
+                      to={`/products?category=${cat.slug}`} 
+                      className={`block px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                        isCategoryActive(cat.slug) && !location.search.includes('subcategory')
+                          ? 'text-accent font-semibold'  // Only text color
+                          : 'text-accent hover:bg-accent/10'
+                      }`}
+                    >
+                      View All
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>))}
+          ))}
+          
           <div className="h-5 w-px bg-border mx-2" />
-          {quickLinks.map((item) => (<Link key={item.label} to={item.href} className={`px-3 py-2 text-sm font-medium transition-colors whitespace-nowrap rounded-md ${item.highlight
-            ? "bg-accent/10 text-accent hover:bg-accent/20"
-            : "text-foreground/80 hover:text-foreground hover:bg-secondary"}`}>
-            {item.label}
-          </Link>))}
+          
+          {quickLinks.map((item) => (
+            <Link 
+              key={item.label} 
+              to={item.href} 
+              className={`px-3 py-2 text-sm hover:bg-accent/10 hover:text-accent font-medium transition-colors whitespace-nowrap rounded-md ${
+                isQuickLinkActive(item.href) 
+                  ? 'bg-accent/10 text-accent hover:bg-accent/20'  // Active: bg-accent with accent-foreground text
+                  : 'text-gray-600'  // Inactive: bg-accent/10 with accent text
+              }`}
+            >
+              {item.label}
+            </Link>
+          ))}
         </nav>
 
         {/* Spacer */}
@@ -216,18 +280,9 @@ export function Header() {
           </SearchModal>
         </div>
 
-        {/* Actions - Desktop Only (since mobile uses bottom nav) */}
+        {/* Actions - Desktop Only */}
         <div className="hidden lg:flex items-center gap-2">
-          {/* Wishlist */}
-          <Link to="/account" onClick={(e) => {
-            const storedUser = localStorage.getItem('user');
-            if (!storedUser) {
-              e.preventDefault();
-              openSignup();
-            }
-          }} type="button" className="p-2.5 text-foreground hover:text-accent hover:bg-accent/10 rounded-full transition-all duration-300" aria-label="Wishlist">
-            <Heart className="w-5 h-5" />
-          </Link>
+         
 
           {/* Account */}
           <Link to="/account" onClick={(e) => {
@@ -236,7 +291,11 @@ export function Header() {
               e.preventDefault();
               openSignup();
             }
-          }} className="p-2.5 text-foreground hover:text-accent hover:bg-accent/10 rounded-full transition-all duration-300" aria-label="Account">
+          }} className={`p-2.5 rounded-full transition-all duration-300 ${
+            location.pathname === '/account' 
+              ? 'text-accent' 
+              : 'text-foreground hover:text-accent hover:bg-accent/10'
+          }`} aria-label="Account">
             <User className="w-5 h-5" />
           </Link>
 
@@ -247,7 +306,11 @@ export function Header() {
               e.preventDefault();
               openSignup();
             }
-          }} className="flex items-center gap-2 p-2.5 text-foreground hover:text-accent hover:bg-accent/10 rounded-full transition-all duration-300 group" aria-label="Cart">
+          }} className={`flex items-center gap-2 p-2.5 rounded-full transition-all duration-300 group ${
+            location.pathname === '/cart' 
+              ? 'text-accent' 
+              : 'text-foreground hover:text-accent hover:bg-accent/10'
+          }`} aria-label="Cart">
             <div className="relative">
               <ShoppingCart className="w-5 h-5 group-hover:scale-110 transition-transform" />
               <span className="absolute -top-1.5 -right-1.5 bg-accent text-accent-foreground text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow-sm">
@@ -260,82 +323,147 @@ export function Header() {
     </header>
 
     {/* Mobile Menu Overlay */}
-    {isMenuOpen && (<div className="lg:hidden fixed inset-0 z-[100]">
-      <div className={`absolute inset-0 bg-foreground/40 transition-opacity duration-300 ${isClosing ? 'opacity-0' : 'opacity-100'}`} onClick={handleCloseMenu} />
+    {isMenuOpen && (
+      <div className="lg:hidden fixed inset-0 z-[100]">
+        <div className={`absolute inset-0 bg-foreground/40 transition-opacity duration-300 ${isClosing ? 'opacity-0' : 'opacity-100'}`} onClick={handleCloseMenu} />
 
-      <div className={`absolute inset-y-0 left-0 w-[300px] max-w-[85vw] bg-card shadow-elevated flex flex-col transition-transform duration-300 ease-out ${isClosing ? '-translate-x-full' : 'translate-x-0 animate-slide-in-left'}`}>
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-border">
-          <span className="text-lg font-bold text-foreground">
-            Menu
-          </span>
-          <button onClick={handleCloseMenu} className="p-2 -mr-2 text-foreground hover:text-accent transition-colors" aria-label="Close menu">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto py-2">
-          {/* Categories */}
-          <div className="px-2">
-            <p className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              Shop by Category
-            </p>
-            {categories.map((cat) => (<div key={cat.id}>
-              <button onClick={() => setOpenCategory(openCategory === cat.id ? null : cat.id)} className="w-full flex items-center justify-between px-3 py-3 text-foreground hover:bg-secondary rounded-md transition-colors">
-                <span className="text-sm font-medium">{cat.name}</span>
-                <ChevronRight className={`w-4 h-4 text-muted-foreground transition-transform ${openCategory === cat.id ? 'rotate-90' : ''}`} />
-              </button>
-              {openCategory === cat.id && (<div className="ml-3 mb-2 border-l-2 border-border pl-3">
-                {ensureArray(cat.subcategories).map((sub, index) => (<Link key={`${cat.id}-mobile-sub-${index}`} to={`/products?category=${cat.slug}&subcategory=${encodeURIComponent(sub)}`} className="block px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors" onClick={handleCloseMenu}>
-                  {sub}
-                </Link>))}
-                <Link to={`/products?category=${cat.slug}`} className="block px-3 py-2 text-sm text-accent font-medium" onClick={handleCloseMenu}>
-                  View All →
-                </Link>
-              </div>)}
-            </div>))}
+        <div className={`absolute inset-y-0 left-0 w-[300px] max-w-[85vw] bg-card shadow-elevated flex flex-col transition-transform duration-300 ease-out ${isClosing ? '-translate-x-full' : 'translate-x-0 animate-slide-in-left'}`}>
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 border-b border-border">
+            <span className="text-lg font-bold text-foreground">
+              Menu
+            </span>
+            <button onClick={handleCloseMenu} className="p-2 -mr-2 text-foreground hover:text-accent transition-colors" aria-label="Close menu">
+              <X className="w-5 h-5" />
+            </button>
           </div>
 
-          <div className="h-px bg-border mx-4 my-3" />
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto py-2">
+            {/* Categories */}
+            <div className="px-2">
+              <p className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                Shop by Category
+              </p>
+              {categories.map((cat) => (
+                <div key={cat.id}>
+                  <button 
+                    onClick={() => setOpenCategory(openCategory === cat.id ? null : cat.id)} 
+                    className={`w-full flex items-center justify-between px-3 py-3 rounded-md transition-colors ${
+                      isCategoryActive(cat.slug)
+                        ? 'text-accent font-semibold'  // Only text color
+                        : 'text-foreground hover:bg-secondary'
+                    }`}
+                  >
+                    <span className="text-sm font-medium">{cat.name}</span>
+                    <ChevronRight className={`w-4 h-4 transition-transform ${
+                      openCategory === cat.id ? 'rotate-90' : ''
+                    } ${
+                      isCategoryActive(cat.slug) ? 'text-accent' : 'text-muted-foreground'
+                    }`} />
+                  </button>
+                  
+                  {openCategory === cat.id && (
+                    <div className="ml-3 mb-2 border-l-2 border-border pl-3">
+                      {ensureArray(cat.subcategories).map((sub, index) => (
+                        <Link 
+                          key={`${cat.id}-mobile-sub-${index}`} 
+                          to={`/products?category=${cat.slug}&subcategory=${encodeURIComponent(sub)}`} 
+                          className={`block px-3 py-2 text-sm transition-colors ${
+                            isSubcategoryActive(cat.slug, sub)
+                              ? 'text-accent font-semibold'  // Only text color
+                              : 'text-muted-foreground hover:text-foreground'
+                          }`} 
+                          onClick={handleCloseMenu}
+                        >
+                          {sub}
+                        </Link>
+                      ))}
+                      <Link 
+                        to={`/products?category=${cat.slug}`} 
+                        className={`block px-3 py-2 text-sm font-medium ${
+                          isCategoryActive(cat.slug) && !location.search.includes('subcategory')
+                            ? 'text-accent font-semibold'  // Only text color
+                            : 'text-accent'
+                        }`} 
+                        onClick={handleCloseMenu}
+                      >
+                        View All →
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
 
-          {/* Quick Links */}
-          <div className="px-2">
-            <p className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              Quick Links
-            </p>
-            {quickLinks.map((item) => (<Link key={item.label} to={item.href} className={`block px-3 py-3 rounded-md transition-colors text-sm ${item.highlight
-              ? "text-accent font-medium"
-              : "text-foreground hover:bg-secondary"}`} onClick={handleCloseMenu}>
+            <div className="h-px bg-border mx-4 my-3" />
+
+            {/* Quick Links */}
+            <div className="px-2">
+              <p className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                Quick Links
+              </p>
+          {quickLinks.map((item) => (
+            <Link 
+              key={item.label} 
+              to={item.href} 
+              className={`block px-3 py-3 rounded-md transition-colors text-sm font-medium ${
+                isQuickLinkActive(item.href) 
+                  ? 'bg-accent/10 text-accent hover:bg-accent/20'  // Active: bg-accent with accent-foreground text
+                  : 'text-gray-600'  // Inactive: bg-accent/10 with accent text
+              }`}
+            >
               {item.label}
-            </Link>))}
-          </div>
-
-          <div className="h-px bg-border mx-4 my-3" />
-
-          {/* Account */}
-          <div className="px-2">
-            <p className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              Account
-            </p>
-            <Link to="/account" className="flex items-center gap-3 px-3 py-3 text-foreground hover:bg-secondary rounded-md transition-colors" onClick={(e) => {
-              handleCloseMenu();
-              const storedUser = localStorage.getItem('user');
-              if (!storedUser) {
-                e.preventDefault();
-                openSignup();
-              }
-            }}>
-              <User className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm">Sign In / Register</span>
             </Link>
-            <Link to="/cart" className="flex items-center gap-3 px-3 py-3 text-foreground hover:bg-secondary rounded-md transition-colors" onClick={handleCloseMenu}>
-              <ShoppingCart className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm">Your Cart ({cartCount})</span>
-            </Link>
+          ))}
+            </div>
+
+            <div className="h-px bg-border mx-4 my-3" />
+
+            {/* Account */}
+            <div className="px-2">
+              <p className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                Account
+              </p>
+              <Link 
+                to="/account" 
+                className={`flex items-center gap-3 px-3 py-3 rounded-md transition-colors ${
+                  location.pathname === '/account'
+                    ? 'text-accent'  // Only text color
+                    : 'text-foreground hover:bg-secondary'
+                }`} 
+                onClick={(e) => {
+                  handleCloseMenu();
+                  const storedUser = localStorage.getItem('user');
+                  if (!storedUser) {
+                    e.preventDefault();
+                    openSignup();
+                  }
+                }}
+              >
+                <User className={`w-4 h-4 ${
+                  location.pathname === '/account' ? 'text-accent' : 'text-muted-foreground'
+                }`} />
+                <span className="text-sm">Sign In / Register</span>
+              </Link>
+              <Link 
+                to="/cart" 
+                className={`flex items-center gap-3 px-3 py-3 rounded-md transition-colors ${
+                  location.pathname === '/cart'
+                    ? 'text-accent'  // Only text color
+                    : 'text-foreground hover:bg-secondary'
+                }`} 
+                onClick={handleCloseMenu}
+              >
+                <ShoppingCart className={`w-4 h-4 ${
+                  location.pathname === '/cart' ? 'text-accent' : 'text-muted-foreground'
+                }`} />
+                <span className="text-sm">Your Cart ({cartCount})</span>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
-    </div>)}
+    )}
   </>);
 }
