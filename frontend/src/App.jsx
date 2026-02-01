@@ -81,7 +81,6 @@ const App = () => {
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <MobileBottomNav />
-              <SignupDialog open={showSignup} onOpenChange={handleSignupOpenChange} />
               </ShopInfoProvider>
             </AuthProvider>
           </CartProvider>
