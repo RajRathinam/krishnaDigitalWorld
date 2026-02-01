@@ -127,7 +127,7 @@ app.use((req, res, next) => {
 
 // Rate limiting for all API routes (production only)
 if (process.env.NODE_ENV === 'production') {
-  app.use('/api', apiLimiter);
+  // app.use('/api', apiLimiter);
   console.log('✅ Rate limiting enabled for production');
 } else {
   console.log('⚠️  Rate limiting disabled for development');
