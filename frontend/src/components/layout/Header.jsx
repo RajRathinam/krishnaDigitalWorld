@@ -324,10 +324,10 @@ export function Header() {
 
     {/* Mobile Menu Overlay */}
     {isMenuOpen && (
-      <div className="lg:hidden fixed inset-0 z-[100]">
+      <div className="lg:hidden fixed bottom-0 inset-0 z-[100]">
         <div className={`absolute inset-0 bg-foreground/40 transition-opacity duration-300 ${isClosing ? 'opacity-0' : 'opacity-100'}`} onClick={handleCloseMenu} />
 
-        <div className={`absolute inset-y-0 left-0 w-[300px] max-w-[85vw] bg-card shadow-elevated flex flex-col transition-transform duration-300 ease-out ${isClosing ? '-translate-x-full' : 'translate-x-0 animate-slide-in-left'}`}>
+        <div className={`absolute bottom-0 inset-y-0 left-0 w-[280px] max-w-[75vw] bg-card shadow-elevated flex flex-col transition-transform duration-300 ease-out ${isClosing ? '-translate-x-full' : 'translate-x-0 animate-slide-in-left'}`}>
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-border">
             <span className="text-lg font-bold text-foreground">
