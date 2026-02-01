@@ -51,13 +51,21 @@ const App = () => {
     const onOpen = () => setShowSignup(true);
     window.addEventListener('openSignup', onOpen);
     
-    // Check if user is already logged in
+    // Check auth status immediately (don't wait for splash)
     const checkAuthStatus = () => {
       const token = localStorage.getItem('authToken');
       const user = localStorage.getItem('user');
+      const forceSignup = localStorage.getItem('forceSignup');
       
+      // If forceSignup flag is set, show signup and clear the flag
+      if (forceSignup === 'true') {
+        localStorage.removeItem('forceSignup');
+        setTimeout(() => {
+          setShowSignup(true);
+        }, 500);
+      } 
       // If user is already authenticated, don't show signup dialog
-      if (token && user) {
+      else if (token && user) {
         setShowSignup(false);
       } else {
         // Only show signup if user hasn't signed up before
@@ -66,20 +74,18 @@ const App = () => {
           // Show signup dialog after a delay
           setTimeout(() => {
             setShowSignup(true);
-          }); // 1 second delay after splash screen
+          }, 3000); // 3 second delay after splash screen
         }
       }
       
       setIsCheckingAuth(false);
     };
     
-    // Check auth after splash screen
-    if (!showSplash) {
-      checkAuthStatus();
-    }
+    // Start auth check immediately
+    checkAuthStatus();
     
     return () => window.removeEventListener('openSignup', onOpen);
-  }, [showSplash]);
+  }, []);
 
   const handleSplashFinish = () => {
     setShowSplash(false);
@@ -92,8 +98,8 @@ const App = () => {
     }
   };
 
-  // Don't render main app while checking auth or showing splash
-  if (showSplash || isCheckingAuth) {
+  // Show splash screen OR main app (not both at the same time)
+  if (showSplash) {
     return (
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
@@ -105,6 +111,7 @@ const App = () => {
     );
   }
 
+  // Main app (splash screen has finished)
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
