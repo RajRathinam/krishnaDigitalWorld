@@ -85,7 +85,7 @@ const SplashScreen = ({ onFinish }) => {
                   scale: animationPhase === 'enter' ? 1 : 0.5
                 }}
                 transition={{
-                  duration: 0.8
+                  duration: 0.5
                 }}
               />
             </div>

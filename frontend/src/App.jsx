@@ -66,7 +66,7 @@ const App = () => {
           // Show signup dialog after a delay
           setTimeout(() => {
             setShowSignup(true);
-          }, 1000); // 1 second delay after splash screen
+          }); // 1 second delay after splash screen
         }
       }
       
