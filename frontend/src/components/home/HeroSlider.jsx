@@ -116,7 +116,7 @@ export function HeroSlider() {
    */
   useEffect(() => {
     if (!isAutoPlaying || isPaused) return;
-    
+
     const timer = setInterval(nextSlide, AUTO_PLAY_INTERVAL);
     return () => clearInterval(timer);
   }, [isAutoPlaying, isPaused, nextSlide]);
@@ -150,169 +150,169 @@ export function HeroSlider() {
   }, [nextSlide, prevSlide]);
 
   return (
-    <section 
-      className="relative w-full h-[60vh] min-h-[400px] sm:h-[400px] md:h-[480px] lg:h-[540px] overflow-hidden bg-muted"
-      onMouseEnter={() => {
-        setIsAutoPlaying(false);
-        setIsPaused(true);
+    <section className="p-4 sm:p-6 lg:p-8">
+      <section
+        className="relative rounded-xl w-full h-[50vh] min-h-[300px] sm:h-[350px] md:h-[380px] lg:h-[480px] overflow-hidden bg-muted mx-auto max-w-8xl"
+        onMouseEnter={() => {
+          setIsAutoPlaying(false);
+          setIsPaused(true);
+        }}
+        onMouseLeave={() => {
+          if (!isPaused) {
+            setIsAutoPlaying(true);
+            setIsPaused(false);
+          }
+        }}
+        aria-label="Hero banner carousel"
+      >
+        {/* Decorative Background Elements */}
+        <div className="absolute top-0 left-0 w-64 h-64 bg-accent/20 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0" />
+        <div className="absolute bottom-0 right-0 w-80 h-80 bg-yellow-400/15 rounded-full blur-3xl translate-x-1/3 translate-y-1/3 pointer-events-none z-0" />
+
+{/* Slides Container */}
+<div className="relative w-full h-full">
+  {slides.map((slide, index) => (
+    <div
+      key={slide.id}
+      className="absolute inset-0 transition-transform duration-700 ease-out"
+      style={{
+        transform: `translateX(${(index - currentSlide) * 100}%)`,
       }}
-      onMouseLeave={() => {
-        if (!isPaused) {
-          setIsAutoPlaying(true);
-          setIsPaused(false);
-        }
-      }}
-      aria-label="Hero banner carousel"
+      aria-hidden={index !== currentSlide}
     >
-      {/* Decorative Background Elements */}
-      <div className="absolute top-0 left-0 w-72 h-72 bg-accent/20 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0" />
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-yellow-400/15 rounded-full blur-3xl translate-x-1/3 translate-y-1/3 pointer-events-none z-0" />
+      {/* Background Image */}
+      <div
+        className="absolute inset-0 bg-cover bg-center transition-transform duration-[8s] ease-out"
+        style={{
+          backgroundImage: `url(${slide.image})`,
+          backgroundPosition: "center center",
+          transform: index === currentSlide ? 'scale(1.05)' : 'scale(1)'
+        }}
+      >
+        {/* Gradient Overlays for Text Readability */}
+        <div className="absolute inset-0 bg-gradient-to-r from-white/80 via-white/40 to-transparent" />
+      </div>
 
-      {/* Slides Container */}
-      <div className="relative w-full h-full">
-        {slides.map((slide, index) => (
-          <div
-            key={slide.id}
-            className="absolute inset-0 transition-transform duration-700 ease-out"
-            style={{
-              transform: `translateX(${(index - currentSlide) * 100}%)`,
-            }}
-            aria-hidden={index !== currentSlide}
-          >
-            {/* Background Image */}
-            <div
-              className="absolute inset-0 bg-cover bg-center transition-transform duration-[8s] ease-out"
-              style={{
-                backgroundImage: `url(${slide.image})`,
-                backgroundPosition: "center center",
-                transform: index === currentSlide ? 'scale(1.05)' : 'scale(1)'
-              }}
+      {/* Content */}
+      <div className="relative h-full container flex flex-col justify-end py-8 items-center sm:items-start text-center sm:text-left px-4 sm:px-6 lg:px-8 z-10">
+        <div
+          className={`max-w-lg lg:max-w-xl transition-all duration-500 delay-200 flex flex-col items-center sm:items-start ${
+            index === currentSlide
+              ? 'opacity-100 translate-y-0 sm:translate-x-0'
+              : 'opacity-0 translate-y-4 sm:translate-y-0 sm:translate-x-8'
+          }`}
+        >
+          {/* Accent Badge */}
+          <span className="inline-block mb-2 sm:mb-3 px-3 sm:px-4 py-1.5 bg-accent text-accent-foreground text-xs sm:text-sm font-semibold rounded-full shadow-lg">
+            {slide.accent}
+          </span>
+
+          {/* Title */}
+          <h1 className="text-2xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-800 mb-2 sm:mb-3 leading-tight">
+            {slide.title}
+          </h1>
+
+          {/* Subtitle */}
+          <p className="text-sm sm:text-sm md:text-base text-gray-700 mb-4 sm:mb-6 max-w-xs sm:max-w-md line-clamp-2 sm:line-clamp-none">
+            {slide.subtitle}
+          </p>
+
+          {/* Call-to-Action Buttons */}
+          <div className="flex flex-wrap gap-3 justify-center sm:justify-start w-full">
+            <Link
+              to={slide.ctaLink}
+              className="group inline-flex items-center gap-2 bg-accent text-accent-foreground font-semibold py-2 px-6 rounded-full hover:bg-accent/90 hover:shadow-lg hover:shadow-accent/30 transition-all duration-300 text-xs sm:text-sm"
+              aria-label={`${slide.cta} - ${slide.title}`}
             >
-              {/* Gradient Overlays for Text Readability */}
-              <div className="absolute inset-0 bg-black/40 sm:bg-gradient-to-r sm:from-black/70 sm:via-black/40 sm:to-transparent" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent sm:hidden" />
-            </div>
-
-            {/* Content */}
-            <div className="relative h-full container flex flex-col justify-center items-center sm:items-start text-center sm:text-left px-4 sm:px-6 lg:px-8 pb-12 sm:pb-0 z-10">
-              <div
-                className={`max-w-lg lg:max-w-xl transition-all duration-500 delay-200 flex flex-col items-center sm:items-start ${
-                  index === currentSlide
-                    ? 'opacity-100 translate-y-0 sm:translate-x-0'
-                    : 'opacity-0 translate-y-4 sm:translate-y-0 sm:translate-x-8'
-                }`}
-              >
-                {/* Accent Badge */}
-                <span className="inline-block mb-3 sm:mb-4 px-3 sm:px-4 py-1.5 bg-accent text-accent-foreground text-xs sm:text-sm font-semibold rounded-full shadow-lg animate-float">
-                  {slide.accent}
-                </span>
-
-                {/* Title */}
-                <h1 className="text-3xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-3 sm:mb-4 leading-tight drop-shadow-lg">
-                  {slide.title}
-                </h1>
-
-                {/* Subtitle */}
-                <p className="text-base sm:text-base md:text-lg text-white/90 mb-6 sm:mb-8 max-w-xs sm:max-w-md line-clamp-3 sm:line-clamp-none">
-                  {slide.subtitle}
-                </p>
-
-                {/* Call-to-Action Buttons */}
-                <div className="flex flex-wrap gap-3 justify-center sm:justify-start w-full">
-                  <Link
-                    to={slide.ctaLink}
-                    className="group inline-flex items-center gap-2 bg-accent text-accent-foreground font-semibold py-3 px-8 rounded-full hover:bg-accent/90 hover:shadow-lg hover:shadow-accent/30 transition-all duration-300 text-sm sm:text-base"
-                    aria-label={`${slide.cta} - ${slide.title}`}
-                  >
-                    {slide.cta}
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </Link>
-                  <Link
-                    to="/products"
-                    className="hidden sm:inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm text-white font-medium py-3 px-6 rounded-full border border-white/25 hover:bg-white/25 hover:border-accent/50 transition-all duration-300 text-sm sm:text-base"
-                    aria-label="View all products"
-                  >
-                    View All
-                  </Link>
-                </div>
-              </div>
-            </div>
+              {slide.cta}
+              <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" />
+            </Link>
+            <Link
+              to="/products"
+              className="hidden sm:inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm text-gray-800 font-medium py-2 px-5 rounded-full border border-white hover:bg-white hover:border-accent/50 transition-all duration-300 text-xs sm:text-sm"
+              aria-label="View all products"
+            >
+              View All
+            </Link>
           </div>
-        ))}
+        </div>
       </div>
+    </div>
+  ))}
+</div>
 
-      {/* Navigation Controls */}
-      {/* Previous Button */}
-      <button
-        onClick={() => {
-          prevSlide();
-          setIsAutoPlaying(false);
-          setIsPaused(true);
-          setTimeout(() => {
-            setIsAutoPlaying(true);
-            setIsPaused(false);
-          }, PAUSE_RESUME_DELAY);
-        }}
-        className="hidden sm:block absolute left-4 lg:left-6 top-1/2 -translate-y-1/2 bg-white/15 backdrop-blur-sm hover:bg-white/25 p-3 rounded-full border border-white/20 transition-all z-20"
-        aria-label="Previous slide"
-      >
-        <ChevronLeft className="w-5 h-5 text-white" />
-      </button>
+        {/* Navigation Controls */}
+        {/* Previous Button */}
+        <button
+          onClick={() => {
+            prevSlide();
+            setIsAutoPlaying(false);
+            setIsPaused(true);
+            setTimeout(() => {
+              setIsAutoPlaying(true);
+              setIsPaused(false);
+            }, PAUSE_RESUME_DELAY);
+          }}
+          className="hidden sm:block absolute left-3 lg:left-4 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-sm hover:bg-white p-2.5 sm:p-3 rounded-full border border-white/40 shadow-sm transition-all z-20"
+          aria-label="Previous slide"
+        >
+          <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700" />
+        </button>
 
-      {/* Next Button */}
-      <button
-        onClick={() => {
-          nextSlide();
-          setIsAutoPlaying(false);
-          setIsPaused(true);
-          setTimeout(() => {
-            setIsAutoPlaying(true);
-            setIsPaused(false);
-          }, PAUSE_RESUME_DELAY);
-        }}
-        className="hidden sm:block absolute right-4 lg:right-6 top-1/2 -translate-y-1/2 bg-white/15 backdrop-blur-sm hover:bg-white/25 p-3 rounded-full border border-white/20 transition-all z-20"
-        aria-label="Next slide"
-      >
-        <ChevronRight className="w-5 h-5 text-white" />
-      </button>
+        {/* Next Button */}
+        <button
+          onClick={() => {
+            nextSlide();
+            setIsAutoPlaying(false);
+            setIsPaused(true);
+            setTimeout(() => {
+              setIsAutoPlaying(true);
+              setIsPaused(false);
+            }, PAUSE_RESUME_DELAY);
+          }}
+          className="hidden sm:block absolute right-3 lg:right-4 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-sm hover:bg-white p-2.5 sm:p-3 rounded-full border border-white/40 shadow-sm transition-all z-20"
+          aria-label="Next slide"
+        >
+          <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700" />
+        </button>
 
-      {/* Play/Pause Button */}
-      <button
-        onClick={togglePlayPause}
-        className="hidden md:block absolute top-4 right-4 bg-white/15 backdrop-blur-sm hover:bg-white/25 p-2 rounded-full border border-white/20 transition-all z-20"
-        aria-label={isPaused ? "Play slideshow" : "Pause slideshow"}
-      >
-        {isPaused ? (
-          <Play className="w-4 h-4 text-white" />
-        ) : (
-          <Pause className="w-4 h-4 text-white" />
-        )}
-      </button>
+        {/* Play/Pause Button */}
+        <button
+          onClick={togglePlayPause}
+          className="hidden md:block absolute top-3 right-3 bg-white/80 backdrop-blur-sm hover:bg-white p-1.5 sm:p-2 rounded-full border border-white/40 shadow-sm transition-all z-20"
+          aria-label={isPaused ? "Play slideshow" : "Pause slideshow"}
+        >
+          {isPaused ? (
+            <Play className="w-3 h-3 sm:w-4 sm:h-4 text-gray-700" />
+          ) : (
+            <Pause className="w-3 h-3 sm:w-4 sm:h-4 text-gray-700" />
+          )}
+        </button>
 
-      {/* Slide Indicators */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-20" role="tablist" aria-label="Slide indicators">
-        {slides.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => handleManualNavigation(index)}
-            className={`h-1.5 sm:h-2 rounded-full transition-all duration-300 ${
-              index === currentSlide
-                ? "w-6 sm:w-8 bg-white"
-                : "w-1.5 sm:w-2 bg-white/40 hover:bg-white/60"
-            }`}
-            aria-label={`Go to slide ${index + 1}`}
-            aria-selected={index === currentSlide}
-            role="tab"
-          />
-        ))}
-      </div>
+        {/* Slide Indicators */}
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 sm:gap-2 z-20" role="tablist" aria-label="Slide indicators">
+          {slides.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => handleManualNavigation(index)}
+              className={`h-1.5 sm:h-2 rounded-full transition-all duration-300 ${index === currentSlide
+                  ? "w-5 sm:w-6 bg-gray-800"
+                  : "w-1.5 sm:w-2 bg-gray-400 hover:bg-gray-600"
+                }`}
+              aria-label={`Go to slide ${index + 1}`}
+              aria-selected={index === currentSlide}
+              role="tab"
+            />
+          ))}
+        </div>
 
-      {/* Slide Counter - Desktop only */}
-      <div className="hidden md:flex absolute bottom-6 right-6 lg:right-8 items-center gap-2 text-white/60 text-sm font-medium z-20">
-        <span className="text-white text-lg">{String(currentSlide + 1).padStart(2, '0')}</span>
-        <span>/</span>
-        <span>{String(slides.length).padStart(2, '0')}</span>
-      </div>
+        {/* Slide Counter - Desktop only */}
+        <div className="hidden md:flex absolute bottom-4 right-4 lg:right-6 items-center gap-1 text-gray-600 text-xs sm:text-sm font-medium z-20">
+          <span className="text-gray-800 text-sm sm:text-base">{String(currentSlide + 1).padStart(2, '0')}</span>
+          <span>/</span>
+          <span>{String(slides.length).padStart(2, '0')}</span>
+        </div>
+      </section>
     </section>
   );
 }

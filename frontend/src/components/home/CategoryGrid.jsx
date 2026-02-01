@@ -90,7 +90,7 @@ export function CategoryGrid() {
   }, []);
 
   return (
-    <section className="py-12 lg:py-16 bg-background">
+    <section className="py-6 lg:py-16 bg-background">
       <div className="container px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-10 lg:mb-14">
@@ -106,12 +106,11 @@ export function CategoryGrid() {
         {/* Categories Grid */}
         <div className="max-w-7xl mx-auto">
           {loading ? (
-            // Loading Skeletons - 4 skeletons for 4 categories
+            // Loading Skeletons - Square shape
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
               {Array.from({ length: MAX_CATEGORIES }).map((_, i) => (
-                <div key={i} className="flex flex-col items-center">
-                  <Skeleton className="w-full aspect-square rounded-lg mb-3" />
-                  <Skeleton className="h-5 w-3/4" />
+                <div key={i} className="aspect-square">
+                  <Skeleton className="w-full h-full rounded-xl" />
                 </div>
               ))}
             </div>
@@ -132,42 +131,30 @@ export function CategoryGrid() {
             // Categories Grid - 2 cols on mobile, 4 cols on desktop
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
               {categories.map((cat, index) => (
-                <div key={cat.id || index} className="group">
+                <div key={cat.id || index} className="group aspect-square">
                   <Link
                     to={`/category/${cat.slug || cat.name?.toLowerCase().replace(/\s+/g, '-')}`}
                     className="block h-full"
                     aria-label={`Browse ${cat.name} category`}
                   >
-                    {/* Card Container */}
-                    <div className="flex flex-col items-center p-3 sm:p-4 border border-border rounded-xl hover:border-accent hover:shadow-lg transition-all duration-300 bg-card h-full">
-                      {/* Image Container */}
-                      <div className="relative w-full aspect-square mb-3 sm:mb-4 rounded-lg overflow-hidden bg-muted">
-                        <img
-                          src={cat.image}
-                          alt={cat.name || 'Category'}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                          loading="lazy"
-                          onError={(e) => {
-                            // Fallback to placeholder if image fails to load
-                            e.target.onerror = null;
-                            e.target.src = getCategoryImage(index);
-                          }}
-                        />
-                        
-                        {/* Hover Overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      </div>
-
-                      {/* Category Name */}
-                      <div className="text-center w-full">
-                        <h3 className="font-medium text-foreground group-hover:text-accent transition-colors duration-300 text-sm sm:text-base line-clamp-2 min-h-[2.5em]">
+                    {/* Card Container - Square Shape */}
+                    <div className="relative h-full rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300">
+                      {/* Background Image */}
+                      <div 
+                        className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
+                        style={{ backgroundImage: `url(${cat.image})` }}
+                      />
+                      
+                      {/* White Gradient Overlay from left to right */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-white/40 via-white/20 to-transparent" />
+                      
+                      {/* Title at Bottom */}
+                      <div className="absolute bottom-0 left-0 right-0 z-10 p-4">
+                        <h3 className="text-gray-800 font-bold text-smm sm:text-xs text-center">
                           {cat.name || 'Category'}
                         </h3>
-                        
-                        {/* Hover Indicator */}
-                        <div className="w-8 h-1 hidden md:block bg-accent mx-auto mt-2 sm:mt-3 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
                       </div>
-                    </div>
+                  </div>
                   </Link>
                 </div>
               ))}
@@ -175,18 +162,7 @@ export function CategoryGrid() {
           )}
         </div>
 
-        {/* View All Categories Link (if more than MAX_CATEGORIES exist) */}
-        {!loading && !error && categories.length > 0 && categories.length >= MAX_CATEGORIES && (
-          <div className="text-center mt-8">
-            <Link
-              to="/products"
-              className="inline-flex items-center gap-2 text-sm font-medium text-accent hover:text-accent/80 transition-colors"
-            >
-              View All Categories
-              <span>→</span>
-            </Link>
-          </div>
-        )}
+    
       </div>
     </section>
   );

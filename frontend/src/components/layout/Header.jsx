@@ -322,148 +322,164 @@ export function Header() {
       </div>
     </header>
 
-    {/* Mobile Menu Overlay */}
-    {isMenuOpen && (
-      <div className="lg:hidden fixed bottom-0 inset-0 z-[100]">
-        <div className={`absolute inset-0 bg-foreground/40 transition-opacity duration-300 ${isClosing ? 'opacity-0' : 'opacity-100'}`} onClick={handleCloseMenu} />
+{/* Mobile Menu Overlay */}
+{isMenuOpen && (
+  <div className="lg:hidden fixed inset-0 z-[100]">
+    <div className={`absolute inset-0 bg-foreground/40 transition-opacity duration-300 ${isClosing ? 'opacity-0' : 'opacity-100'}`} onClick={handleCloseMenu} />
 
-        <div className={`absolute bottom-0 inset-y-0 left-0 w-[280px] max-w-[75vw] bg-card shadow-elevated flex flex-col transition-transform duration-300 ease-out ${isClosing ? '-translate-x-full' : 'translate-x-0 animate-slide-in-left'}`}>
-          {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-border">
-            <span className="text-lg font-bold text-foreground">
-              Menu
-            </span>
-            <button onClick={handleCloseMenu} className="p-2 -mr-2 text-foreground hover:text-accent transition-colors" aria-label="Close menu">
-              <X className="w-5 h-5" />
-            </button>
-          </div>
+    <div className={`absolute inset-y-0 left-0 w-[280px] max-w-[75vw] bg-card shadow-elevated flex flex-col transition-transform duration-300 ease-out ${isClosing ? '-translate-x-full' : 'translate-x-0 animate-slide-in-left'}`}>
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b border-border">
+        <span className="text-lg font-bold text-foreground">
+          Menu
+        </span>
+        <button onClick={handleCloseMenu} className="p-2 -mr-2 text-foreground hover:text-accent transition-colors" aria-label="Close menu">
+          <X className="w-5 h-5" />
+        </button>
+      </div>
 
-          {/* Content */}
-          <div className="flex-1 overflow-y-auto py-2">
-            {/* Categories */}
-            <div className="px-2">
-              <p className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                Shop by Category
-              </p>
-              {categories.map((cat) => (
-                <div key={cat.id}>
-                  <button 
-                    onClick={() => setOpenCategory(openCategory === cat.id ? null : cat.id)} 
-                    className={`w-full flex items-center justify-between px-3 py-3 rounded-md transition-colors ${
-                      isCategoryActive(cat.slug)
-                        ? 'text-accent font-semibold'  // Only text color
-                        : 'text-foreground hover:bg-secondary'
-                    }`}
-                  >
-                    <span className="text-sm font-medium">{cat.name}</span>
-                    <ChevronRight className={`w-4 h-4 transition-transform ${
-                      openCategory === cat.id ? 'rotate-90' : ''
-                    } ${
-                      isCategoryActive(cat.slug) ? 'text-accent' : 'text-muted-foreground'
-                    }`} />
-                  </button>
-                  
-                  {openCategory === cat.id && (
-                    <div className="ml-3 mb-2 border-l-2 border-border pl-3">
-                      {ensureArray(cat.subcategories).map((sub, index) => (
-                        <Link 
-                          key={`${cat.id}-mobile-sub-${index}`} 
-                          to={`/products?category=${cat.slug}&subcategory=${encodeURIComponent(sub)}`} 
-                          className={`block px-3 py-2 text-sm transition-colors ${
-                            isSubcategoryActive(cat.slug, sub)
-                              ? 'text-accent font-semibold'  // Only text color
-                              : 'text-muted-foreground hover:text-foreground'
-                          }`} 
-                          onClick={handleCloseMenu}
-                        >
-                          {sub}
-                        </Link>
-                      ))}
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto py-2">
+        {/* Categories */}
+        <div className="px-2">
+          <p className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            Shop by Category
+          </p>
+          {categories.map((cat) => {
+            // Get first 4 subcategories
+            const subcategories = ensureArray(cat.subcategories);
+            const firstFourSubcategories = subcategories.slice(0, 4);
+            const hasMoreSubcategories = subcategories.length > 4;
+            
+            return (
+              <div key={cat.id}>
+                <button 
+                  onClick={() => setOpenCategory(openCategory === cat.id ? null : cat.id)} 
+                  className={`w-full flex items-center justify-between px-3 py-3 rounded-md transition-colors ${
+                    isCategoryActive(cat.slug)
+                      ? 'text-accent font-semibold'
+                      : 'text-foreground hover:bg-secondary'
+                  }`}
+                >
+                  <span className="text-sm font-medium">{cat.name}</span>
+                  <ChevronRight className={`w-4 h-4 transition-transform ${
+                    openCategory === cat.id ? 'rotate-90' : ''
+                  } ${
+                    isCategoryActive(cat.slug) ? 'text-accent' : 'text-muted-foreground'
+                  }`} />
+                </button>
+                
+                {openCategory === cat.id && (
+                  <div className="ml-3 mb-2 border-l-2 border-border pl-3">
+                    {/* Show only first 4 subcategories */}
+                    {firstFourSubcategories.map((sub, index) => (
                       <Link 
-                        to={`/products?category=${cat.slug}`} 
-                        className={`block px-3 py-2 text-sm font-medium ${
-                          isCategoryActive(cat.slug) && !location.search.includes('subcategory')
-                            ? 'text-accent font-semibold'  // Only text color
-                            : 'text-accent'
+                        key={`${cat.id}-mobile-sub-${index}`} 
+                        to={`/products?category=${cat.slug}&subcategory=${encodeURIComponent(sub)}`} 
+                        className={`block px-3 py-2 text-sm transition-colors ${
+                          isSubcategoryActive(cat.slug, sub)
+                            ? 'text-accent font-semibold'
+                            : 'text-muted-foreground hover:text-foreground'
                         }`} 
                         onClick={handleCloseMenu}
                       >
-                        View All →
+                        {sub}
                       </Link>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+                    ))}
+                    
+             
+                    
+                    {/* Regular "View All" link for the category */}
+                    <Link 
+                      to={`/products?category=${cat.slug}`} 
+                      className={`block px-3 py-2 text-sm font-medium mt-1 ${
+                        isCategoryActive(cat.slug) && !location.search.includes('subcategory')
+                          ? 'text-accent font-semibold'
+                          : 'text-accent'
+                      }`} 
+                      onClick={handleCloseMenu}
+                    >
+                      View All Products
+                    </Link>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
 
-            <div className="h-px bg-border mx-4 my-3" />
+        <div className="h-px bg-border mx-4 my-3" />
 
-            {/* Quick Links */}
-            <div className="px-2">
-              <p className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                Quick Links
-              </p>
+        {/* Quick Links */}
+        <div className="px-2">
+          <p className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            Quick Links
+          </p>
           {quickLinks.map((item) => (
             <Link 
               key={item.label} 
               to={item.href} 
               className={`block px-3 py-3 rounded-md transition-colors text-sm font-medium ${
                 isQuickLinkActive(item.href) 
-                  ? 'bg-accent/10 text-accent hover:bg-accent/20'  // Active: bg-accent with accent-foreground text
-                  : 'text-gray-600'  // Inactive: bg-accent/10 with accent text
+                  ? 'bg-accent/10 text-accent hover:bg-accent/20'
+                  : 'text-gray-600'
               }`}
             >
               {item.label}
             </Link>
           ))}
-            </div>
+        </div>
 
-            <div className="h-px bg-border mx-4 my-3" />
+        <div className="h-px bg-border mx-4 my-3" />
 
-            {/* Account */}
-            <div className="px-2">
-              <p className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                Account
-              </p>
-              <Link 
-                to="/account" 
-                className={`flex items-center gap-3 px-3 py-3 rounded-md transition-colors ${
-                  location.pathname === '/account'
-                    ? 'text-accent'  // Only text color
-                    : 'text-foreground hover:bg-secondary'
-                }`} 
-                onClick={(e) => {
-                  handleCloseMenu();
-                  const storedUser = localStorage.getItem('user');
-                  if (!storedUser) {
-                    e.preventDefault();
-                    openSignup();
-                  }
-                }}
-              >
-                <User className={`w-4 h-4 ${
-                  location.pathname === '/account' ? 'text-accent' : 'text-muted-foreground'
-                }`} />
-                <span className="text-sm">Sign In / Register</span>
-              </Link>
-              <Link 
-                to="/cart" 
-                className={`flex items-center gap-3 px-3 py-3 rounded-md transition-colors ${
-                  location.pathname === '/cart'
-                    ? 'text-accent'  // Only text color
-                    : 'text-foreground hover:bg-secondary'
-                }`} 
-                onClick={handleCloseMenu}
-              >
-                <ShoppingCart className={`w-4 h-4 ${
-                  location.pathname === '/cart' ? 'text-accent' : 'text-muted-foreground'
-                }`} />
-                <span className="text-sm">Your Cart ({cartCount})</span>
-              </Link>
-            </div>
-          </div>
+        {/* Account */}
+        <div className="px-2">
+          <p className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            Account
+          </p>
+          <Link 
+            to="/account" 
+            className={`flex items-center gap-3 px-3 py-3 rounded-md transition-colors ${
+              location.pathname === '/account'
+                ? 'text-accent'
+                : 'text-foreground hover:bg-secondary'
+            }`} 
+            onClick={(e) => {
+              handleCloseMenu();
+              const storedUser = localStorage.getItem('user');
+              if (!storedUser) {
+                e.preventDefault();
+                openSignup();
+              }
+            }}
+          >
+            <User className={`w-4 h-4 ${
+              location.pathname === '/account' ? 'text-accent' : 'text-muted-foreground'
+            }`} />
+            <span className="text-sm">Sign In / Register</span>
+          </Link>
+          <Link 
+            to="/cart" 
+            className={`flex items-center gap-3 px-3 py-3 rounded-md transition-colors ${
+              location.pathname === '/cart'
+                ? 'text-accent'
+                : 'text-foreground hover:bg-secondary'
+            }`} 
+            onClick={handleCloseMenu}
+          >
+            <ShoppingCart className={`w-4 h-4 ${
+              location.pathname === '/cart' ? 'text-accent' : 'text-muted-foreground'
+            }`} />
+            <span className="text-sm">Your Cart ({cartCount})</span>
+          </Link>
         </div>
       </div>
-    )}
+    </div>
+  </div>
+)}
   </>);
 }
+
+
+
+
