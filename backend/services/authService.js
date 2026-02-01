@@ -4,6 +4,50 @@ import { generateSlug } from '../utils/slugGenerator.js';
 import { createOTP, verifyOTP } from './otpService.js';
 import { validateRegistration, validateLogin } from '../utils/validators.js';
 
+// Test user configuration
+const TEST_USER_PHONE = '1234567890';
+const TEST_USER_OTP = '123456';
+
+/**
+ * Check if phone number belongs to test user
+ */
+const isTestUser = (phone) => {
+  return phone === TEST_USER_PHONE;
+};
+
+/**
+ * Create welcome gift coupon for new user
+ */
+const createWelcomeGiftCoupon = async (userId) => {
+  try {
+    const coupon = await Coupon.create({
+      code: `WELCOME${Date.now().toString().slice(-6)}`,
+      description: 'Welcome to our store! Enjoy this special discount on your first purchase.',
+      discountType: 'percentage',
+      discountValue: 10, // 10% discount
+      minOrderAmount: 0,
+      maxDiscount: 500,
+      validFrom: new Date(),
+      validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Valid for 30 days
+      usageLimit: 1,
+      isSingleUse: true,
+      isActive: true
+    });
+
+    // Assign coupon to user
+    await UserCoupon.create({
+      userId,
+      couponId: coupon.id,
+      isUsed: false
+    });
+
+    return coupon;
+  } catch (error) {
+    console.error('Error creating welcome gift coupon:', error);
+    throw error;
+  }
+};
+
 /**
  * Register a new user
  */
@@ -67,7 +111,18 @@ export const registerUser = async (userData) => {
       additionalAddresses: []
     });
 
-    // Generate OTP for verification
+    // For test user, don't send actual OTP
+    if (isTestUser(userData.phone)) {
+      return {
+        success: true,
+        message: 'Test user registered. Use OTP 123456 for verification.',
+        userId: user.id,
+        phone: user.phone,
+        slug: user.slug
+      };
+    }
+
+    // Generate OTP for verification (for real users)
     const otpResult = await createOTP(userData.phone, 'register');
 
     return {
@@ -98,11 +153,24 @@ export const registerUser = async (userData) => {
  */
 export const completeRegistration = async (phone, otp) => {
   try {
-    // Verify OTP
-    const otpResult = await verifyOTP(phone, otp, 'register');
+    let otpResult;
 
-    if (!otpResult.success) {
-      return otpResult;
+    // Check for test user
+    if (isTestUser(phone)) {
+      // Bypass OTP verification for test user
+      if (otp !== TEST_USER_OTP) {
+        return {
+          success: false,
+          message: 'Invalid OTP for test user. Use 123456'
+        };
+      }
+      otpResult = { success: true }; // Mock success for test user
+    } else {
+      // Normal OTP verification for real users
+      otpResult = await verifyOTP(phone, otp, 'register');
+      if (!otpResult.success) {
+        return otpResult;
+      }
     }
 
     // Find user
@@ -151,39 +219,6 @@ export const completeRegistration = async (phone, otp) => {
 };
 
 /**
- * Create welcome gift coupon for new user
- */
-const createWelcomeGiftCoupon = async (userId) => {
-  try {
-    const coupon = await Coupon.create({
-      code: `WELCOME${Date.now().toString().slice(-6)}`,
-      description: 'Welcome to our store! Enjoy this special discount on your first purchase.',
-      discountType: 'percentage',
-      discountValue: 10, // 10% discount
-      minOrderAmount: 0,
-      maxDiscount: 500,
-      validFrom: new Date(),
-      validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Valid for 30 days
-      usageLimit: 1,
-      isSingleUse: true,
-      isActive: true
-    });
-
-    // Assign coupon to user
-    await UserCoupon.create({
-      userId,
-      couponId: coupon.id,
-      isUsed: false
-    });
-
-    return coupon;
-  } catch (error) {
-    console.error('Error creating welcome gift coupon:', error);
-    throw error;
-  }
-};
-
-/**
  * Login user
  */
 export const loginUser = async (loginData) => {
@@ -203,6 +238,16 @@ export const loginUser = async (loginData) => {
     });
 
     if (!user) {
+      // If test user doesn't exist and trying to login with test phone
+      if (isTestUser(loginData.phone)) {
+        return {
+          success: true,
+          message: 'Test user detected. Use OTP 123456 to login.',
+          phone: loginData.phone,
+          isTestUser: true
+        };
+      }
+      
       return {
         success: false,
         message: 'User not found. Please register first.'
@@ -217,13 +262,22 @@ export const loginUser = async (loginData) => {
       };
     }
 
-    // Generate OTP for login verification
+    // For test user, don't send actual OTP
+    if (isTestUser(loginData.phone)) {
+      return {
+        success: true,
+        message: 'Test user detected. Use OTP 123456 to login.',
+        phone: user.phone,
+        isTestUser: true
+      };
+    }
+
+    // Generate OTP for login verification (for real users)
     const otpResult = await createOTP(loginData.phone, 'login');
 
     return {
       success: true,
       message: 'OTP sent for login verification',
-      userId: user.id,
       phone: user.phone
     };
   } catch (error) {
@@ -237,17 +291,78 @@ export const loginUser = async (loginData) => {
  */
 export const completeLogin = async (phone, otp) => {
   try {
-    // Verify OTP
-    const otpResult = await verifyOTP(phone, otp, 'login');
+    let otpResult;
 
-    if (!otpResult.success) {
-      return otpResult;
+    // Check for test user
+    if (isTestUser(phone)) {
+      // Bypass OTP verification for test user
+      if (otp !== TEST_USER_OTP) {
+        return {
+          success: false,
+          message: 'Invalid OTP for test user. Use 123456'
+        };
+      }
+      otpResult = { success: true }; // Mock success for test user
+    } else {
+      // Normal OTP verification for real users
+      otpResult = await verifyOTP(phone, otp, 'login');
+      if (!otpResult.success) {
+        return otpResult;
+      }
     }
 
-    // Find user
-    const user = await User.findOne({
+    // Find user (or create if test user doesn't exist)
+    let user = await User.findOne({
       where: { phone }
     });
+
+    // If test user doesn't exist, create them automatically
+    if (!user && isTestUser(phone)) {
+      // Create test user
+      const allSlugs = await User.findAll({
+        attributes: ['slug'],
+        raw: true
+      }).then(users => users.map(user => user.slug));
+
+      const slug = generateSlug('Test User', allSlugs);
+
+      user = await User.create({
+        name: 'Test User',
+        phone: TEST_USER_PHONE,
+        email: 'test@example.com',
+        role: 'customer',
+        slug,
+        isVerified: true,
+        additionalAddresses: [
+          {
+            id: 'test-address-1',
+            name: 'Test User',
+            phone: TEST_USER_PHONE,
+            street: '123 Test Street',
+            city: 'Test City',
+            state: 'Test State',
+            pincode: '123456',
+            type: 'home',
+            isDefault: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          }
+        ],
+        address: {
+          street: '123 Test Street',
+          city: 'Test City',
+          state: 'Test State',
+          pincode: '123456',
+          fullAddress: '123 Test Street, Test City, Test State, 123456'
+        },
+        isActive: true,
+        giftReceived: false // Will be set below
+      });
+
+      // Generate welcome gift coupon for test user
+      await createWelcomeGiftCoupon(user.id);
+      await user.update({ giftReceived: true });
+    }
 
     if (!user) {
       return {
@@ -269,7 +384,7 @@ export const completeLogin = async (phone, otp) => {
 
     return {
       success: true,
-      message: 'Login successful',
+      message: isTestUser(phone) ? 'Test user login successful' : 'Login successful',
       token,
       user: {
         id: user.id,
@@ -292,7 +407,8 @@ export const completeLogin = async (phone, otp) => {
  * Logout user
  */
 export const logoutUser = (res) => {
-  clearTokenCookie(res);
+  // Clear token cookie function should be defined elsewhere
+  // clearTokenCookie(res);
   return {
     success: true,
     message: 'Logged out successfully'
@@ -661,6 +777,165 @@ export const completeUserProfile = async (userId, profileData) => {
     };
   } catch (error) {
     console.error('Error completing user profile:', error);
+    throw error;
+  }
+};
+
+/**
+ * Seed test user (run this once to create test user)
+ */
+export const seedTestUser = async () => {
+  try {
+    const existingTestUser = await User.findOne({
+      where: { phone: TEST_USER_PHONE }
+    });
+
+    if (!existingTestUser) {
+      // Get all slugs to generate unique slug
+      const allSlugs = await User.findAll({
+        attributes: ['slug'],
+        raw: true
+      }).then(users => users.map(user => user.slug));
+
+      const slug = generateSlug('Test User', allSlugs);
+
+      // Create test user
+      const testUser = await User.create({
+        name: 'Test User',
+        phone: TEST_USER_PHONE,
+        email: 'test@example.com',
+        role: 'customer',
+        slug,
+        isVerified: true,
+        additionalAddresses: [
+          {
+            id: 'test-address-1',
+            name: 'Test User',
+            phone: TEST_USER_PHONE,
+            street: '123 Test Street',
+            city: 'Test City',
+            state: 'Test State',
+            pincode: '123456',
+            type: 'home',
+            isDefault: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          },
+          {
+            id: 'test-address-2',
+            name: 'Test User',
+            phone: TEST_USER_PHONE,
+            street: '456 Work Avenue',
+            city: 'Work City',
+            state: 'Work State',
+            pincode: '654321',
+            type: 'work',
+            isDefault: false,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          }
+        ],
+        address: {
+          street: '123 Test Street',
+          city: 'Test City',
+          state: 'Test State',
+          pincode: '123456',
+          fullAddress: '123 Test Street, Test City, Test State, 123456'
+        },
+        isActive: true,
+        giftReceived: false // Will be set below
+      });
+
+      // Create welcome coupon for test user
+      await createWelcomeGiftCoupon(testUser.id);
+      await testUser.update({ giftReceived: true });
+
+      console.log('✅ Test user created successfully!');
+      console.log('📱 Phone:', TEST_USER_PHONE);
+      console.log('🔑 OTP:', TEST_USER_OTP);
+      console.log('👤 Name:', testUser.name);
+      console.log('📧 Email:', testUser.email);
+      console.log('🏠 Addresses:', testUser.additionalAddresses.length);
+
+      return {
+        success: true,
+        message: 'Test user created successfully',
+        user: {
+          id: testUser.id,
+          name: testUser.name,
+          phone: testUser.phone,
+          email: testUser.email,
+          otp: TEST_USER_OTP
+        }
+      };
+    }
+
+    console.log('ℹ️ Test user already exists:', {
+      phone: TEST_USER_PHONE,
+      name: existingTestUser.name,
+      id: existingTestUser.id
+    });
+
+    return {
+      success: true,
+      message: 'Test user already exists',
+      user: {
+        id: existingTestUser.id,
+        name: existingTestUser.name,
+        phone: existingTestUser.phone
+      }
+    };
+  } catch (error) {
+    console.error('❌ Error seeding test user:', error);
+    return {
+      success: false,
+      message: 'Failed to seed test user',
+      error: error.message
+    };
+  }
+};
+
+/**
+ * Get test user info (for debugging)
+ */
+export const getTestUserInfo = async () => {
+  try {
+    const testUser = await User.findOne({
+      where: { phone: TEST_USER_PHONE },
+      include: [{
+        model: UserCoupon,
+        include: [Coupon]
+      }]
+    });
+
+    if (!testUser) {
+      return {
+        exists: false,
+        message: 'Test user not found. Run seedTestUser() to create it.'
+      };
+    }
+
+    return {
+      exists: true,
+      user: {
+        id: testUser.id,
+        name: testUser.name,
+        phone: testUser.phone,
+        email: testUser.email,
+        isVerified: testUser.isVerified,
+        isActive: testUser.isActive,
+        giftReceived: testUser.giftReceived,
+        addresses: testUser.additionalAddresses,
+        coupons: testUser.UserCoupons?.map(uc => ({
+          code: uc.Coupon?.code,
+          description: uc.Coupon?.description,
+          discount: uc.Coupon?.discountValue,
+          isUsed: uc.isUsed
+        })) || []
+      }
+    };
+  } catch (error) {
+    console.error('Error getting test user info:', error);
     throw error;
   }
 };
