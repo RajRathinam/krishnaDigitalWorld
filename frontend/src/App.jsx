@@ -45,13 +45,41 @@ const queryClient = new QueryClient();
 const App = () => {
   const [showSignup, setShowSignup] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   useEffect(() => {
     const onOpen = () => setShowSignup(true);
     window.addEventListener('openSignup', onOpen);
     
+    // Check if user is already logged in
+    const checkAuthStatus = () => {
+      const token = localStorage.getItem('authToken');
+      const user = localStorage.getItem('user');
+      
+      // If user is already authenticated, don't show signup dialog
+      if (token && user) {
+        setShowSignup(false);
+      } else {
+        // Only show signup if user hasn't signed up before
+        const hasSignedUp = localStorage.getItem('hasSignedUp');
+        if (!hasSignedUp) {
+          // Show signup dialog after a delay
+          setTimeout(() => {
+            setShowSignup(true);
+          }, 1000); // 1 second delay after splash screen
+        }
+      }
+      
+      setIsCheckingAuth(false);
+    };
+    
+    // Check auth after splash screen
+    if (!showSplash) {
+      checkAuthStatus();
+    }
+    
     return () => window.removeEventListener('openSignup', onOpen);
-  }, []);
+  }, [showSplash]);
 
   const handleSplashFinish = () => {
     setShowSplash(false);
@@ -64,61 +92,65 @@ const App = () => {
     }
   };
 
+  // Don't render main app while checking auth or showing splash
+  if (showSplash || isCheckingAuth) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <SplashScreen onFinish={handleSplashFinish} />
+          <Toaster />
+          <Sonner />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        {/* Always show splash screen first */}
-        {showSplash && (
-          <SplashScreen onFinish={handleSplashFinish} />
-        )}
-        
-        {/* Show main app only after splash screen finishes */}
-        {!showSplash && (
-          <BrowserRouter>
-            <ScrollToTop />
-            <CartProvider>
-              <AuthProvider>
-                <ShopInfoProvider>
-                  <Routes>
-                    {/* Customer-only routes */}
-                    <Route element={<CustomerGuard />}>
-                      <Route path="/" element={<Index />} />
-                      <Route path="/products" element={<ProductListing />} />
-                      <Route path="/category/:category" element={<ProductListing />} />
-                      <Route path="/product/:slug" element={<ProductDetail />} />
-                      <Route path="/cart" element={<Cart />} />
-                      <Route path="/checkout" element={<Checkout />} />
-                      <Route path="/account" element={<Account />} />
-                      <Route path="/help" element={<Help />} />
-                      <Route path="/deals" element={<TodaysDeals />} />
-                      <Route path="/new-arrivals" element={<NewArrivals />} />
-                      <Route path="/best-sellers" element={<BestSellersPage />} />
-                      <Route path="/about-us" element={<AboutUs />} />
+        <BrowserRouter>
+          <ScrollToTop />
+          <CartProvider>
+            <AuthProvider>
+              <ShopInfoProvider>
+                <Routes>
+                  <Route element={<CustomerGuard />}>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/products" element={<ProductListing />} />
+                    <Route path="/category/:category" element={<ProductListing />} />
+                    <Route path="/product/:slug" element={<ProductDetail />} />
+                    <Route path="/cart" element={<Cart />} />
+                    <Route path="/checkout" element={<Checkout />} />
+                    <Route path="/account" element={<Account />} />
+                    <Route path="/help" element={<Help />} />
+                    <Route path="/deals" element={<TodaysDeals />} />
+                    <Route path="/new-arrivals" element={<NewArrivals />} />
+                    <Route path="/best-sellers" element={<BestSellersPage />} />
+                    <Route path="/about-us" element={<AboutUs />} />
 
-                      {/* New footer pages */}
-                      <Route path="/careers" element={<Careers />} />
-                      <Route path="/our-promise" element={<OurPromise />} />
-                      <Route path="/contact" element={<Contact />} />
-                      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-                      <Route path="/terms-conditions" element={<TermsConditions />} />
-                      <Route path="/shipping-policy" element={<ShippingPolicy />} />
-                      <Route path="/refund-policy" element={<RefundPolicy />} />
-                      <Route path="/return-policy" element={<ReturnPolicy />} />
-                      <Route path="/help-support" element={<HelpSupport />} />
-                      <Route path="/warranty-info" element={<WarrantyInfo />} />
-                      <Route path="/installation-support" element={<InstallationSupport />} />
-                    </Route>
+                    <Route path="/careers" element={<Careers />} />
+                    <Route path="/our-promise" element={<OurPromise />} />
+                    <Route path="/contact" element={<Contact />} />
+                    <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                    <Route path="/terms-conditions" element={<TermsConditions />} />
+                    <Route path="/shipping-policy" element={<ShippingPolicy />} />
+                    <Route path="/refund-policy" element={<RefundPolicy />} />
+                    <Route path="/return-policy" element={<ReturnPolicy />} />
+                    <Route path="/help-support" element={<HelpSupport />} />
+                    <Route path="/warranty-info" element={<WarrantyInfo />} />
+                    <Route path="/installation-support" element={<InstallationSupport />} />
+                  </Route>
 
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                  <MobileBottomNav />
-                  <SignupDialog open={showSignup} onOpenChange={handleSignupOpenChange} />
-                </ShopInfoProvider>
-              </AuthProvider>
-            </CartProvider>
-          </BrowserRouter>
-        )}
-        {/* Toaster and Sonner are always present */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+                <MobileBottomNav />
+                
+                {/* Only show signup dialog if user is not authenticated */}
+                <SignupDialog open={showSignup} onOpenChange={handleSignupOpenChange} />
+              </ShopInfoProvider>
+            </AuthProvider>
+          </CartProvider>
+        </BrowserRouter>
         <Toaster />
         <Sonner />
       </TooltipProvider>

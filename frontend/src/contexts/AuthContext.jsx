@@ -110,6 +110,7 @@ export const AuthProvider = ({ children }) => {
             // ignore network errors
         }
         localStorage.removeItem("authToken");
+        localStorage.removeItem("hasSignedUp");
         setLocalUser(null);
         window.dispatchEvent(new Event("authChanged"));
     };

@@ -44,15 +44,6 @@ const Index = () => {
       offset: 50,
       disable: 'mobile' // Disable animations on mobile to prevent blank spaces
     });
-
-    // Show signup modal after 5 seconds if user hasn't signed up
-    const hasSignedUp = localStorage.getItem("hasSignedUp");
-    if (!hasSignedUp) {
-      const timer = setTimeout(() => {
-        window.dispatchEvent(new Event('openSignup'));
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
   }, []);
 
   return (
