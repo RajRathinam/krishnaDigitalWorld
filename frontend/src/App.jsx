@@ -40,6 +40,21 @@ import InstallationSupport from "@/components/contentPages/InstallationSupport";
 const queryClient = new QueryClient();
 
 const App = () => {
+  const [showSignup, setShowSignup] = useState(false);
+
+  useEffect(() => {
+    const onOpen = () => setShowSignup(true);
+    window.addEventListener('openSignup', onOpen);
+    return () => window.removeEventListener('openSignup', onOpen);
+  }, []);
+
+  const handleSignupOpenChange = (open) => {
+    setShowSignup(open);
+    if (!open) {
+      localStorage.setItem('hasSignedUp', 'true');
+    }
+  };
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -81,6 +96,7 @@ const App = () => {
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <MobileBottomNav />
+              <SignupDialog open={showSignup} onOpenChange={handleSignupOpenChange} />
               </ShopInfoProvider>
             </AuthProvider>
           </CartProvider>
