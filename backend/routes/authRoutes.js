@@ -26,10 +26,10 @@ import { authLimiter, otpLimiter } from '../middleware/rateLimiter.js';
 const router = express.Router();
 
 // Public routes
-router.post('/register', authLimiter, validateRegistrationData, register);
-router.post('/verify-otp', authLimiter, validateOTPData, verifyOTP);
-router.post('/login', authLimiter, validateLoginData, login);
-router.post('/verify-login', authLimiter, validateOTPData, verifyLogin);
+router.post('/register', validateRegistrationData, register);
+router.post('/verify-otp', validateOTPData, verifyOTP);
+router.post('/login', validateLoginData, login);
+router.post('/verify-login', validateOTPData, verifyLogin);
 router.post('/resend-otp', otpLimiter, validateResendOTPData, resendOTPController);
 
 // Protected routes
