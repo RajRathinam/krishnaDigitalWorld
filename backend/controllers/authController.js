@@ -1,8 +1,8 @@
-import { 
-  registerUser, 
-  completeRegistration, 
-  loginUser, 
-  completeLogin, 
+import {
+  registerUser,
+  completeRegistration,
+  loginUser,
+  completeLogin,
   logoutUser,
   getCurrentUser,
   updateUserProfile,
@@ -23,19 +23,18 @@ import { setTokenCookie, clearTokenCookie } from '../utils/jwt.js';
 export const register = async (req, res) => {
   try {
     const result = await registerUser(req.body);
-    
+
     if (!result.success) {
       return res.status(400).json(result);
     }
-    
+
     res.status(201).json({
       success: true,
       message: result.message,
       data: {
         userId: result.userId,
         phone: result.phone,
-        slug: result.slug,
-        otp: result.otp // Only in development
+        slug: result.slug
       }
     });
   } catch (error) {
@@ -55,16 +54,16 @@ export const register = async (req, res) => {
 export const verifyOTP = async (req, res) => {
   try {
     const { phone, otp } = req.body;
-    
+
     const result = await completeRegistration(phone, otp);
-    
+
     if (!result.success) {
       return res.status(400).json(result);
     }
-    
+
     // Set token cookie
     setTokenCookie(res, result.token);
-    
+
     res.status(200).json({
       success: true,
       message: result.message,
@@ -77,7 +76,8 @@ export const verifyOTP = async (req, res) => {
     console.error('Verify OTP error:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error during OTP verification'
+      message: 'Server error during OTP verification',
+      error: error.message
     });
   }
 };
@@ -90,18 +90,17 @@ export const verifyOTP = async (req, res) => {
 export const login = async (req, res) => {
   try {
     const result = await loginUser(req.body);
-    
+
     if (!result.success) {
       return res.status(401).json(result);
     }
-    
+
     res.status(200).json({
       success: true,
       message: result.message,
       data: {
         userId: result.userId,
-        phone: result.phone,
-        otp: result.otp // Only in development
+        phone: result.phone
       }
     });
   } catch (error) {
@@ -121,16 +120,16 @@ export const login = async (req, res) => {
 export const verifyLogin = async (req, res) => {
   try {
     const { phone, otp } = req.body;
-    
+
     const result = await completeLogin(phone, otp);
-    
+
     if (!result.success) {
       return res.status(401).json(result);
     }
-    
+
     // Set token cookie
     setTokenCookie(res, result.token);
-    
+
     res.status(200).json({
       success: true,
       message: result.message,
@@ -143,7 +142,8 @@ export const verifyLogin = async (req, res) => {
     console.error('Verify login error:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error during login verification'
+      message: 'Server error during login verification',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
@@ -156,20 +156,19 @@ export const verifyLogin = async (req, res) => {
 export const resendOTPController = async (req, res) => {
   try {
     const { phone, purpose } = req.body;
-    
+
     const result = await resendOTP(phone, purpose);
-    
+
     if (!result.success) {
       return res.status(400).json(result);
     }
-    
+
     res.status(200).json({
       success: true,
       message: 'OTP resent successfully',
       data: {
         phone,
-        purpose,
-        otp: process.env.NODE_ENV === 'development' ? result.otp : undefined
+        purpose
       }
     });
   } catch (error) {
@@ -209,11 +208,11 @@ export const logout = (req, res) => {
 export const getMe = async (req, res) => {
   try {
     const result = await getCurrentUser(req.user.id);
-    
+
     if (!result.success) {
       return res.status(404).json(result);
     }
-    
+
     // Ensure address structure is consistent
     const userData = result.user;
     const responseData = {
@@ -229,7 +228,7 @@ export const getMe = async (req, res) => {
       isVerified: userData.isVerified,
       createdAt: userData.createdAt
     };
-    
+
     res.status(200).json({
       success: true,
       data: responseData
@@ -251,11 +250,11 @@ export const getMe = async (req, res) => {
 export const updateMe = async (req, res) => {
   try {
     const result = await updateUserProfile(req.user.id, req.body);
-    
+
     if (!result.success) {
       return res.status(400).json(result);
     }
-    
+
     res.status(200).json({
       success: true,
       message: result.message,
@@ -278,11 +277,11 @@ export const updateMe = async (req, res) => {
 export const completeProfile = async (req, res) => {
   try {
     const result = await completeUserProfile(req.user.id, req.body);
-    
+
     if (!result.success) {
       return res.status(400).json(result);
     }
-    
+
     res.status(200).json({
       success: true,
       message: result.message,
@@ -305,11 +304,11 @@ export const completeProfile = async (req, res) => {
 export const addAddress = async (req, res) => {
   try {
     const result = await addAdditionalAddress(req.user.id, req.body);
-    
+
     if (!result.success) {
       return res.status(400).json(result);
     }
-    
+
     res.status(201).json({
       success: true,
       message: result.message,
@@ -336,11 +335,11 @@ export const updateAddress = async (req, res) => {
   try {
     const { addressId } = req.params;
     const result = await updateAdditionalAddress(req.user.id, addressId, req.body);
-    
+
     if (!result.success) {
       return res.status(400).json(result);
     }
-    
+
     res.status(200).json({
       success: true,
       message: result.message,
@@ -367,11 +366,11 @@ export const deleteAddress = async (req, res) => {
   try {
     const { addressId } = req.params;
     const result = await deleteAdditionalAddress(req.user.id, addressId);
-    
+
     if (!result.success) {
       return res.status(400).json(result);
     }
-    
+
     res.status(200).json({
       success: true,
       message: result.message,
@@ -397,11 +396,11 @@ export const setDefaultAddressController = async (req, res) => {
   try {
     const { addressId } = req.params;
     const result = await setDefaultAddress(req.user.id, addressId);
-    
+
     if (!result.success) {
       return res.status(400).json(result);
     }
-    
+
     res.status(200).json({
       success: true,
       message: result.message,

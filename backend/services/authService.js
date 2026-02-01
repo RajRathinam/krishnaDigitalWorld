@@ -75,12 +75,11 @@ export const registerUser = async (userData) => {
       message: 'Registration successful. OTP sent for verification.',
       userId: user.id,
       phone: user.phone,
-      slug: user.slug,
-      otp: process.env.NODE_ENV === 'development' ? otpResult.otp : undefined
+      slug: user.slug
     };
   } catch (error) {
     console.error('Error registering user:', error);
-    
+
     // Handle unique constraint errors
     if (error.name === 'SequelizeUniqueConstraintError') {
       const field = error.errors[0].path;
@@ -101,7 +100,7 @@ export const completeRegistration = async (phone, otp) => {
   try {
     // Verify OTP
     const otpResult = await verifyOTP(phone, otp, 'register');
-    
+
     if (!otpResult.success) {
       return otpResult;
     }
@@ -225,8 +224,7 @@ export const loginUser = async (loginData) => {
       success: true,
       message: 'OTP sent for login verification',
       userId: user.id,
-      phone: user.phone,
-      otp: process.env.NODE_ENV === 'development' ? otpResult.otp : undefined
+      phone: user.phone
     };
   } catch (error) {
     console.error('Error in login:', error);
@@ -241,7 +239,7 @@ export const completeLogin = async (phone, otp) => {
   try {
     // Verify OTP
     const otpResult = await verifyOTP(phone, otp, 'login');
-    
+
     if (!otpResult.success) {
       return otpResult;
     }
@@ -372,7 +370,7 @@ export const updateUserProfile = async (userId, updateData) => {
       // If address is an object, format it as primary address
       const { street, city, state, pincode, ...rest } = updateData.address;
       const fullAddress = `${street || ''}${city ? `, ${city}` : ''}${state ? `, ${state}` : ''}${pincode ? `, ${pincode}` : ''}`;
-      
+
       // Save structured address in JSON
       updateData.address = {
         street: street || '',
@@ -409,7 +407,7 @@ export const updateUserProfile = async (userId, updateData) => {
     };
   } catch (error) {
     console.error('Error updating user profile:', error);
-    
+
     // Handle unique constraint errors
     if (error.name === 'SequelizeUniqueConstraintError') {
       const field = error.errors[0].path;
@@ -438,9 +436,9 @@ export const addAdditionalAddress = async (userId, addressData) => {
     }
 
     // Generate proper UUID for the address
-    const addressId = crypto.randomUUID ? crypto.randomUUID() : 
+    const addressId = crypto.randomUUID ? crypto.randomUUID() :
       Date.now().toString(36) + Math.random().toString(36).substr(2);
-    
+
     const newAddress = {
       id: addressId,
       name: addressData.name || user.name,
@@ -457,7 +455,7 @@ export const addAdditionalAddress = async (userId, addressData) => {
 
     // Get current additional addresses or initialize empty array
     let additionalAddresses = user.additionalAddresses || [];
-    
+
     // If this is the first additional address, set as default
     if (additionalAddresses.length === 0) {
       newAddress.isDefault = true;
@@ -557,7 +555,7 @@ export const deleteAdditionalAddress = async (userId, addressId) => {
     }
 
     const wasDefault = additionalAddresses[addressIndex].isDefault;
-    
+
     // Remove address
     additionalAddresses = additionalAddresses.filter(addr => String(addr.id) !== String(addressId));
 
@@ -597,7 +595,7 @@ export const setDefaultAddress = async (userId, addressId) => {
     }
 
     const additionalAddresses = user.additionalAddresses || [];
-    
+
     // Update all addresses: set the selected one as default, others as not default
     const updatedAddresses = additionalAddresses.map(addr => ({
       ...addr,
@@ -632,7 +630,7 @@ export const completeUserProfile = async (userId, profileData) => {
     }
 
     const updateData = {};
-    
+
     if (profileData.dateOfBirth) {
       updateData.dateOfBirth = profileData.dateOfBirth;
     }

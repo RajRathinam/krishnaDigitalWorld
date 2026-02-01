@@ -5,9 +5,13 @@ export function cn(...inputs) {
 }
 
 export const getImageUrl = (path) => {
-    if (!path) return '';
+    if (!path) return '/placeholder.svg';
     if (path.startsWith('http')) return path;
-    // Use environment variable or default to localhost:5000
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-    return `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;
+
+    // Return relative path - let the proxy handle it
+    // If it starts with /uploads, return as is (relative)
+    if (path.startsWith('/uploads')) return path;
+
+    // If it doesn't start with /, add it
+    return path.startsWith('/') ? path : `/${path}`;
 };

@@ -376,11 +376,14 @@ export function SignupDialog({ open, onOpenChange }) {
                         </p>
                     </DialogHeader>
 
-                    {devOtp && (<div className="px-6 pb-2">
-                        <p className="text-sm text-muted-foreground">
-                            Dev OTP: <span className="font-mono">{devOtp}</span>
-                        </p>
-                    </div>)}
+                    {devOtp && /^\d{6}$/.test(devOtp) && (
+                        <div className="px-6 pb-2">
+                            <p className="text-sm text-muted-foreground">
+                                Dev OTP: <span className="font-mono">{devOtp}</span>
+                            </p>
+                        </div>
+                    )}
+
 
                     <div className="space-y-6">
                         <div className="flex justify-center">

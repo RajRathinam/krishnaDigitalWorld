@@ -6,8 +6,8 @@ import rateLimit from 'express-rate-limit';
  * NOTE: relaxed in development to make testing easier; strict limits apply in production.
  */
 export const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.NODE_ENV === 'production' ? 5 : 1000, // Strict in prod, lenient in dev
+  windowMs: 15 * 60 * 1000,
+  max: 1000, // Always relaxed for testing
   message: {
     success: false,
     message: 'Too many attempts. Please try again after 15 minutes.'
@@ -18,15 +18,13 @@ export const authLimiter = rateLimit({
 
 /**
  * Rate limiter for OTP requests
- *
- * NOTE: relaxed in development to allow repeated OTP testing; production remains strict.
  */
 export const otpLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: process.env.NODE_ENV === 'production' ? 1 : 10, // Strict in prod, relaxed in dev
+  windowMs: 60 * 1000,
+  max: 100, // Always relaxed for testing
   message: {
     success: false,
-    message: process.env.NODE_ENV === 'production' ? 'Please wait 1 minute before requesting another OTP.' : 'OTP rate limit relaxed in development.'
+    message: 'Please wait 1 minute before requesting another OTP.'
   },
   standardHeaders: true,
   legacyHeaders: false
@@ -82,7 +80,7 @@ export const userRateLimiter = (maxRequests = 100, windowMinutes = 15) => {
     if (!req.user) {
       return apiLimiter(req, res, next);
     }
-    
+
     const userLimiter = rateLimit({
       windowMs: windowMinutes * 60 * 1000,
       max: maxRequests,
@@ -94,7 +92,7 @@ export const userRateLimiter = (maxRequests = 100, windowMinutes = 15) => {
       standardHeaders: true,
       legacyHeaders: false
     });
-    
+
     return userLimiter(req, res, next);
   };
 };

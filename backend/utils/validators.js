@@ -55,7 +55,7 @@ export const validateOTP = (data) => {
     errors.otp = 'Valid 6-digit OTP is required';
   }
 
-  if (!data.purpose || !['register', 'login', 'reset'].includes(data.purpose)) {
+  if (data.purpose && !['register', 'login', 'reset'].includes(data.purpose)) {
     errors.purpose = 'Valid purpose is required';
   }
 
@@ -67,23 +67,23 @@ export const validateOTP = (data) => {
 // utils/validators.js - Add this function
 export const validateResendOTP = (data) => {
   const errors = {};
-  
+
   // Phone validation
   if (!data.phone || data.phone.trim() === '') {
     errors.phone = 'Phone number is required';
   } else if (!/^\+?[\d\s\-\(\)]{10,}$/.test(data.phone.replace(/\s/g, ''))) {
     errors.phone = 'Invalid phone number format';
   }
-  
+
   // Purpose validation
   if (!data.purpose || data.purpose.trim() === '') {
     errors.purpose = 'Purpose is required';
   } else if (!['register', 'login', 'reset'].includes(data.purpose)) {
     errors.purpose = 'Valid purpose is required (register, login, reset)';
   }
-  
+
   // No OTP validation for resend!
-  
+
   return {
     isValid: Object.keys(errors).length === 0,
     errors
@@ -321,26 +321,26 @@ export const sanitizeInput = (input) => {
   if (!input || typeof input !== 'object') {
     return input;
   }
-  
+
   // Create a new object
   const sanitized = Array.isArray(input) ? [] : {};
-  
+
   Object.keys(input).forEach(key => {
     let value = input[key];
-    
+
     if (typeof value === 'string') {
       // Trim and escape
       value = value.trim();
       value = value.replace(/[<>]/g, '');
     }
-    
+
     // Recursively sanitize nested objects
     if (value && typeof value === 'object') {
       value = sanitizeInput(value);
     }
-    
+
     sanitized[key] = value;
   });
-  
+
   return sanitized;
 };

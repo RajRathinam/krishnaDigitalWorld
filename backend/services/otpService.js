@@ -1,7 +1,8 @@
-// services/otpService.js
 import { Otp } from '../models/index.js';
-import { Sequelize } from 'sequelize';
+import { Op } from 'sequelize';
 import CryptoJS from 'crypto-js';
+import { sendOTPSMS } from './smsService.js';
+
 
 /**
  * Generate a 6-digit OTP
@@ -10,21 +11,22 @@ export const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
+
 /**
- * Create OTP record
+ * Create OTP record + send SMS
  */
 export const createOTP = async (phone, purpose) => {
   try {
-    // Delete any existing OTPs for this phone and purpose
+    // delete old OTPs
     await Otp.destroy({
-      where: {
-        phone,
-        purpose
-      }
+      where: { phone, purpose }
     });
 
     const otp = generateOTP();
-    const expiresAt = new Date(Date.now() + (process.env.OTP_EXPIRY_MINUTES || 10) * 60 * 1000);
+
+    const expiresAt = new Date(
+      Date.now() + (process.env.OTP_EXPIRY_MINUTES || 10) * 60 * 1000
+    );
 
     const otpRecord = await Otp.create({
       phone,
@@ -34,148 +36,105 @@ export const createOTP = async (phone, purpose) => {
       isUsed: false
     });
 
+    // ✅ SEND SMS HERE
+    await sendOTPSMS(phone, otp, purpose);
+
     return {
       success: true,
       otpRecord,
-      otp // In development, return OTP. In production, send via SMS/Email
+      otp // keep only for development testing
     };
+
   } catch (error) {
     console.error('Error creating OTP:', error);
     throw error;
   }
 };
 
+
 /**
  * Verify OTP
  */
 export const verifyOTP = async (phone, inputOtp, purpose) => {
   try {
-    // FIXED: Use the correct field name - let Sequelize handle the conversion
     const otpRecord = await Otp.findOne({
       where: {
         phone,
         purpose,
         isUsed: false
       },
-      order: [['created_at', 'DESC']] // Use JavaScript field name - Sequelize will convert it
+      order: [['id', 'DESC']]
     });
 
     if (!otpRecord) {
-      return {
-        success: false,
-        message: 'OTP not found or already used'
-      };
+      return { success: false, message: 'OTP not found or used' };
     }
 
-    // Check if OTP is expired
     if (new Date() > otpRecord.expiresAt) {
-      // Mark as used
       await otpRecord.update({ isUsed: true });
-      return {
-        success: false,
-        message: 'OTP has expired'
-      };
+      return { success: false, message: 'OTP expired' };
     }
 
-    // Verify OTP using instance method
     const isValid = otpRecord.verifyOtp(inputOtp);
 
     if (!isValid) {
-      return {
-        success: false,
-        message: 'Invalid OTP'
-      };
+      return { success: false, message: 'Invalid OTP' };
     }
 
-    // Mark OTP as used
     await otpRecord.update({ isUsed: true });
 
-    return {
-      success: true,
-      message: 'OTP verified successfully'
-    };
+    return { success: true, message: 'OTP verified' };
+
   } catch (error) {
-    console.error('Error verifying OTP:', error);
+    console.error('Verify error:', error);
     throw error;
   }
 };
+
 
 /**
  * Resend OTP
  */
 export const resendOTP = async (phone, purpose) => {
-  try {
-    // Delete any existing unused OTPs for this phone
-    await Otp.destroy({
-      where: {
-        phone,
-        purpose,
-        isUsed: false
-      }
-    });
+  await Otp.destroy({
+    where: { phone, purpose, isUsed: false }
+  });
 
-    return await createOTP(phone, purpose);
-  } catch (error) {
-    console.error('Error resending OTP:', error);
-    throw error;
-  }
+  return await createOTP(phone, purpose);
 };
 
+
 /**
- * Clean up expired OTPs
+ * Cleanup expired OTPs
  */
 export const cleanupExpiredOTPs = async () => {
-  try {
-    const result = await Otp.destroy({
-      where: {
-        expiresAt: {
-          [Sequelize.Op.lt]: new Date()
-        }
-      }
-    });
-
-    console.log(`Cleaned up ${result} expired OTPs`);
-    return result;
-  } catch (error) {
-    console.error('Error cleaning up expired OTPs:', error);
-    throw error;
-  }
+  return await Otp.destroy({
+    where: {
+      expiresAt: { [Op.lt]: new Date() }
+    }
+  });
 };
 
+
 /**
- * Get OTP details (for debugging)
+ * Debug helper
  */
 export const getOTPDetails = async (phone, purpose) => {
-  try {
-    const otpRecord = await Otp.findOne({
-      where: {
-        phone,
-        purpose
-      },
-      order: [['createdAt', 'DESC']]
-    });
+  const otpRecord = await Otp.findOne({
+    where: { phone, purpose },
+    order: [['createdAt', 'DESC']]
+  });
 
-    if (!otpRecord) {
-      return null;
-    }
+  if (!otpRecord) return null;
 
-    // Decrypt OTP for display (development only)
-    const decryptedOTP = CryptoJS.AES.decrypt(
-      otpRecord.otp,
-      process.env.OTP_SECRET_KEY
-    ).toString(CryptoJS.enc.Utf8);
+  const decryptedOTP = CryptoJS.AES.decrypt(
+    otpRecord.otp,
+    process.env.OTP_SECRET_KEY
+  ).toString(CryptoJS.enc.Utf8);
 
-    return {
-      id: otpRecord.id,
-      phone: otpRecord.phone,
-      otp: decryptedOTP,
-      purpose: otpRecord.purpose,
-      expiresAt: otpRecord.expiresAt,
-      isUsed: otpRecord.isUsed,
-      createdAt: otpRecord.createdAt
-    };
-  } catch (error) {
-    console.error('Error getting OTP details:', error);
-    throw error;
-  }
+  return {
+    phone,
+    otp: decryptedOTP,
+    expiresAt: otpRecord.expiresAt
+  };
 };

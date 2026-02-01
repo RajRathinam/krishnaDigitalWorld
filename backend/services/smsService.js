@@ -1,53 +1,53 @@
-// This is a mock SMS service
-// In production, integrate with Twilio, AWS SNS, etc.
+import axios from "axios";
 
 /**
- * Send SMS (mock implementation)
+ * Send SMS using Fast2SMS DLT route
  */
 export const sendSMS = async (to, message) => {
   try {
-    console.log('Mock SMS Service:');
-    console.log('To:', to);
-    console.log('Message:', message);
-    console.log('---');
+    // extract OTP digits from message text
+    const otpMatch = message.match(/\d{4,6}/);
+    const otp = otpMatch ? otpMatch[0] : "";
 
-    // In production, implement actual SMS sending
-    // Example with Twilio:
-    /*
-    const client = require('twilio')(
-      process.env.TWILIO_ACCOUNT_SID,
-      process.env.TWILIO_AUTH_TOKEN
+    const response = await axios.post(
+      "https://www.fast2sms.com/dev/bulkV2",
+      {
+        route: "dlt",
+        sender_id: process.env.FAST2SMS_SENDER_ID,
+        message: process.env.FAST2SMS_TEMPLATE_ID,
+        variables_values: otp,
+        flash: 0,
+        numbers: to
+      },
+      {
+        headers: {
+          "authorization": process.env.FAST2SMS_API_KEY,
+          "Content-Type": "application/json"
+        }
+      }
     );
 
-    const result = await client.messages.create({
-      body: message,
-      from: process.env.TWILIO_PHONE_NUMBER,
-      to: to
-    });
+    console.log("Fast2SMS sent:", response.data);
 
     return {
       success: true,
-      message: 'SMS sent successfully',
-      sid: result.sid
+      message: "SMS sent successfully"
     };
-    */
 
-    return {
-      success: true,
-      message: 'SMS sent successfully (mock)'
-    };
   } catch (error) {
-    console.error('Error sending SMS:', error);
+    console.error("SMS failed:", error.response?.data || error.message);
+
     return {
       success: false,
-      message: 'Failed to send SMS',
-      error: error.message
+      message: "Failed to send SMS"
     };
   }
 };
 
+
+
 /**
- * Send OTP via SMS
+ * Send OTP SMS
  */
 export const sendOTPSMS = async (phone, otp, purpose) => {
   const purposes = {
@@ -56,52 +56,27 @@ export const sendOTPSMS = async (phone, otp, purpose) => {
     reset: 'password reset'
   };
 
-  const message = `Your OTP for ${purposes[purpose]} is ${otp}. Valid for ${process.env.OTP_EXPIRY_MINUTES} minute(s). Do not share with anyone.`;
+  const message =
+    `Your OTP for ${purposes[purpose]} is ${otp}. ` +
+    `Valid for ${process.env.OTP_EXPIRY_MINUTES} minute(s).`;
 
   return await sendSMS(phone, message);
 };
 
 /**
- * Send welcome SMS
- */
-export const sendWelcomeSMS = async (phone, name) => {
-  const message = `Welcome ${name}! Thank you for registering. You've received a 10% discount coupon on your first purchase. Happy shopping!`;
-
-  return await sendSMS(phone, message);
-};
-
-/**
- * Send birthday SMS
- */
-export const sendBirthdaySMS = async (phone, name, couponCode) => {
-  const message = `Happy Birthday ${name}! 🎉 Use coupon code ${couponCode} for 15% off on your next purchase. Valid for 7 days.`;
-
-  return await sendSMS(phone, message);
-};
-
-/**
- * Send order confirmation SMS
- */
-export const sendOrderConfirmationSMS = async (phone, orderNumber, amount) => {
-  const message = `Order ${orderNumber} confirmed. Amount: ₹${amount.toFixed(2)}. We'll notify you when it ships.`;
-
-  return await sendSMS(phone, message);
-};
-
-/**
- * Send order shipped SMS
+ * Send Order Shipped SMS
  */
 export const sendOrderShippedSMS = async (phone, orderNumber, trackingId) => {
-  const message = `Your order ${orderNumber} has been shipped! Track your order: ${process.env.APP_URL}/orders/track/${trackingId}`;
-
-  return await sendSMS(phone, message);
+  // TODO: Implement actual Fast2SMS call with appropriate DLT template
+  console.log(`[SMS] Order ${orderNumber} shipped. Tracking: ${trackingId}. To: ${phone}`);
+  return { success: true, message: "SMS logged (not sent - missing template)" };
 };
 
 /**
- * Send order delivered SMS
+ * Send Order Delivered SMS
  */
 export const sendOrderDeliveredSMS = async (phone, orderNumber) => {
-  const message = `Your order ${orderNumber} has been delivered! We hope you enjoy your purchase. Thank you for shopping with us!`;
-
-  return await sendSMS(phone, message);
+  // TODO: Implement actual Fast2SMS call with appropriate DLT template
+  console.log(`[SMS] Order ${orderNumber} delivered. To: ${phone}`);
+  return { success: true, message: "SMS logged (not sent - missing template)" };
 };
