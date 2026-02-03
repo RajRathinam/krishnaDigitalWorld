@@ -17,3 +17,4 @@ export { BundleOffers } from './BundleOffers';
 export { FeaturedProjects } from './FeaturedProjects';
 export { SignupDialog } from './SignupDialog';
 
+export { SubcategorySlider } from './SubcategorySlider';

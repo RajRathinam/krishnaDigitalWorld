@@ -31,6 +31,9 @@ import {
   FeaturedProjects
 } from "@/components/home";
 
+// Import SubcategorySlider
+import { SubcategorySlider } from "@/components/home";
+
 const Index = () => {
   /**
    * Initialize AOS (Animate On Scroll) library and handle signup modal
@@ -52,9 +55,14 @@ const Index = () => {
       <Header />
 
       {/* Main Content */}
-      <main className="relative">
+      <main className="relative ">
         {/* Hero Section - Full width banner with call-to-action */}
         <HeroSlider />
+
+        {/* Subcategory Slider - Circle images of subcategories */}
+        <div data-aos="fade-up">
+          <SubcategorySlider />
+        </div>
 
         {/* Category Grid - Browse products by category */}
         <CategoryGrid />

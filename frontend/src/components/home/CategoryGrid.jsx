@@ -22,6 +22,7 @@ import { categoryApi } from '@/services/api';
 import { Skeleton } from "@/components/ui/skeleton";
 import { SplitHeading } from "@/components/ui/split-heading";
 import { AlertCircle } from "lucide-react";
+import { ChevronsUp } from "lucide-react";
 
 // Category images - 4 images for 4 categories
 const CATEGORY_IMAGES = [
@@ -90,8 +91,8 @@ export function CategoryGrid() {
   }, []);
 
   return (
-    <section className="py-6 lg:py-16 bg-background">
-      <div className="container px-4 sm:px-6 lg:px-8">
+    <section className="lg:py-16 bg-background">
+      <div className="container p-3 sm:p-6 lg:p-8">
         {/* Section Header */}
         <div className="text-center mb-10 lg:mb-14">
           <SplitHeading 
@@ -144,16 +145,13 @@ export function CategoryGrid() {
                         className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
                         style={{ backgroundImage: `url(${cat.image})` }}
                       />
-                      
-                      {/* White Gradient Overlay from left to right */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-white/40 via-white/20 to-transparent" />
-                      
-                      {/* Title at Bottom */}
-                      <div className="absolute bottom-0 left-0 right-0 z-10 p-4">
-                        <h3 className="text-gray-800 font-bold text-smm sm:text-xs text-center">
-                          {cat.name || 'Category'}
-                        </h3>
-                      </div>
+  
+<div className="absolute bottom-0 left-0 right-0 z-10 p-4 flex justify-center">
+<ChevronsUp 
+    size={28} 
+    className="text-gray-500 animate-bounce"/>
+</div>
+
                   </div>
                   </Link>
                 </div>
