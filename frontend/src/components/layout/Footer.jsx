@@ -50,7 +50,7 @@ export function Footer() {
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
-  return (<footer className="mt-12 pb-20 md:pb-0">
+  return (<footer className="mt-12 pb-16 md:pb-0">
     {/* Back to Top */}
     <button onClick={scrollToTop} className="w-full bg-secondary hover:bg-secondary/80 text-secondary-foreground py-3 text-sm font-medium transition-colors border-t border-border">
       <span className="flex items-center justify-center gap-2">
@@ -169,7 +169,7 @@ export function Footer() {
             href="https://infygrid.in"
             target="_blank"
             rel="noopener noreferrer"
-            className="focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary/30 rounded"
+            className="focus:outline-none rounded"
           >
             <img
               src="/infygrid_logo.png"
