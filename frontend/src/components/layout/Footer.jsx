@@ -158,12 +158,12 @@ export function Footer() {
 
     {/* Bottom Footer */}
     <div className="bg-secondary/50">
-      <div className="container flex justify-between items-center py-6 px-4">
+      <div className="container flex flex-col md:flex-row justify-between items-center py-6 px-4">
         <div className="text-center text-xs text-muted-foreground">
           <span>© {new Date().getFullYear()} {shopInfo?.shopName || 'Sri Krishna Home Appliances'}.</span>
         </div>
         {/* Powered by section - centered below on mobile, inline on desktop */}
-        <div className="flex items-center gap-1.5 text-xs text-primary-foreground/50 mt-2 md:mt-0">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground text- mt-2 md:mt-0">
           <span>Powered by</span>
           <a
             href="https://infygrid.in"
