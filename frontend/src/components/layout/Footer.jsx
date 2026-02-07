@@ -131,23 +131,44 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Divider */}
-        <div className="border-t border-primary-foreground/10">
-          <div className="container py-6 flex flex-col md:flex-row items-center justify-center gap-4">
-            <Link to="/" className="flex items-center gap-2">
-              <span className="text-xl font-display font-semibold text-primary-foreground">Sri Krishna</span>
-              <span className="text-xl font-display font-semibold text-accent">Digital World</span>
-            </Link>
-            <div className="flex items-center gap-4 text-primary-foreground/60 text-sm">
-              <span className="flex items-center gap-1">
-                <MapPin className="w-3.5 h-3.5"/> 
-                {shopInfo?.city && shopInfo?.state 
-                  ? `${shopInfo.city}, ${shopInfo.state}`
-                  : 'Nagapattinam, Tamil Nadu'}
-              </span>
-            </div>
-          </div>
-        </div>
+{/* Divider */}
+<div className="border-t border-primary-foreground/10">
+  <div className="container py-6 flex flex-col items-center gap-4">
+    {/* Store name and location row */}
+    <div className="flex flex-col md:flex-row items-center justify-center gap-4 w-full">
+      <Link to="/" className="flex items-center gap-2">
+        <span className="text-xl font-display font-semibold text-primary-foreground">Sri Krishna</span>
+        <span className="text-xl font-display font-semibold text-accent">Digital World</span>
+      </Link>
+      
+      <div className="flex items-center gap-4 text-primary-foreground/60 text-sm">
+        <span className="flex items-center gap-1">
+          <MapPin className="w-3.5 h-3.5"/> 
+          {shopInfo?.city && shopInfo?.state 
+            ? `${shopInfo.city}, ${shopInfo.state}`
+            : 'Nagapattinam, Tamil Nadu'}
+        </span>
+      </div>
+    </div>
+    
+    {/* Powered by section - centered below on mobile, inline on desktop */}
+    <div className="flex items-center gap-1.5 text-xs text-primary-foreground/50 mt-2 md:mt-0">
+      <span>Powered by</span>
+      <a 
+        href="https://infygrid.in" 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary/30 rounded"
+      >
+        <img 
+          src="/infygrid_logo.png" 
+          alt="Infygrid" 
+          className="h-4 w-auto object-contain hover:opacity-80 transition-opacity"
+        />
+      </a>
+    </div>
+  </div>
+</div>
       </div>
 
       {/* Bottom Footer */}

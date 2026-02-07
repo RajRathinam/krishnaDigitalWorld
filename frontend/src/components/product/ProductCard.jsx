@@ -562,7 +562,7 @@ export function ProductCard({ product, variant = "default", selectedColor }) {
             </button>
 
             {/* Image */}
-            <div className="aspect-square bg-secondary/30 rounded-lg flex items-center justify-center mb-4 overflow-hidden">
+            <div className="aspect-square bg-white rounded-lg flex items-center justify-center mb-4 overflow-hidden">
                 <img src={getImageUrl(displayImageUrl)} alt={name} className="w-full h-full object-contain" onError={(e) => {
                     e.currentTarget.src = '/placeholder.svg';
                 }} />
