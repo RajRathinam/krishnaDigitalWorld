@@ -15,7 +15,13 @@ const sequelize = new Sequelize(
     dialectModule: mysql2,
     dialectOptions: {
       charset: 'utf8mb4',
-      // Remove 'collate' - mysql2 doesn't support it directly
+      // Try this approach instead
+      typeCast: function (field, next) {
+        if (field.type === 'STRING' || field.type === 'VAR_STRING') {
+          return field.string();
+        }
+        return next();
+      },
       connectTimeout: 60000,
       decimalNumbers: true,
       supportBigNumbers: true,
@@ -34,9 +40,12 @@ const sequelize = new Sequelize(
       createdAt: 'created_at',
       updatedAt: 'updated_at',
       charset: 'utf8mb4',
-      collate: 'utf8mb4_unicode_ci' // Keep here in define, not in dialectOptions
+      collate: 'utf8mb4_unicode_ci'
     },
-    timezone: '+05:30'
+    timezone: '+05:30',
+    // Add this to ensure proper charset handling
+    charset: 'utf8mb4',
+    collation: 'utf8mb4_unicode_ci'
   }
 );
 
