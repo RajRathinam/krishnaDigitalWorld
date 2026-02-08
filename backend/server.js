@@ -42,24 +42,21 @@ console.log(`   NODE_ENV: ${process.env.NODE_ENV}`);
 console.log(`   FRONTEND_URL: ${process.env.FRONTEND_URL}`);
 console.log(`   ADMIN_URL: ${process.env.ADMIN_URL}`);
 
-// CORS configuration - Hardcoded for reliability
+// CORS configuration - Allow ONLY your two domains
 const allowedOrigins = [
-  'https://srikrishnadigitalworld.in',
-  'https://admin.srikrishnadigitalworld.in',
-  'https://www.srikrishnadigitalworld.in',
-  'https://www.admin.srikrishnadigitalworld.in',
-  'http://localhost:3000',    // For local frontend development
-  'http://localhost:3001'     // For local admin development
-];
+  process.env.FRONTEND_URL,
+  process.env.ADMIN_URL,
+  process.env.FRONTEND_URL_1,
+  process.env.ADMIN_URL_1,
+].filter(Boolean);
 
 console.log('🌐 Allowed CORS Origins:', allowedOrigins);
 
-// CORS configuration
+// Simple CORS configuration
 const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (server-to-server, curl, etc.)
     if (!origin) {
-      console.log('ℹ️  No origin header (server-to-server request)');
       return callback(null, true);
     }
 
@@ -74,25 +71,38 @@ const corsOptions = {
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
-  exposedHeaders: ['Content-Range', 'X-Content-Range'],
-  maxAge: 86400, // 24 hours
-  preflightContinue: false,
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   optionsSuccessStatus: 204
 };
 
 // Security middleware
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" },
-  contentSecurityPolicy: false // Disable if causing issues with external resources
+  crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 
-// Apply CORS middleware - ONLY THIS ONE
+// Apply CORS middleware
 app.use(cors(corsOptions));
 
-// Request logging middleware (before routes)
+// Manual CORS headers and OPTIONS handling - NO app.options() call
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} ${req.method} ${req.path} - Origin: ${req.headers.origin || 'none'}`);
+  const origin = req.headers.origin;
+
+  // Set CORS headers
+  if (origin && allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+  }
+
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+
+  // Handle preflight OPTIONS requests
+  if (req.method === 'OPTIONS') {
+    console.log(`🔄 OPTIONS preflight request from: ${origin}`);
+    return res.status(204).end();
+  }
+
+  console.log(`${new Date().toISOString()} ${req.method} ${req.originalUrl} - Origin: ${origin || 'none'}`);
   next();
 });
 
@@ -106,13 +116,12 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 console.log('✅ Serving static files from /uploads directory');
 
-// Detailed request logging
+// Request logging
 app.use((req, res, next) => {
   const start = Date.now();
   res.on('finish', () => {
     const duration = Date.now() - start;
-    const origin = req.headers.origin || 'none';
-    console.log(`${req.method} ${req.originalUrl} ${res.statusCode} - ${duration}ms - Origin: ${origin}`);
+    console.log(`${req.method} ${req.originalUrl} ${res.statusCode} - ${duration}ms`);
   });
   next();
 });
@@ -151,27 +160,18 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV,
     allowedOrigins: allowedOrigins,
-    requestOrigin: req.headers.origin || 'none',
-    headers: req.headers
+    requestOrigin: req.headers.origin || 'none'
   });
 });
 
 // CORS test endpoint
 app.get('/api/cors-test', (req, res) => {
-  const origin = req.headers.origin || 'Not provided';
-  const isAllowed = allowedOrigins.includes(origin);
-  
   res.status(200).json({
     success: true,
     message: 'CORS test successful',
-    origin: origin,
-    allowed: isAllowed,
-    allowedOrigins: allowedOrigins,
+    origin: req.headers.origin || 'Not provided',
     timestamp: new Date().toISOString(),
-    headers: {
-      'access-control-allow-origin': res.getHeader('access-control-allow-origin'),
-      'access-control-allow-credentials': res.getHeader('access-control-allow-credentials')
-    }
+    allowed: allowedOrigins.includes(req.headers.origin || '')
   });
 });
 
@@ -183,7 +183,6 @@ app.get('/', (req, res) => {
     version: '1.0.0',
     endpoints: {
       health: '/api/health',
-      corsTest: '/api/cors-test',
       auth: '/api/auth',
       products: '/api/products',
       categories: '/api/categories',
@@ -195,21 +194,18 @@ app.get('/', (req, res) => {
 
 // 404 handler
 app.use((req, res) => {
-  console.log(`❌ 404: ${req.method} ${req.originalUrl} - Origin: ${req.headers.origin || 'none'}`);
+  console.log(`❌ 404: ${req.method} ${req.originalUrl}`);
   res.status(404).json({
     success: false,
     message: 'API endpoint not found',
     requestedUrl: req.originalUrl,
-    method: req.method,
-    origin: req.headers.origin || 'none'
+    method: req.method
   });
 });
 
 // Global error handler
 app.use((err, req, res, next) => {
   console.error('🔥 Error:', err.message);
-  console.error('Error stack:', err.stack);
-  console.error('Request Origin:', req.headers.origin || 'none');
 
   // Handle CORS errors specifically
   if (err.message && err.message.includes('CORS')) {
@@ -218,8 +214,7 @@ app.use((err, req, res, next) => {
       message: 'CORS error',
       error: err.message,
       allowedOrigins: allowedOrigins,
-      requestOrigin: req.headers.origin || 'Not provided',
-      timestamp: new Date().toISOString()
+      requestOrigin: req.headers.origin || 'Not provided'
     });
   }
 
@@ -230,7 +225,6 @@ app.use((err, req, res, next) => {
     success: false,
     message,
     error: process.env.NODE_ENV === 'development' ? err.message : undefined,
-    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
     timestamp: new Date().toISOString()
   });
 });
