@@ -71,37 +71,74 @@ const parseSocialMediaData = (socialMediaData) => {
   
   // If it's already an object, return it
   if (typeof socialMediaData === 'object' && !Array.isArray(socialMediaData)) {
-    return socialMediaData;
+    // Filter out numeric keys
+    const filtered = {};
+    Object.entries(socialMediaData).forEach(([key, value]) => {
+      if (!isNaN(key) || !value || value.trim() === '') return;
+      filtered[key] = value;
+    });
+    return filtered;
   }
   
   // If it's a string, try to parse it as JSON
   if (typeof socialMediaData === 'string') {
     try {
-      // Clean the string - remove malformed parts
-      let cleanedString = socialMediaData;
+      // First, try to parse it directly
+      const parsed = JSON.parse(socialMediaData);
       
-      // Remove the malformed "{", "}" entries if present
-      cleanedString = cleanedString.replace(/"\{\"/g, '{"'); // Fix opening
-      cleanedString = cleanedString.replace(/\"\}"/g, '"}'); // Fix closing
-      cleanedString = cleanedString.replace(/"0":"{"/g, '');
-      cleanedString = cleanedString.replace(/"1":"}"/g, '');
-      cleanedString = cleanedString.replace(/,,/g, ','); // Remove double commas
-      
-      // Parse the JSON
-      const parsed = JSON.parse(cleanedString);
-      
-      // Filter out numeric keys (like "0", "1") and empty values
+      // Filter out numeric keys and empty values
       const filtered = {};
       Object.entries(parsed).forEach(([key, value]) => {
-        // Skip numeric keys and empty values
+        // Skip numeric keys (like "0", "1") and empty values
         if (!isNaN(key) || !value || value.trim() === '') return;
         filtered[key] = value;
       });
       
       return filtered;
     } catch (error) {
-      console.error('Error parsing social media JSON:', error, 'Raw data:', socialMediaData);
-      return {};
+      // If parsing fails, try to fix common issues
+      console.warn('Initial JSON parse failed, attempting cleanup...');
+      
+      try {
+        // Remove problematic entries like "0":"{" and "1":"}"
+        let cleanedString = socialMediaData;
+        
+        // Use regex to remove the problematic key-value pairs
+        cleanedString = cleanedString.replace(/"\d+":"\{"/g, '');
+        cleanedString = cleanedString.replace(/"\d+":"\}"/g, '');
+        cleanedString = cleanedString.replace(/,,/g, ',');
+        cleanedString = cleanedString.replace(/,}/g, '}');
+        cleanedString = cleanedString.replace(/{,/g, '{');
+        
+        // Try parsing again
+        const parsed = JSON.parse(cleanedString);
+        
+        // Filter out any remaining numeric keys
+        const filtered = {};
+        Object.entries(parsed).forEach(([key, value]) => {
+          if (!isNaN(key) || !value || value.trim() === '') return;
+          filtered[key] = value;
+        });
+        
+        return filtered;
+      } catch (cleanupError) {
+        console.error('Failed to parse social media JSON even after cleanup:', cleanupError);
+        
+        // Last resort: manually extract social media links
+        const manualExtract = {};
+        const platforms = ['facebook', 'twitter', 'instagram', 'youtube', 'linkedin', 'whatsapp'];
+        
+        platforms.forEach(platform => {
+          // Look for pattern like "facebook":"https://..."
+          const regex = new RegExp(`"${platform}":"([^"]+)"`);
+          const match = socialMediaData.match(regex);
+          if (match && match[1]) {
+            manualExtract[platform] = match[1];
+          }
+        });
+        
+        return manualExtract;
+      }
     }
   }
   
@@ -115,7 +152,7 @@ export function Footer() {
 
   // Parse and process social media links from shopInfo
   useEffect(() => {
-    if (shopInfo?.socialMedia) {
+    if (shopInfo) {
       const parsedLinks = parseSocialMediaData(shopInfo.socialMedia);
       setSocialMediaLinks(parsedLinks);
       
@@ -123,6 +160,7 @@ export function Footer() {
       if (process.env.NODE_ENV === 'development') {
         console.log('Original socialMedia:', shopInfo.socialMedia);
         console.log('Parsed socialMedia:', parsedLinks);
+        console.log('Type of socialMedia:', typeof shopInfo.socialMedia);
       }
     }
   }, [shopInfo]);
@@ -161,7 +199,7 @@ export function Footer() {
 
   // Function to validate and format social media URL
   const formatSocialMediaUrl = (platform, url) => {
-    if (!url) return '#';
+    if (!url || typeof url !== 'string') return '#';
     
     let cleanedUrl = url.trim();
     
@@ -197,16 +235,16 @@ export function Footer() {
     if (typeof field === 'object') return field;
     if (typeof field === 'string') {
       try {
-        return JSON.parse(field);
+        // Check if it's a JSON string
+        if (field.startsWith('{') || field.startsWith('[')) {
+          return JSON.parse(field);
+        }
       } catch {
-        return {};
+        // If parsing fails, return empty object
       }
     }
     return {};
   };
-
-  const businessHours = parseJSONField(shopInfo?.businessHours);
-  const locations = parseJSONField(shopInfo?.locations);
 
   return (
     <footer className="mt-12 pb-16 md:pb-0">
@@ -248,7 +286,7 @@ export function Footer() {
               <h3 className="text-primary-foreground font-display font-medium text-lg mb-4">Connect With Us</h3>
               <div className="flex flex-wrap gap-3">
                 {Object.entries(socialMediaLinks).map(([platform, url]) => {
-                  if (!url || !url.trim() || url.trim() === '{}') return null;
+                  if (!url || typeof url !== 'string' || !url.trim()) return null;
                   
                   const formattedUrl = formatSocialMediaUrl(platform, url);
                   
@@ -260,7 +298,7 @@ export function Footer() {
                       rel="noopener noreferrer"
                       className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground transition-colors"
                       aria-label={`Follow us on ${platform}`}
-                      title={`Follow us on ${platform}`}
+                      title={`Follow us on ${platform}: ${url}`}
                     >
                       {getSocialMediaIcon(platform)}
                     </a>
@@ -350,7 +388,7 @@ export function Footer() {
             {hasSocialMedia && (
               <div className="flex gap-4 mt-2">
                 {Object.entries(socialMediaLinks).map(([platform, url]) => {
-                  if (!url || !url.trim() || url.trim() === '{}') return null;
+                  if (!url || typeof url !== 'string' || !url.trim()) return null;
                   
                   const formattedUrl = formatSocialMediaUrl(platform, url);
                   return (
@@ -361,7 +399,7 @@ export function Footer() {
                       rel="noopener noreferrer"
                       className="text-primary-foreground/40 hover:text-primary-foreground transition-colors"
                       aria-label={`${platform}`}
-                      title={platform}
+                      title={`${platform}: ${url}`}
                     >
                       {getSocialMediaIcon(platform)}
                     </a>
