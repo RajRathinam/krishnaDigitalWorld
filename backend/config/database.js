@@ -11,9 +11,17 @@ const sequelize = new Sequelize(
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
     dialect: 'mysql',
+    dialectModule: require('mysql2'), // IMPORTANT: Use mysql2 for MariaDB
+    dialectOptions: {
+      charset: 'utf8mb4',
+      collate: 'utf8mb4_unicode_ci',
+      // MariaDB specific options
+      connectTimeout: 60000,
+      decimalNumbers: true,
+    },
     logging: process.env.NODE_ENV === 'development' ? console.log : false,
     pool: {
-      max: 5,
+      max: 10,
       min: 0,
       acquire: 30000,
       idle: 10000
@@ -22,8 +30,11 @@ const sequelize = new Sequelize(
       timestamps: true,
       underscored: true,
       createdAt: 'created_at',
-      updatedAt: 'updated_at'
-    }
+      updatedAt: 'updated_at',
+      charset: 'utf8mb4',
+      collate: 'utf8mb4_unicode_ci'
+    },
+    timezone: '+05:30' // IST timezone
   }
 );
 
