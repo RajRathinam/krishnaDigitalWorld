@@ -324,7 +324,7 @@ export default function ProductListing() {
   const hasActiveFilters = selectedBrands.length > 0 || minPriceFilter !== null || maxPriceFilter !== null;
   // Get current sort label
   const currentSortLabel = SORT_OPTIONS.find(opt => opt.value === sortBy)?.label || "Newest";
-  return (<div className="min-h-screen bg-background overflow-x-hidden pb-20 md:pb-0">
+  return (<div className="min-h-screen bg-background overflow-x-hidden md:pb-0">
     <Header />
 
     <div className="bg-card border-b border-border">

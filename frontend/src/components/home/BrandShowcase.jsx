@@ -152,7 +152,7 @@ const repeatedBrands = (items, repeat = 4) => {
 
 export function BrandShowcase() {
     return (
-        <section className="w-full py-12 md:py-16 bg-background overflow-hidden">
+        <section className="w-full py-6 md:py-16 bg-background overflow-hidden">
             <div className="mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
                 {/* Section Header */}
                 <div className="text-center mb-10">

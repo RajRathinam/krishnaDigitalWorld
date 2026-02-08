@@ -1,8 +1,21 @@
-import { ChevronUp, MapPin, Phone, Mail, Shield, FileText, Truck, RefreshCcw, Home, Briefcase } from "lucide-react";
+import { ChevronUp, MapPin, Phone, Mail, Shield, FileText, Truck, RefreshCcw, Home, Briefcase, Facebook, Instagram, Twitter, Youtube, Linkedin, Globe } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useEffect, useState } from 'react';
 import { categoryApi } from '@/services/api';
 import { useShopInfo } from '@/contexts/ShopInfoContext';
+
+// Social media icon mapping
+const SOCIAL_MEDIA_ICONS = {
+  facebook: Facebook,
+  instagram: Instagram,
+  twitter: Twitter,
+  youtube: Youtube,
+  linkedin: Linkedin,
+  website: Globe,
+  whatsapp: Phone, // You can use Phone or create a WhatsApp-specific icon
+  pinterest: Globe, // Add more as needed
+};
+
 const footerLinks = {
   "Company": [
     { name: "About Us", path: "/about-us", icon: Home },
@@ -29,9 +42,11 @@ const footerLinks = {
     { name: "Energy Efficient", path: "/products?category=energy-efficient", query: "energy-efficient" }
   ]
 };
+
 export function Footer() {
   const { shopInfo } = useShopInfo();
   const [categories, setCategories] = useState([]);
+
   useEffect(() => {
     let canceled = false;
     (async () => {
@@ -47,138 +62,229 @@ export function Footer() {
     })();
     return () => { canceled = true; };
   }, []);
+
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
-  return (<footer className="mt-12 pb-16 md:pb-0">
-    {/* Back to Top */}
-    <button onClick={scrollToTop} className="w-full bg-secondary hover:bg-secondary/80 text-secondary-foreground py-3 text-sm font-medium transition-colors border-t border-border">
-      <span className="flex items-center justify-center gap-2">
-        <ChevronUp className="w-4 h-4" />
-        Back to top
-      </span>
-    </button>
 
-    {/* Main Footer Links */}
-    <div className="bg-primary md:px-10">
-      <div className="container py-12 px-4">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {Object.entries(footerLinks).map(([title, links]) => (<div key={title}>
-            <h3 className="text-primary-foreground font-display font-medium text-lg mb-4">{title}</h3>
-            <ul className="space-y-2.5">
-              {links.map((link) => {
-                const Icon = link.icon;
-                return (<li key={link.name}>
-                  <Link to={link.path} className="flex items-center gap-2 text-primary-foreground/60 hover:text-primary-foreground text-sm transition-colors">
-                    {Icon && <Icon className="w-3.5 h-3.5" />}
-                    {link.name}
-                  </Link>
-                </li>);
-              })}
-            </ul>
-          </div>))}
-        </div>
+  // Get social media links from shopInfo
+  const socialMediaLinks = shopInfo?.socialMedia || {};
+  const hasSocialMedia = Object.keys(socialMediaLinks).length > 0;
 
-        {/* Contact Information */}
-        <div className="mt-8 pt-8 border-t border-primary-foreground/10">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="flex items-center gap-3">
-              <MapPin className="w-12 h-12 md:w-10 md:h-10 text-accent" />
+  // Function to get icon for social media platform
+  const getSocialMediaIcon = (platform) => {
+    const Icon = SOCIAL_MEDIA_ICONS[platform.toLowerCase()] || Globe;
+    return <Icon className="w-5 h-5" />;
+  };
+
+  // Function to validate and format social media URL
+  const formatSocialMediaUrl = (platform, url) => {
+    if (!url) return '#';
+    
+    // Add https:// if not present
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = 'https://' + url;
+    }
+    
+    // Special handling for WhatsApp
+    if (platform.toLowerCase() === 'whatsapp') {
+      // Remove any non-numeric characters except +
+      const phoneNumber = url.replace(/[^\d+]/g, '');
+      return `https://wa.me/${phoneNumber}`;
+    }
+    
+    return url;
+  };
+
+  return (
+    <footer className="mt-12 md:pb-0">
+      {/* Back to Top */}
+      <button onClick={scrollToTop} className="w-full bg-secondary hover:bg-secondary/80 text-secondary-foreground py-3 text-sm font-medium transition-colors border-t border-border">
+        <span className="flex items-center justify-center gap-2">
+          <ChevronUp className="w-4 h-4" />
+          Back to top
+        </span>
+      </button>
+
+      {/* Main Footer Links */}
+      <div className="bg-primary md:px-10">
+        <div className="container py-12 px-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {Object.entries(footerLinks).map(([title, links]) => (
+              <div key={title}>
+                <h3 className="text-primary-foreground font-display font-medium text-lg mb-4">{title}</h3>
+                <ul className="space-y-2.5">
+                  {links.map((link) => {
+                    const Icon = link.icon;
+                    return (
+                      <li key={link.name}>
+                        <Link to={link.path} className="flex items-center gap-2 text-primary-foreground/60 hover:text-primary-foreground text-sm transition-colors">
+                          {Icon && <Icon className="w-3.5 h-3.5" />}
+                          {link.name}
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
+
+
+          </div>
+            {/* Social Media Links Column */}
+            {hasSocialMedia && (
               <div>
-                <p className="font-medium text-primary-foreground">Store Location</p>
-                <p className="text-xs md:text-sm text-primary-foreground/60">
-                  {shopInfo?.address || shopInfo?.city
-                    ? `${shopInfo.address || ''}${shopInfo.city ? `, ${shopInfo.city}` : ''}${shopInfo.state ? `, ${shopInfo.state}` : ''}${shopInfo.pincode ? ` - ${shopInfo.pincode}` : ''}`
-                    : 'Sri Krishna Home Appliances, Nagapattinam'}
+                <h3 className="text-primary-foreground font-display font-medium text-lg mb-4 mt-6">Connect With Us</h3>
+                <div className="flex flex-wrap gap-3">
+                  {Object.entries(socialMediaLinks).map(([platform, url]) => {
+                    if (!url) return null;
+                    
+                    const formattedUrl = formatSocialMediaUrl(platform, url);
+                    return (
+                      <a
+                        key={platform}
+                        href={formattedUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground transition-colors group"
+                        aria-label={`Follow us on ${platform}`}
+                        title={`Follow us on ${platform}`}
+                      >
+                        {getSocialMediaIcon(platform)}
+                      </a>
+                    );
+                  })}
+                </div>
+                
+                {/* Optional: Follow us text */}
+                <p className="mt-4 text-sm text-primary-foreground/60">
+                  Follow us for updates, offers, and more!
                 </p>
-                <p className="text-xs text-primary-foreground/40">Delivery within 30km radius</p>
               </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Phone className="w-5 h-5 text-accent" />
-              <div>
-                <p className="font-medium text-primary-foreground">Call Us</p>
-                {shopInfo?.phone ? (
-                  <a href={`tel:${shopInfo.phone}`} className="text-xs md:text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors">
-                    {shopInfo.phone}
-                  </a>
-                ) : (
-                  <span className="text-sm text-primary-foreground/60">+91 XXXXXXXXXX</span>
-                )}
-                {shopInfo?.supportPhone && (
-                  <p className="text-xs text-primary-foreground/40">Support: {shopInfo.supportPhone}</p>
-                )}
+            )}
+          {/* Contact Information */}
+          <div className="mt-8 pt-8 border-t border-primary-foreground/10">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="flex items-center gap-3">
+                <MapPin className="w-12 h-12 md:w-10 md:h-10 text-accent" />
+                <div>
+                  <p className="font-medium text-primary-foreground">Store Location</p>
+                  <p className="text-xs md:text-sm text-primary-foreground/60">
+                    {shopInfo?.address || shopInfo?.city
+                      ? `${shopInfo.address || ''}${shopInfo.city ? `, ${shopInfo.city}` : ''}${shopInfo.state ? `, ${shopInfo.state}` : ''}${shopInfo.pincode ? ` - ${shopInfo.pincode}` : ''}`
+                      : 'Sri Krishna Home Appliances, Nagapattinam'}
+                  </p>
+                  <p className="text-xs text-primary-foreground/40">Delivery within 30km radius</p>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Mail className="w-5 h-5 text-accent" />
-              <div>
-                <p className="font-medium text-primary-foreground">Email Us</p>
-                {shopInfo?.email ? (
-                  <a href={`mailto:${shopInfo.email}`} className="text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors">
-                    {shopInfo.email}
-                  </a>
-                ) : (
-                  <span className="text-xs md:text-sm text-primary-foreground/60">support@srikrishnahomeappliances.com</span>
-                )}
-                {shopInfo?.supportEmail && (
-                  <p className="text-xs text-primary-foreground/40">Support: {shopInfo.supportEmail}</p>
-                )}
+              <div className="flex items-center gap-3">
+                <Phone className="w-5 h-5 text-accent" />
+                <div>
+                  <p className="font-medium text-primary-foreground">Call Us</p>
+                  {shopInfo?.phone ? (
+                    <a href={`tel:${shopInfo.phone}`} className="text-xs md:text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors">
+                      {shopInfo.phone}
+                    </a>
+                  ) : (
+                    <span className="text-sm text-primary-foreground/60">+91 XXXXXXXXXX</span>
+                  )}
+                  {shopInfo?.supportPhone && (
+                    <p className="text-xs text-primary-foreground/40">Support: {shopInfo.supportPhone}</p>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <Mail className="w-5 h-5 text-accent" />
+                <div>
+                  <p className="font-medium text-primary-foreground">Email Us</p>
+                  {shopInfo?.email ? (
+                    <a href={`mailto:${shopInfo.email}`} className="text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors">
+                      {shopInfo.email}
+                    </a>
+                  ) : (
+                    <span className="text-xs md:text-sm text-primary-foreground/60">support@srikrishnahomeappliances.com</span>
+                  )}
+                  {shopInfo?.supportEmail && (
+                    <p className="text-xs text-primary-foreground/40">Support: {shopInfo.supportEmail}</p>
+                  )}
+                </div>
               </div>
             </div>
 
+        
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div className="border-t border-primary-foreground/10">
+          <div className="container py-6 flex flex-col items-center gap-2">
+            {/* Store name and location row */}
+            <div className="flex flex-col md:flex-row items-center justify-center gap-2 w-full">
+              <Link to="/" className="flex items-center gap-2">
+                <span className="text-xl font-display font-semibold text-primary-foreground">Sri Krishna</span>
+                <span className="text-xl font-display font-semibold text-accent">Digital World</span>
+              </Link>
+
+              <div className="flex items-center gap-4 text-primary-foreground/60 text-sm">
+                <span className="flex items-center gap-1">
+                  <MapPin className="w-3.5 h-3.5" />
+                  {shopInfo?.city && shopInfo?.state
+                    ? `${shopInfo.city}, ${shopInfo.state}`
+                    : 'Nagapattinam, Tamil Nadu'}
+                </span>
+              </div>
+            </div>
+
+            {/* Social Media Links (Alternative placement in the middle section) */}
+            {hasSocialMedia && (
+              <div className="flex gap-4 mt-2">
+                {Object.entries(socialMediaLinks).map(([platform, url]) => {
+                  if (!url) return null;
+                  
+                  const formattedUrl = formatSocialMediaUrl(platform, url);
+                  return (
+                    <a
+                      key={platform}
+                      href={formattedUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary-foreground/40 hover:text-primary-foreground transition-colors"
+                      aria-label={`${platform}`}
+                    >
+                      {getSocialMediaIcon(platform)}
+                    </a>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Divider */}
-      <div className="border-t border-primary-foreground/10">
-        <div className="container py-6 flex flex-col items-center gap-4">
-          {/* Store name and location row */}
-          <div className="flex flex-col md:flex-row items-center justify-center gap-4 w-full">
-            <Link to="/" className="flex items-center gap-2">
-              <span className="text-xl font-display font-semibold text-primary-foreground">Sri Krishna</span>
-              <span className="text-xl font-display font-semibold text-accent">Digital World</span>
-            </Link>
-
-            <div className="flex items-center gap-4 text-primary-foreground/60 text-sm">
-              <span className="flex items-center gap-1">
-                <MapPin className="w-3.5 h-3.5" />
-                {shopInfo?.city && shopInfo?.state
-                  ? `${shopInfo.city}, ${shopInfo.state}`
-                  : 'Nagapattinam, Tamil Nadu'}
-              </span>
-            </div>
+      {/* Bottom Footer */}
+      <div className="bg-secondary/50">
+        <div className="container flex flex-col md:flex-row justify-between items-center py-6 px-4">
+          <div className="text-center text-xs text-muted-foreground">
+            <span>© {new Date().getFullYear()} {shopInfo?.shopName || 'Sri Krishna Home Appliances'}.</span>
           </div>
-
-
+          {/* Powered by section - centered below on mobile, inline on desktop */}
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground text- mt-2 md:mt-0">
+            <span>Powered by</span>
+            <a
+              href="https://infygrid.in"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="focus:outline-none rounded"
+            >
+              <img
+                src="/infygrid_logo.png"
+                alt="Infygrid"
+                className="h-4 w-auto object-contain hover:opacity-80 transition-opacity"
+              />
+            </a>
+          </div>
         </div>
       </div>
-    </div>
-
-    {/* Bottom Footer */}
-    <div className="bg-secondary/50">
-      <div className="container flex flex-col md:flex-row justify-between items-center py-6 px-4">
-        <div className="text-center text-xs text-muted-foreground">
-          <span>© {new Date().getFullYear()} {shopInfo?.shopName || 'Sri Krishna Home Appliances'}.</span>
-        </div>
-        {/* Powered by section - centered below on mobile, inline on desktop */}
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground text- mt-2 md:mt-0">
-          <span>Powered by</span>
-          <a
-            href="https://infygrid.in"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="focus:outline-none rounded"
-          >
-            <img
-              src="/infygrid_logo.png"
-              alt="Infygrid"
-              className="h-4 w-auto object-contain hover:opacity-80 transition-opacity"
-            />
-          </a>
-        </div>
-      </div>
-    </div>
-  </footer>);
+    </footer>
+  );
 }

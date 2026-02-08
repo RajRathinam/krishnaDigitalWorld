@@ -796,19 +796,19 @@ export const ProductManagement = () => {
                       <div className="space-y-2">
                         <Label className="text-xs font-semibold uppercase text-muted-foreground">Images</Label>
                         <div className="flex flex-wrap gap-2">
-                          {color.existingImages?.map((img, iIdx) => (
-                            <div key={`exist-${iIdx}`} className="relative h-20 w-20 rounded-md border overflow-hidden group">
-                              <img src={img.url} className="h-full w-full object-cover" />
-                              <button className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity"
-                                onClick={() => {
-                                  const newColors = [...colorsList];
-                                  newColors[idx].existingImages.splice(iIdx, 1);
-                                  setColorsList(newColors);
-                                }}>
-                                <Trash2 className="h-4 w-4" />
-                              </button>
-                            </div>
-                          ))}
+                    {color.existingImages?.map((img, iIdx) => (
+  <div key={`exist-${iIdx}`} className="relative h-20 w-20 rounded-md border overflow-hidden group">
+    <img src={getImageUrl(img.url)} className="h-full w-full object-cover" />
+    <button className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity"
+      onClick={() => {
+        const newColors = [...colorsList];
+        newColors[idx].existingImages.splice(iIdx, 1);
+        setColorsList(newColors);
+      }}>
+      <Trash2 className="h-4 w-4" />
+    </button>
+  </div>
+))}
                           {color.files?.map((file, fIdx) => (
                             <div key={`new-${fIdx}`} className="relative h-20 w-20 rounded-md border overflow-hidden group">
                               <img src={URL.createObjectURL(file)} className="h-full w-full object-cover" />

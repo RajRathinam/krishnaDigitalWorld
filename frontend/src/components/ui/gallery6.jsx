@@ -69,17 +69,17 @@ const Gallery6 = ({ heading = "Gallery", demoUrl = "/products", items = [
             carouselApi.scrollNext();
         }
     };
-    return (<section className="py-12 md:py-16">
+    return (<section className="py-6 md:py-16">
       <div className="container">
         <div className="mb-8 flex flex-col justify-between gap-4 md:mb-12 md:flex-row md:items-end">
           <div className="flex flex-col gap-4 md:ml-5">
             <SplitHeading text={heading} className="text-2xl md:text-3xl lg:text-4xl font-bold"/>
-            <Link to={demoUrl} className="group flex items-center gap-1 text-accent font-medium hover:underline">
+            <Link to={demoUrl} className="group hidden md:flex items-center gap-1 text-accent font-medium hover:underline">
               View All
               <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"/>
             </Link>
           </div>
-          <div className="flex gap-2">
+          <div className="hidden md:flex gap-2">
             <Button type="button" variant="outline" size="icon" onClick={handlePrev} disabled={!canScrollPrev} className="disabled:pointer-events-auto disabled:opacity-50" aria-label="Previous slide">
               <ArrowLeft className="h-4 w-4"/>
             </Button>

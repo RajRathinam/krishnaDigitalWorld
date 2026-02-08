@@ -65,7 +65,7 @@ const badges = [
 
 export function TrustBadges() {
     return (
-        <section className="container mt-8 px-4 sm:px-6 lg:px-8">
+        <section className="container mt-4 px-4 sm:px-6 lg:px-8">
             <div className="bg-card rounded-xl p-6 shadow-soft border border-border/50 relative overflow-hidden">
                 {/* Subtle gradient overlay */}
                 <div className="absolute inset-0 bg-gradient-to-r from-accent/5 via-transparent to-yellow-400/5 pointer-events-none" />

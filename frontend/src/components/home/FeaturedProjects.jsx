@@ -104,7 +104,7 @@ export function FeaturedProjects() {
 
     if (loading) {
         return (
-            <section className="py-12 md:py-16">
+            <section className="py-6 md:py-16">
                 <div className="container px-4 sm:px-6 lg:px-8">
                     <Skeleton className="h-8 w-64 mb-8 mx-auto" />
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

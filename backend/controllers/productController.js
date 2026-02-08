@@ -901,10 +901,9 @@ export const createProduct = async (req, res) => {
     const isProductBestSeller = isBestSeller === true || isBestSeller === 'true' || isBestSeller === '1';
     const isProductDealOfTheDay = isDealOfTheDay === true || isDealOfTheDay === 'true' || isDealOfTheDay === '1';
 
-    // Handle sellerId
-    const sellerIdValue = sellerId || req.user?.id || null;
-    console.log('Using sellerId:', sellerIdValue);
-
+// Handle sellerId - ALWAYS use the authenticated user's ID
+const sellerIdValue = req.user?.id || null;
+console.log('Using sellerId from authenticated user:', sellerIdValue);
     // Create product with subcategory string
     const product = await Product.create({
       code,
@@ -1022,6 +1021,11 @@ export const updateProduct = async (req, res) => {
     // }
 
     const updateData = { ...req.body };
+
+    // CRITICAL FIX: Remove sellerId from update data - product seller shouldn't change
+    // The frontend is sending sellerId: "1" which causes foreign key constraint error
+    delete updateData.sellerId;
+    delete updateData.seller_id;
 
     // Support updating model via modelId (legacy) or direct modelCode/modelName
     if (updateData.modelId) {
@@ -1145,7 +1149,7 @@ export const updateProduct = async (req, res) => {
       }
     }
 
-    // Update product
+    // Update product WITHOUT sellerId
     await product.update(updateData, { transaction });
 
     await transaction.commit();

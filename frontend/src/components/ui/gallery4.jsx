@@ -49,7 +49,7 @@ const Gallery4 = ({
         <section className="lg:py-5 w-full">
             <div className="w-full">
                 <div className="mb-4 flex flex-col justify-between md:mb-8 md:flex-row md:items-end">
-                    <div className="flex shrink-0 items-center justify-start gap-2">
+                    <div className="hidden md:flex shrink-0 items-center justify-start gap-2">
                         <Button 
                             type="button" 
                             size="icon" 

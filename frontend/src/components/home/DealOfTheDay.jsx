@@ -5,7 +5,7 @@
  * Shows discounted products in a grid layout with special pricing.
  * 
  * Features:
- * - Countdown timer (can be real-time or static)
+ * - Countdown timer that resets daily at midnight
  * - Featured products grid
  * - Special pricing highlights
  * - Link to all deals page
@@ -19,11 +19,35 @@
 import { Clock, Zap, ArrowRight, Sparkles } from "lucide-react";
 import { ProductCard } from "@/components/product/ProductCard";
 import { Link } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { toast } from '@/hooks/use-toast';
 import { SplitHeading } from "@/components/ui/split-heading";
 import { Skeleton } from "@/components/ui/skeleton";
 import { productApi } from '@/services/api';
+
+/**
+ * Calculate time remaining until end of day (midnight)
+ * @returns {{hours: number, minutes: number, seconds: number}} Time remaining object
+ */
+const calculateTimeUntilMidnight = () => {
+    const now = new Date();
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999); // Set to 23:59:59.999
+    
+    const diffMs = endOfDay.getTime() - now.getTime();
+    
+    // If somehow we're past midnight (shouldn't happen), default to 24 hours
+    if (diffMs <= 0) {
+        return { hours: 23, minutes: 59, seconds: 59 };
+    }
+    
+    const diffSeconds = Math.floor(diffMs / 1000);
+    const hours = Math.floor(diffSeconds / 3600);
+    const minutes = Math.floor((diffSeconds % 3600) / 60);
+    const seconds = diffSeconds % 60;
+    
+    return { hours, minutes, seconds };
+};
 
 /**
  * Format time remaining for countdown display
@@ -39,7 +63,26 @@ const formatTime = (hours, minutes, seconds) => {
 export function DealOfTheDay() {
     const [dealProducts, setDealProducts] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [timeRemaining, setTimeRemaining] = useState({ hours: 5, minutes: 23, seconds: 45 });
+    const [timeRemaining, setTimeRemaining] = useState(() => calculateTimeUntilMidnight());
+
+    /**
+     * Update the countdown timer
+     */
+    const updateTimer = useCallback(() => {
+        const now = new Date();
+        const currentHour = now.getHours();
+        const currentMinute = now.getMinutes();
+        const currentSecond = now.getSeconds();
+        
+        // Check if it's exactly midnight (or a few seconds after to handle delays)
+        if (currentHour === 0 && currentMinute === 0 && currentSecond <= 2) {
+            // Reset to 24 hours
+            setTimeRemaining({ hours: 23, minutes: 59, seconds: 59 });
+        } else {
+            // Calculate time until midnight
+            setTimeRemaining(calculateTimeUntilMidnight());
+        }
+    }, []);
 
     /**
      * Fetch featured/deal products
@@ -82,13 +125,18 @@ export function DealOfTheDay() {
     }, []);
 
     /**
-     * Countdown timer effect
+     * Countdown timer effect - resets daily at midnight
      */
     useEffect(() => {
+        // Initial calculation
+        updateTimer();
+        
+        // Set up interval for countdown
         const timer = setInterval(() => {
             setTimeRemaining(prev => {
                 let { hours, minutes, seconds } = prev;
                 
+                // Decrement seconds
                 if (seconds > 0) {
                     seconds--;
                 } else if (minutes > 0) {
@@ -99,10 +147,37 @@ export function DealOfTheDay() {
                     minutes = 59;
                     seconds = 59;
                 } else {
-                    // Reset to 24 hours when countdown reaches 0
-                    hours = 23;
-                    minutes = 59;
-                    seconds = 59;
+                    // When countdown reaches 0, it's midnight
+                    // Force a recalculation to handle edge cases
+                    clearInterval(timer);
+                    setTimeout(() => {
+                        updateTimer();
+                        // Restart interval after reset
+                        const newTimer = setInterval(() => {
+                            setTimeRemaining(prev => {
+                                let { hours, minutes, seconds } = prev;
+                                
+                                if (seconds > 0) {
+                                    seconds--;
+                                } else if (minutes > 0) {
+                                    minutes--;
+                                    seconds = 59;
+                                } else if (hours > 0) {
+                                    hours--;
+                                    minutes = 59;
+                                    seconds = 59;
+                                }
+                                
+                                return { hours, minutes, seconds };
+                            });
+                        }, 1000);
+                        
+                        // Store timer reference if needed
+                        // This approach uses closure, so we don't need to store it
+                    }, 100);
+                    
+                    // Return 0 for now, will be updated by the setTimeout
+                    return { hours: 0, minutes: 0, seconds: 0 };
                 }
                 
                 return { hours, minutes, seconds };
@@ -110,10 +185,45 @@ export function DealOfTheDay() {
         }, 1000);
 
         return () => clearInterval(timer);
-    }, []);
+    }, [updateTimer]);
+
+    /**
+     * Additional check every minute to ensure timer stays accurate
+     */
+    useEffect(() => {
+        const syncInterval = setInterval(() => {
+            updateTimer();
+        }, 60000); // Sync every minute to prevent drift
+
+        return () => clearInterval(syncInterval);
+    }, [updateTimer]);
+
+    /**
+     * Check for midnight reset on component mount and date changes
+     */
+    useEffect(() => {
+        // Check current date to handle page refresh scenarios
+        updateTimer();
+        
+        // Set up a check for midnight
+        const now = new Date();
+        const msUntilMidnight = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate() + 1, // Next day
+            0, 0, 0, 0 // Midnight
+        ).getTime() - now.getTime();
+        
+        // Set timeout for midnight reset
+        const midnightTimeout = setTimeout(() => {
+            updateTimer();
+        }, msUntilMidnight);
+        
+        return () => clearTimeout(midnightTimeout);
+    }, [updateTimer]);
 
     return (
-        <section className="py-12 md:py-20 relative overflow-hidden bg-gradient-to-b from-background to-muted/30">
+        <section className="py-4 md:py-20 relative overflow-hidden bg-gradient-to-b from-background to-muted/30">
             {/* Background Mesh */}
             <div className="absolute inset-0 bg-gradient-to-br from-accent/5 via-transparent to-orange-500/5 pointer-events-none" />
 
@@ -186,7 +296,7 @@ export function DealOfTheDay() {
                 </div>
 
                 {/* View All Link - Mobile */}
-                <div className="mt-8 text-center md:hidden">
+                <div className="mt-4 md:mt-8 text-center md:hidden">
                     <Link 
                         to="/deals" 
                         className="inline-flex items-center gap-2 text-sm font-semibold text-accent hover:text-accent/80 transition-colors"

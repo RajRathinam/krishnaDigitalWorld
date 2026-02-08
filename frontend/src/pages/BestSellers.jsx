@@ -65,7 +65,7 @@ export default function BestSellers() {
     }, []);
 
     return (
-        <div className="min-h-screen bg-background overflow-x-hidden pb-20 md:pb-0">
+        <div className="min-h-screen bg-background overflow-x-hidden md:pb-0">
             <Header />
             
             <div className="bg-card border-b border-border">

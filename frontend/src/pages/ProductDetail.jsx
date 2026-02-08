@@ -524,7 +524,7 @@ export default function ProductDetail() {
   const reviews = Array.isArray(product?.reviews) ? product.reviews : [];
   if (loading) {
     return (
-      <div className="min-h-screen bg-background pb-20 md:pb-0">
+      <div className="min-h-screen bg-background md:pb-0">
         <Header />
         <div className="bg-card border-b md:mt-4 mt-1 border-border">
           <div className="container py-2 px-3 md:px-4">

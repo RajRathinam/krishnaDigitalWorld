@@ -131,16 +131,52 @@ const getSubcategoryImage = (subcategoryName) => {
   return null;
 };
 
-// Skeleton component for loading state
+// Skeleton component for loading state - Normal Gray Color
 const SubcategorySkeleton = () => (
-  <section className="container mx-auto px-4 py-8">
-    <div className="flex gap-4 overflow-hidden">
-      {[...Array(6)].map((_, index) => (
-        <div key={index} className="flex flex-col items-center shrink-0 w-32 sm:w-40 md:w-48">
-          <div className="w-full aspect-square rounded-2xl bg-gray-200 animate-pulse" />
-          <div className="mt-3 w-3/4 h-4 bg-gray-200 rounded animate-pulse" />
-        </div>
-      ))}
+  <section className="container mx-auto px-3 py-2">
+    {/* Mobile Skeleton */}
+    <div className="md:hidden">
+      <div className="flex gap-2 overflow-x-auto scrollbar-hide py-2 px-2">
+        {[...Array(8)].map((_, index) => (
+          <div key={index} className="flex flex-col items-center shrink-0">
+            {/* Gray Circle - Mobile */}
+            <div className="w-14 h-14 rounded-full bg-gray-200 animate-pulse" />
+            
+            {/* Text skeleton - Mobile */}
+            <div className="mt-2 text-center w-20">
+              <div className="h-3 w-16 mx-auto bg-gray-200 rounded animate-pulse" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    {/* Desktop & Tablet Skeleton */}
+    <div className="hidden md:block relative py-6 md:py-10">
+      <div className="flex gap-4 sm:gap-6 overflow-x-auto scrollbar-hide px-2 py-4">
+        {[...Array(6)].map((_, index) => (
+          <div key={index} className="flex flex-col items-center shrink-0 w-36 md:w-44 lg:w-48">
+            {/* Gray Container - Desktop */}
+            <div className="w-full aspect-square rounded-2xl md:rounded-[2rem] bg-gray-100 animate-pulse p-4 sm:p-6 lg:p-8 flex items-center justify-center">
+              <div className="w-32 h-32 md:w-40 md:h-40 rounded-full bg-gray-200" />
+            </div>
+            
+            {/* Text skeleton - Desktop */}
+            <div className="mt-3 text-center w-full px-1">
+              <div className="h-4 w-3/4 mx-auto bg-gray-200 rounded animate-pulse mb-2" />
+              <div className="h-3 w-1/2 mx-auto bg-gray-200 rounded animate-pulse" />
+            </div>
+          </div>
+        ))}
+      </div>
+      
+      {/* Skeleton Navigation Arrows */}
+      <div className="absolute left-0 top-1/2 -translate-y-1/2 z-10">
+        <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse" />
+      </div>
+      <div className="absolute right-0 top-1/2 -translate-y-1/2 z-10">
+        <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse" />
+      </div>
     </div>
   </section>
 );

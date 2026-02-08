@@ -152,7 +152,7 @@ export function HeroSlider() {
     return (
       <section className="p-3 sm:p-6 lg:p-12">
         <div className="relative rounded-xl w-full h-[250px] sm:h-[350px] md:h-[380px] lg:h-[530px] overflow-hidden mx-auto max-w-8xl bg-muted flex items-center justify-center">
-         
+     
         </div>
       </section>
     );
@@ -165,6 +165,8 @@ export function HeroSlider() {
       <div
         className="relative rounded-xl w-full h-[250px] min-h-[250px] sm:h-[350px] md:h-[380px] lg:h-[530px] overflow-hidden mx-auto max-w-8xl group"
         aria-label="Hero banner carousel"
+        onMouseEnter={() => setIsAutoPlaying(false)}
+        onMouseLeave={() => setIsAutoPlaying(true)}
       >
         {/* Slides Container */}
         <div className="relative w-full h-full">
@@ -184,52 +186,47 @@ export function HeroSlider() {
                   loading={index === 0 ? "eager" : "lazy"}
                 />
 
-                {/* Content Container - Hidden on mobile, shown on desktop */}
-                <div className="hidden md:block absolute inset-0 h-full flex flex-col justify-end pb-6 px-4 sm:px-6 lg:px-8 text-left">
+                {/* Gradient Overlay for better text readability - Mobile */}
+                <div className="hidden md:absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+
+                {/* Content Container - Shows on both mobile and desktop */}
+                <div className="absolute hidden inset-0 h-full md:flex flex-col justify-end pb-4 sm:pb-6 px-4 sm:px-6 lg:px-8 text-left">
                   <div className="w-full max-w-2xl">
                     {/* Accent badge - Yellow background with black text */}
                     {slide.accent && (
-                      <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-yellow-400 text-black font-semibold mb-3 shadow-lg">
+                      <div className="inline-flex items-center px-3 py-1 sm:px-4 sm:py-1.5 rounded-full bg-yellow-400 text-black font-semibold mb-2 sm:mb-3 shadow-lg text-xs sm:text-sm">
                         {slide.accent}
                       </div>
                     )}
 
-                    {/* Title */}
+                    {/* Title - Responsive font sizes */}
                     {slide.title && (
-                      <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-2 leading-tight drop-shadow-md">
+                      <h2 className="text-lg sm:text-xl md:text-2xl lg:text-4xl font-bold text-white mb-1 sm:mb-2 leading-tight drop-shadow-md">
                         {slide.title}
                       </h2>
                     )}
 
-                    {/* Subtitle */}
+                    {/* Subtitle - Hidden on very small screens, shown on sm and up */}
                     {slide.subtitle && (
-                      <p className="text-base md:text-lg text-white/90 mb-4 max-w-xl drop-shadow-sm">
+                      <p className="hidden sm:block text-sm md:text-base lg:text-lg text-white/90 mb-3 sm:mb-4 max-w-xl drop-shadow-sm">
                         {slide.subtitle}
                       </p>
                     )}
 
                     {/* CTA Button - Yellow background with black text */}
                     {slide.cta && (
-                      <Link
-                        to={slide.ctaLink || "#"}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-400 text-black font-semibold rounded-full hover:bg-yellow-300 transition-all duration-300 shadow-lg hover:shadow-xl group"
-                      >
-                        {slide.cta}
-                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                      </Link>
+                      <div className="flex items-center gap-2">
+                        <Link
+                          to={slide.ctaLink || "#"}
+                          className="inline-flex items-center gap-1 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-yellow-400 text-black font-semibold rounded-full hover:bg-yellow-300 transition-all duration-300 shadow-lg hover:shadow-xl group text-xs sm:text-sm"
+                        >
+                          {slide.cta}
+                          <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" />
+                        </Link>
+                      </div>
                     )}
                   </div>
                 </div>
-
-                {/* Mobile Image Link - Clickable image redirects to page */}
-                <Link
-                  to={slide.ctaLink || "#"}
-                  className="md:hidden absolute inset-0"
-                  aria-label={`Go to ${slide.title}`}
-                >
-                  {/* Transparent overlay for click area */}
-                  <div className="absolute inset-0"></div>
-                </Link>
               </div>
             </div>
           ))}
@@ -283,14 +280,14 @@ export function HeroSlider() {
           ))}
         </div>
 
-        {/* Mobile Slide Indicators */}
-        <div className="md:hidden absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20" role="tablist" aria-label="Slide indicators">
+        {/* Mobile Slide Indicators - Smaller and closer to bottom */}
+        <div className="md:hidden absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1 z-20" role="tablist" aria-label="Slide indicators">
           {slides.map((_, index) => (
             <button
               key={index}
               onClick={() => handleManualNavigation(index)}
               className={`h-1.5 rounded-full transition-all duration-300 ${index === currentSlide
-                ? "w-5 bg-white"
+                ? "w-4 bg-white"
                 : "w-1.5 bg-white/60 hover:bg-white"
                 }`}
               aria-label={`Go to slide ${index + 1}`}

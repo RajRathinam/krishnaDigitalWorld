@@ -150,7 +150,7 @@ export function BestSellers() {
     }, []);
 
     return (
-        <section className="py-12 md:py-20 relative overflow-hidden bg-muted/30">
+        <section className="py-6 md:py-20 relative overflow-hidden bg-muted/30">
             {/* Background Gradients */}
             <div className="absolute top-0 right-0 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2 pointer-events-none" />
 
