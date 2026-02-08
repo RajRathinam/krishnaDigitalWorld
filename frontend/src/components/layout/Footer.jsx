@@ -1,19 +1,87 @@
-import { ChevronUp, MapPin, Phone, Mail, Shield, FileText, Truck, RefreshCcw, Home, Briefcase, Facebook, Instagram, Twitter, Youtube, Linkedin, Globe } from "lucide-react";
+import { ChevronUp, MapPin, Phone, Mail, Shield, FileText, Truck, RefreshCcw, Home, Briefcase, Globe } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useEffect, useState } from 'react';
 import { categoryApi } from '@/services/api';
 import { useShopInfo } from '@/contexts/ShopInfoContext';
 
-// Social media icon mapping
+// Import social icons safely - using the same import pattern
+import { 
+  Facebook, 
+  Instagram, 
+  Twitter, 
+  Youtube, 
+  Linkedin 
+} from "lucide-react";
+
+// Social media icon mapping with fallbacks
 const SOCIAL_MEDIA_ICONS = {
-  facebook: Facebook,
-  instagram: Instagram,
-  twitter: Twitter,
-  youtube: Youtube,
-  linkedin: Linkedin,
+  // Facebook variations
+  facebook: Facebook || Globe,
+  facebookpage: Facebook || Globe,
+  fb: Facebook || Globe,
+  'facebook.com': Facebook || Globe,
+  
+  // Instagram variations
+  instagram: Instagram || Globe,
+  insta: Instagram || Globe,
+  ig: Instagram || Globe,
+  'instagram.com': Instagram || Globe,
+  
+  // Twitter/X variations
+  twitter: Twitter || Globe,
+  x: Twitter || Globe,
+  tw: Twitter || Globe,
+  'twitter.com': Twitter || Globe,
+  'x.com': Twitter || Globe,
+  
+  // YouTube variations
+  youtube: Youtube || Globe,
+  youtubechannel: Youtube || Globe,
+  yt: Youtube || Globe,
+  'youtube.com': Youtube || Globe,
+  'youtu.be': Youtube || Globe,
+  
+  // LinkedIn variations
+  linkedin: Linkedin || Globe,
+  linkedinpage: Linkedin || Globe,
+  li: Linkedin || Globe,
+  'linkedin.com': Linkedin || Globe,
+  
+  // WhatsApp variations
+  whatsapp: Phone || Globe,
+  whatsappbusiness: Phone || Globe,
+  wa: Phone || Globe,
+  wapp: Phone || Globe,
+  
+  // Website variations
   website: Globe,
-  whatsapp: Phone, // You can use Phone or create a WhatsApp-specific icon
-  pinterest: Globe, // Add more as needed
+  site: Globe,
+  web: Globe,
+  url: Globe,
+  
+  // Other platforms
+  pinterest: Globe,
+  pin: Globe,
+  'pinterest.com': Globe,
+  
+  telegram: Globe,
+  tg: Globe,
+  'telegram.me': Globe,
+  't.me': Globe,
+};
+
+// Normalize platform name for consistent matching
+const normalizePlatformName = (platform) => {
+  if (!platform) return 'website';
+  
+  let normalized = platform.toLowerCase().trim();
+  
+  // Remove common prefixes/suffixes
+  normalized = normalized.replace(/(https?:\/\/)?(www\.)?/, '');
+  normalized = normalized.replace(/\..*$/, '');
+  normalized = normalized.replace(/[^a-z0-9]/g, '');
+  
+  return normalized;
 };
 
 const footerLinks = {
@@ -46,6 +114,29 @@ const footerLinks = {
 export function Footer() {
   const { shopInfo } = useShopInfo();
   const [categories, setCategories] = useState([]);
+  const [iconsLoaded, setIconsLoaded] = useState(false);
+
+  // Check if icons are loaded
+  useEffect(() => {
+    const checkIcons = () => {
+      const iconsExist = Facebook && Instagram && Twitter && Youtube && Linkedin;
+      setIconsLoaded(!!iconsExist);
+      
+      // Debug in development
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Icon status:', {
+          Facebook: !!Facebook,
+          Instagram: !!Instagram,
+          Twitter: !!Twitter,
+          Youtube: !!Youtube,
+          Linkedin: !!Linkedin,
+          AllLoaded: iconsExist
+        });
+      }
+    };
+    
+    checkIcons();
+  }, []);
 
   useEffect(() => {
     let canceled = false;
@@ -73,27 +164,60 @@ export function Footer() {
 
   // Function to get icon for social media platform
   const getSocialMediaIcon = (platform) => {
-    const Icon = SOCIAL_MEDIA_ICONS[platform.toLowerCase()] || Globe;
-    return <Icon className="w-5 h-5" />;
+    if (!iconsLoaded) {
+      // Return fallback text while icons load
+      return <span className="text-xs font-medium">{platform.charAt(0).toUpperCase()}</span>;
+    }
+    
+    const normalizedPlatform = normalizePlatformName(platform);
+    
+    // Check for exact match
+    if (SOCIAL_MEDIA_ICONS[normalizedPlatform]) {
+      const Icon = SOCIAL_MEDIA_ICONS[normalizedPlatform];
+      return Icon ? <Icon className="w-5 h-5" /> : <Globe className="w-5 h-5" />;
+    }
+    
+    // Check for partial matches
+    for (const [key, Icon] of Object.entries(SOCIAL_MEDIA_ICONS)) {
+      if (normalizedPlatform.includes(key) || key.includes(normalizedPlatform)) {
+        return Icon ? <Icon className="w-5 h-5" /> : <Globe className="w-5 h-5" />;
+      }
+    }
+    
+    // Default to Globe icon
+    return <Globe className="w-5 h-5" />;
   };
 
   // Function to validate and format social media URL
   const formatSocialMediaUrl = (platform, url) => {
     if (!url) return '#';
     
-    // Add https:// if not present
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      url = 'https://' + url;
-    }
+    let cleanedUrl = url.trim();
     
     // Special handling for WhatsApp
-    if (platform.toLowerCase() === 'whatsapp') {
-      // Remove any non-numeric characters except +
-      const phoneNumber = url.replace(/[^\d+]/g, '');
-      return `https://wa.me/${phoneNumber}`;
+    const lowerPlatform = platform.toLowerCase();
+    if (lowerPlatform.includes('whatsapp') || 
+        lowerPlatform.includes('wa') ||
+        cleanedUrl.includes('wa.me') ||
+        cleanedUrl.includes('whatsapp')) {
+      
+      const phoneMatch = cleanedUrl.match(/[\d\+]{10,}/);
+      if (phoneMatch) {
+        const phoneNumber = phoneMatch[0];
+        const formattedNumber = phoneNumber.startsWith('+') ? phoneNumber : `+91${phoneNumber}`;
+        return `https://wa.me/${formattedNumber}`;
+      }
     }
     
-    return url;
+    // Add https:// if not present
+    if (!cleanedUrl.startsWith('http://') && 
+        !cleanedUrl.startsWith('https://') &&
+        !cleanedUrl.startsWith('mailto:') &&
+        !cleanedUrl.startsWith('tel:')) {
+      cleanedUrl = 'https://' + cleanedUrl;
+    }
+    
+    return cleanedUrl;
   };
 
   return (
@@ -128,40 +252,41 @@ export function Footer() {
                 </ul>
               </div>
             ))}
-
-
           </div>
-            {/* Social Media Links Column */}
-            {hasSocialMedia && (
-              <div>
-                <h3 className="text-primary-foreground font-display font-medium text-lg mb-4 mt-6">Connect With Us</h3>
-                <div className="flex flex-wrap gap-3">
-                  {Object.entries(socialMediaLinks).map(([platform, url]) => {
-                    if (!url) return null;
-                    
-                    const formattedUrl = formatSocialMediaUrl(platform, url);
-                    return (
-                      <a
-                        key={platform}
-                        href={formattedUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground transition-colors group"
-                        aria-label={`Follow us on ${platform}`}
-                        title={`Follow us on ${platform}`}
-                      >
-                        {getSocialMediaIcon(platform)}
-                      </a>
-                    );
-                  })}
-                </div>
-                
-                {/* Optional: Follow us text */}
-                <p className="mt-4 text-sm text-primary-foreground/60">
-                  Follow us for updates, offers, and more!
-                </p>
+
+          {/* Social Media Links Column */}
+          {hasSocialMedia && (
+            <div className="mt-8">
+              <h3 className="text-primary-foreground font-display font-medium text-lg mb-4">Connect With Us</h3>
+              <div className="flex flex-wrap gap-3">
+                {Object.entries(socialMediaLinks).map(([platform, url]) => {
+                  if (!url || !url.trim()) return null;
+                  
+                  const formattedUrl = formatSocialMediaUrl(platform, url);
+                  
+                  return (
+                    <a
+                      key={platform}
+                      href={formattedUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground transition-colors"
+                      aria-label={`Follow us on ${platform}`}
+                      title={`Follow us on ${platform}`}
+                    >
+                      {getSocialMediaIcon(platform)}
+                    </a>
+                  );
+                })}
               </div>
-            )}
+              
+              {/* Follow us text */}
+              <p className="mt-4 text-sm text-primary-foreground/60">
+                Follow us for updates, offers, and more!
+              </p>
+            </div>
+          )}
+
           {/* Contact Information */}
           <div className="mt-8 pt-8 border-t border-primary-foreground/10">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -210,8 +335,6 @@ export function Footer() {
                 </div>
               </div>
             </div>
-
-        
           </div>
         </div>
 
@@ -235,11 +358,11 @@ export function Footer() {
               </div>
             </div>
 
-            {/* Social Media Links (Alternative placement in the middle section) */}
+            {/* Social Media Links */}
             {hasSocialMedia && (
               <div className="flex gap-4 mt-2">
                 {Object.entries(socialMediaLinks).map(([platform, url]) => {
-                  if (!url) return null;
+                  if (!url || !url.trim()) return null;
                   
                   const formattedUrl = formatSocialMediaUrl(platform, url);
                   return (
@@ -250,6 +373,7 @@ export function Footer() {
                       rel="noopener noreferrer"
                       className="text-primary-foreground/40 hover:text-primary-foreground transition-colors"
                       aria-label={`${platform}`}
+                      title={platform}
                     >
                       {getSocialMediaIcon(platform)}
                     </a>
@@ -267,8 +391,8 @@ export function Footer() {
           <div className="text-center text-xs text-muted-foreground">
             <span>© {new Date().getFullYear()} {shopInfo?.shopName || 'Sri Krishna Home Appliances'}.</span>
           </div>
-          {/* Powered by section - centered below on mobile, inline on desktop */}
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground text- mt-2 md:mt-0">
+          {/* Powered by section */}
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-2 md:mt-0">
             <span>Powered by</span>
             <a
               href="https://infygrid.in"
