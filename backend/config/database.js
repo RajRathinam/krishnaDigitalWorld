@@ -13,9 +13,9 @@ const sequelize = new Sequelize(
     port: process.env.DB_PORT || 3306,
     dialect: 'mysql',
     dialectModule: mysql2,
+
     dialectOptions: {
       charset: 'utf8mb4',
-      // Try this approach instead
       typeCast: function (field, next) {
         if (field.type === 'STRING' || field.type === 'VAR_STRING') {
           return field.string();
@@ -27,25 +27,29 @@ const sequelize = new Sequelize(
       supportBigNumbers: true,
       bigNumberStrings: true
     },
+
     logging: process.env.NODE_ENV === 'development' ? console.log : false,
+
     pool: {
       max: 10,
       min: 0,
       acquire: 30000,
       idle: 10000
     },
+
     define: {
       timestamps: true,
       underscored: true,
       createdAt: 'created_at',
       updatedAt: 'updated_at',
       charset: 'utf8mb4',
-      collate: 'utf8mb4_unicode_ci'
+      collate: 'utf8mb4_unicode_ci'   // ✅ KEEP THIS (model-level only)
     },
+
     timezone: '+05:30',
-    // Add this to ensure proper charset handling
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci'
+
+    charset: 'utf8mb4'   // ✅ keep this
+    // ❌ REMOVE: collation: 'utf8mb4_unicode_ci'
   }
 );
 
