@@ -115,6 +115,7 @@ export function Footer() {
   const { shopInfo } = useShopInfo();
   const [categories, setCategories] = useState([]);
   const [iconsLoaded, setIconsLoaded] = useState(false);
+console.log(shopInfo);
 
   // Check if icons are loaded
   useEffect(() => {
