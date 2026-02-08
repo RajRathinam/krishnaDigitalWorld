@@ -104,11 +104,11 @@ export function CategoryGrid() {
           </p>
         </div>
 
-        {/* Categories Grid - Centered container */}
-        <div className="max-w-7xl mx-auto flex justify-center">
+        {/* Categories Grid */}
+        <div className="max-w-7xl mx-auto">
           {loading ? (
-            // Loading Skeletons - Square shape - Centered
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 max-w-2xl md:max-w-4xl">
+            // Loading Skeletons - Square shape
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
               {Array.from({ length: MAX_CATEGORIES }).map((_, i) => (
                 <div key={i} className="aspect-square">
                   <Skeleton className="w-full h-full rounded-xl" />
@@ -116,21 +116,21 @@ export function CategoryGrid() {
               ))}
             </div>
           ) : error ? (
-            // Error State - Centered
-            <div className="flex flex-col items-center justify-center py-12 max-w-2xl">
+            // Error State
+            <div className="flex flex-col items-center justify-center py-12">
               <AlertCircle className="w-12 h-12 text-muted-foreground mb-4" />
               <p className="text-muted-foreground text-center">{error}</p>
             </div>
           ) : categories.length === 0 ? (
-            // Empty State - Centered
-            <div className="flex flex-col items-center justify-center py-12 max-w-2xl">
+            // Empty State
+            <div className="flex flex-col items-center justify-center py-12">
               <p className="text-muted-foreground text-center">
                 No categories available at the moment.
               </p>
             </div>
           ) : (
-            // Categories Grid - Center aligned with max width
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 max-w-2xl md:max-w-4xl">
+            // Categories Grid - 2 cols on mobile, 4 cols on desktop
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
               {categories.map((cat, index) => (
                 <div key={cat.id || index} className="group aspect-square">
                   <Link
@@ -145,34 +145,22 @@ export function CategoryGrid() {
                         className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
                         style={{ backgroundImage: `url(${cat.image})` }}
                       />
-                      
-                      {/* Overlay gradient */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      
-                      {/* Chevron Up Icon - Centered */}
-                      <div className="absolute bottom-0 left-0 right-0 z-10 p-4 flex justify-center">
-                        <ChevronsUp 
-                          size={28} 
-                          className="text-white/90 animate-bounce opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                        />
-                      </div>
-                      
-                      {/* Category Name - Centered at bottom */}
-                      <div className="absolute bottom-0 left-0 right-0 z-10 p-4">
-                        <h3 className="text-white font-semibold text-lg md:text-xl text-center transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-                          {cat.name}
-                        </h3>
-                        <p className="text-white/80 text-sm text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">
-                          Shop Now
-                        </p>
-                      </div>
-                    </div>
+  
+<div className="absolute bottom-0 left-0 right-0 z-10 p-4 flex justify-center">
+<ChevronsUp 
+    size={28} 
+    className="text-white animate-bounce"/>
+</div>
+
+                  </div>
                   </Link>
                 </div>
               ))}
             </div>
           )}
         </div>
+
+    
       </div>
     </section>
   );
