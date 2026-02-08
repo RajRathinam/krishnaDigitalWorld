@@ -1,24 +1,25 @@
 import { Sequelize } from 'sequelize';
 import dotenv from 'dotenv';
-import mysql2 from 'mysql2'; // Use IMPORT, not require
+import mysql2 from 'mysql2';
 
 dotenv.config();
 
 const sequelize = new Sequelize(
-  process.env.DB_NAME,
-  process.env.DB_USER,
-  process.env.DB_PASSWORD,
+  process.env.DB_NAME || 'krishna_digital',
+  process.env.DB_USER || 'kdigital_user',
+  process.env.DB_PASSWORD || 'SriKrishna@15',
   {
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
+    host: process.env.DB_HOST || 'localhost',
+    port: process.env.DB_PORT || 3306,
     dialect: 'mysql',
-    dialectModule: mysql2, // Use imported module, not require()
+    dialectModule: mysql2,
     dialectOptions: {
       charset: 'utf8mb4',
-      collate: 'utf8mb4_unicode_ci',
-      // MariaDB specific options
+      // Remove 'collate' - mysql2 doesn't support it directly
       connectTimeout: 60000,
       decimalNumbers: true,
+      supportBigNumbers: true,
+      bigNumberStrings: true
     },
     logging: process.env.NODE_ENV === 'development' ? console.log : false,
     pool: {
@@ -33,9 +34,9 @@ const sequelize = new Sequelize(
       createdAt: 'created_at',
       updatedAt: 'updated_at',
       charset: 'utf8mb4',
-      collate: 'utf8mb4_unicode_ci'
+      collate: 'utf8mb4_unicode_ci' // Keep here in define, not in dialectOptions
     },
-    timezone: '+05:30' // IST timezone
+    timezone: '+05:30'
   }
 );
 
