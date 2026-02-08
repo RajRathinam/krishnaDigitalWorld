@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { categoryApi } from '@/services/api';
 import { useShopInfo } from '@/contexts/ShopInfoContext';
 
-// Import social icons safely - using the same import pattern
+// Import social icons safely
 import { 
   Facebook, 
   Instagram, 
@@ -13,61 +13,15 @@ import {
   Linkedin 
 } from "lucide-react";
 
-// Social media icon mapping with fallbacks
+// Social media icon mapping
 const SOCIAL_MEDIA_ICONS = {
-  // Facebook variations
   facebook: Facebook || Globe,
-  facebookpage: Facebook || Globe,
-  fb: Facebook || Globe,
-  'facebook.com': Facebook || Globe,
-  
-  // Instagram variations
   instagram: Instagram || Globe,
-  insta: Instagram || Globe,
-  ig: Instagram || Globe,
-  'instagram.com': Instagram || Globe,
-  
-  // Twitter/X variations
   twitter: Twitter || Globe,
-  x: Twitter || Globe,
-  tw: Twitter || Globe,
-  'twitter.com': Twitter || Globe,
-  'x.com': Twitter || Globe,
-  
-  // YouTube variations
   youtube: Youtube || Globe,
-  youtubechannel: Youtube || Globe,
-  yt: Youtube || Globe,
-  'youtube.com': Youtube || Globe,
-  'youtu.be': Youtube || Globe,
-  
-  // LinkedIn variations
   linkedin: Linkedin || Globe,
-  linkedinpage: Linkedin || Globe,
-  li: Linkedin || Globe,
-  'linkedin.com': Linkedin || Globe,
-  
-  // WhatsApp variations
   whatsapp: Phone || Globe,
-  whatsappbusiness: Phone || Globe,
-  wa: Phone || Globe,
-  wapp: Phone || Globe,
-  
-  // Website variations
   website: Globe,
-  site: Globe,
-  web: Globe,
-  url: Globe,
-  
-  // Other platforms
-  pinterest: Globe,
-  pin: Globe,
-  'pinterest.com': Globe,
-  
-  telegram: Globe,
-  tg: Globe,
-  'telegram.me': Globe,
-  't.me': Globe,
 };
 
 // Normalize platform name for consistent matching
@@ -111,33 +65,67 @@ const footerLinks = {
   ]
 };
 
+// Helper function to parse social media data from API
+const parseSocialMediaData = (socialMediaData) => {
+  if (!socialMediaData) return {};
+  
+  // If it's already an object, return it
+  if (typeof socialMediaData === 'object' && !Array.isArray(socialMediaData)) {
+    return socialMediaData;
+  }
+  
+  // If it's a string, try to parse it as JSON
+  if (typeof socialMediaData === 'string') {
+    try {
+      // Clean the string - remove malformed parts
+      let cleanedString = socialMediaData;
+      
+      // Remove the malformed "{", "}" entries if present
+      cleanedString = cleanedString.replace(/"\{\"/g, '{"'); // Fix opening
+      cleanedString = cleanedString.replace(/\"\}"/g, '"}'); // Fix closing
+      cleanedString = cleanedString.replace(/"0":"{"/g, '');
+      cleanedString = cleanedString.replace(/"1":"}"/g, '');
+      cleanedString = cleanedString.replace(/,,/g, ','); // Remove double commas
+      
+      // Parse the JSON
+      const parsed = JSON.parse(cleanedString);
+      
+      // Filter out numeric keys (like "0", "1") and empty values
+      const filtered = {};
+      Object.entries(parsed).forEach(([key, value]) => {
+        // Skip numeric keys and empty values
+        if (!isNaN(key) || !value || value.trim() === '') return;
+        filtered[key] = value;
+      });
+      
+      return filtered;
+    } catch (error) {
+      console.error('Error parsing social media JSON:', error, 'Raw data:', socialMediaData);
+      return {};
+    }
+  }
+  
+  return {};
+};
+
 export function Footer() {
   const { shopInfo } = useShopInfo();
   const [categories, setCategories] = useState([]);
-  const [iconsLoaded, setIconsLoaded] = useState(false);
-console.log(shopInfo);
+  const [socialMediaLinks, setSocialMediaLinks] = useState({});
 
-  // Check if icons are loaded
+  // Parse and process social media links from shopInfo
   useEffect(() => {
-    const checkIcons = () => {
-      const iconsExist = Facebook && Instagram && Twitter && Youtube && Linkedin;
-      setIconsLoaded(!!iconsExist);
+    if (shopInfo?.socialMedia) {
+      const parsedLinks = parseSocialMediaData(shopInfo.socialMedia);
+      setSocialMediaLinks(parsedLinks);
       
       // Debug in development
       if (process.env.NODE_ENV === 'development') {
-        console.log('Icon status:', {
-          Facebook: !!Facebook,
-          Instagram: !!Instagram,
-          Twitter: !!Twitter,
-          Youtube: !!Youtube,
-          Linkedin: !!Linkedin,
-          AllLoaded: iconsExist
-        });
+        console.log('Original socialMedia:', shopInfo.socialMedia);
+        console.log('Parsed socialMedia:', parsedLinks);
       }
-    };
-    
-    checkIcons();
-  }, []);
+    }
+  }, [shopInfo]);
 
   useEffect(() => {
     let canceled = false;
@@ -159,34 +147,16 @@ console.log(shopInfo);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // Get social media links from shopInfo
-  const socialMediaLinks = shopInfo?.socialMedia || {};
+  // Check if we have social media links
   const hasSocialMedia = Object.keys(socialMediaLinks).length > 0;
 
   // Function to get icon for social media platform
   const getSocialMediaIcon = (platform) => {
-    if (!iconsLoaded) {
-      // Return fallback text while icons load
-      return <span className="text-xs font-medium">{platform.charAt(0).toUpperCase()}</span>;
-    }
-    
     const normalizedPlatform = normalizePlatformName(platform);
+    const Icon = SOCIAL_MEDIA_ICONS[normalizedPlatform] || Globe;
     
-    // Check for exact match
-    if (SOCIAL_MEDIA_ICONS[normalizedPlatform]) {
-      const Icon = SOCIAL_MEDIA_ICONS[normalizedPlatform];
-      return Icon ? <Icon className="w-5 h-5" /> : <Globe className="w-5 h-5" />;
-    }
-    
-    // Check for partial matches
-    for (const [key, Icon] of Object.entries(SOCIAL_MEDIA_ICONS)) {
-      if (normalizedPlatform.includes(key) || key.includes(normalizedPlatform)) {
-        return Icon ? <Icon className="w-5 h-5" /> : <Globe className="w-5 h-5" />;
-      }
-    }
-    
-    // Default to Globe icon
-    return <Globe className="w-5 h-5" />;
+    // Return JSX element
+    return Icon ? <Icon className="w-5 h-5" /> : <Globe className="w-5 h-5" />;
   };
 
   // Function to validate and format social media URL
@@ -220,6 +190,23 @@ console.log(shopInfo);
     
     return cleanedUrl;
   };
+
+  // Parse other JSON fields that might be strings
+  const parseJSONField = (field) => {
+    if (!field) return {};
+    if (typeof field === 'object') return field;
+    if (typeof field === 'string') {
+      try {
+        return JSON.parse(field);
+      } catch {
+        return {};
+      }
+    }
+    return {};
+  };
+
+  const businessHours = parseJSONField(shopInfo?.businessHours);
+  const locations = parseJSONField(shopInfo?.locations);
 
   return (
     <footer className="mt-12 pb-16 md:pb-0">
@@ -261,7 +248,7 @@ console.log(shopInfo);
               <h3 className="text-primary-foreground font-display font-medium text-lg mb-4">Connect With Us</h3>
               <div className="flex flex-wrap gap-3">
                 {Object.entries(socialMediaLinks).map(([platform, url]) => {
-                  if (!url || !url.trim()) return null;
+                  if (!url || !url.trim() || url.trim() === '{}') return null;
                   
                   const formattedUrl = formatSocialMediaUrl(platform, url);
                   
@@ -363,7 +350,7 @@ console.log(shopInfo);
             {hasSocialMedia && (
               <div className="flex gap-4 mt-2">
                 {Object.entries(socialMediaLinks).map(([platform, url]) => {
-                  if (!url || !url.trim()) return null;
+                  if (!url || !url.trim() || url.trim() === '{}') return null;
                   
                   const formattedUrl = formatSocialMediaUrl(platform, url);
                   return (
