@@ -26,7 +26,7 @@ const banners = [
         title: "TV Upgrade Sale",
         subtitle: "Smart TVs from ₹12,999",
         bgGradient: "from-indigo-600 via-purple-600 to-pink-500",
-        href: "/products?category=electronics&sub=tvs",
+        href: "/products?category=electronics&sub=tv",
         icon: Sparkles,
     },
     {

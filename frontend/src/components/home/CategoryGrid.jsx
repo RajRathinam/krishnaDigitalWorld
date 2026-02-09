@@ -29,7 +29,7 @@ const CATEGORY_IMAGES = [
   '/categories/electronic.PNG',
   '/categories/furniture.PNG',
   '/categories/home.PNG',
-  '/categories/plastic.PNG',
+  '/categories/plastic.jpeg',
 ];
 
 // Maximum number of categories to display

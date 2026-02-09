@@ -93,7 +93,7 @@ export function BundleOffers() {
     };
 
     return (
-        <section className="w-full py-6 md:py-16 bg-secondary/30">
+        <section className="w-full hidden py-6 md:py-16 bg-secondary/30">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Section Header */}
                 <div className="text-center mb-10">

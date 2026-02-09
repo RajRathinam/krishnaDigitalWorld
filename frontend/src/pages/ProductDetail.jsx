@@ -639,7 +639,7 @@ export default function ProductDetail() {
             {/* Main Image */}
             <div className="bg-card rounded-lg border border-border p-4 md:p-8 mb-3 relative">
               <div className="aspect-square flex items-center justify-center bg-secondary/30 rounded-lg overflow-hidden">
-                {selectedColorImages.length > 0 && selectedColorImages[selectedImage]?.url ? (<img src={getImageUrl(selectedColorImages[selectedImage].url)} alt={selectedColorImages[selectedImage]?.alt || `${product?.name} - ${selectedColorName}`} className="w-full h-full object-cover" onError={(e) => {
+                {selectedColorImages.length > 0 && selectedColorImages[selectedImage]?.url ? (<img src={getImageUrl(selectedColorImages[selectedImage].url)} alt={selectedColorImages[selectedImage]?.alt || `${product?.name} - ${selectedColorName}`} className="w-full h-full object-contain" onError={(e) => {
                   e.currentTarget.src = '/placeholder.svg';
                 }} />) : (<div className="text-center">
                   <Package className="w-24 h-24 md:w-32 md:h-32 text-muted-foreground/50 mx-auto mb-2" />
@@ -664,7 +664,7 @@ export default function ProductDetail() {
             {/* Thumbnails */}
             {selectedColorImages.length > 0 && (<div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
               {selectedColorImages.map((image, i) => (<button key={i} onClick={() => setSelectedImage(i)} className={`shrink-0 w-16 h-16 md:w-20 md:h-20 flex items-center justify-center rounded-lg border-2 transition-colors bg-card ${selectedImage === i ? "border-accent" : "border-border hover:border-accent/50"}`}>
-                {image?.url ? (<img src={getImageUrl(image.url)} alt={image.alt || `${product?.name} - ${selectedColorName}`} className="w-full h-full object-cover" onError={(e) => {
+                {image?.url ? (<img src={getImageUrl(image.url)} alt={image.alt || `${product?.name} - ${selectedColorName}`} className="w-full h-full object-contain" onError={(e) => {
                   e.currentTarget.src = '/placeholder.svg';
                 }} />) : (<Package className="w-8 h-8 text-muted-foreground/50" />)}
               </button>))}
