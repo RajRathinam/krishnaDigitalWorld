@@ -69,7 +69,7 @@ const Gallery6 = ({ heading = "Gallery", demoUrl = "/products", items = [
             carouselApi.scrollNext();
         }
     };
-    return (<section className="py-6 md:py-16">
+    return (<section className="py-6 hidden md:py-16">
       <div className="container">
         <div className="mb-8 flex flex-col justify-between gap-4 md:mb-12 md:flex-row md:items-end">
           <div className="flex flex-col gap-4 md:ml-5">

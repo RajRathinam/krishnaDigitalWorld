@@ -6,6 +6,53 @@ import { Footer } from "@/components/layout/Footer";
 import { HelpCircle, Phone, Mail, Home, Clock, Users, Shield, Truck, CheckCircle } from "lucide-react";
 import { useShopInfo } from '@/contexts/ShopInfoContext';
 
+// Helper function to parse phone numbers from shopInfo
+const parsePhoneNumbers = (phoneData) => {
+  if (!phoneData) return [];
+  
+  // If it's already an array, return it
+  if (Array.isArray(phoneData)) {
+    return phoneData.filter(phone => phone && typeof phone === 'string' && phone.trim());
+  }
+  
+  // If it's a string
+  if (typeof phoneData === 'string') {
+    // Try to parse as JSON first
+    try {
+      const parsed = JSON.parse(phoneData);
+      if (Array.isArray(parsed)) {
+        return parsed.filter(phone => phone && typeof phone === 'string' && phone.trim());
+      }
+      // If it's an object, extract values
+      if (typeof parsed === 'object') {
+        const phones = [];
+        Object.values(parsed).forEach(value => {
+          if (value && typeof value === 'string' && value.trim()) {
+            phones.push(value.trim());
+          }
+        });
+        return phones;
+      }
+    } catch (error) {
+      // If not JSON, treat as single phone number
+      return phoneData.trim() ? [phoneData.trim()] : [];
+    }
+  }
+  
+  // If it's an object
+  if (typeof phoneData === 'object' && !Array.isArray(phoneData)) {
+    const phones = [];
+    Object.values(phoneData).forEach(value => {
+      if (value && typeof value === 'string' && value.trim()) {
+        phones.push(value.trim());
+      }
+    });
+    return phones;
+  }
+  
+  return [];
+};
+
 const HelpSupport = () => {
     const { shopInfo, loading } = useShopInfo();
     
@@ -18,13 +65,16 @@ const HelpSupport = () => {
         });
     }, []);
 
+    // Parse phone numbers from shopInfo
+    const phoneNumbers = parsePhoneNumbers(shopInfo?.phone);
+    
     // Use shopInfo data or fallback to defaults
     const supportEmail = shopInfo?.email || "support@srikrishnahomeappliances.com";
-    const phoneNumbers = {
-        sales: shopInfo?.phone?.[0] || "+91 XXXXXXXXXX",
-        service: shopInfo?.phone?.[1] || "+91 XXXXXXXXXX",
-        default: shopInfo?.phone || "+91 XXXXXXXXXX"
-    };
+    
+    // Set phone numbers with fallbacks
+    const primaryPhone = phoneNumbers.length > 0 ? phoneNumbers[0] : "+91 XXXXXXXXXX";
+    const secondaryPhone = phoneNumbers.length > 0 ? phoneNumbers[0] : "+91 XXXXXXXXXX";
+    const defaultPhone = primaryPhone; // Use first phone as default
 
     const supportCategories = [
         {
@@ -32,10 +82,10 @@ const HelpSupport = () => {
             title: "Phone Support",
             description: "Call us for immediate assistance",
             details: [
-                `Sales & Enquiries: ${phoneNumbers.sales}`,
-                `Service Support: ${phoneNumbers.service}`
+                `Sales & Enquiries: ${primaryPhone}`,
+                `Service Support: ${secondaryPhone}`
             ],
-            action: `tel:${phoneNumbers.default}`,
+            action: `tel:${defaultPhone}`,
             color: "from-blue-500 to-cyan-500"
         },
         {
@@ -84,7 +134,7 @@ const HelpSupport = () => {
             icon: Clock,
             title: "Service Timing",
             description: shopInfo?.businessHours ? 
-                `Service Hours: ${shopInfo.businessHours}` : 
+                `Service Hours: 9 to 6` : 
                 "Information about our service hours and response times"
         }
     ];
@@ -288,7 +338,7 @@ const HelpSupport = () => {
                             </p>
                             <div className="flex flex-col sm:flex-row gap-4 justify-center">
                                 <a 
-                                    href={`tel:${phoneNumbers.default}`} 
+                                    href={`tel:${defaultPhone}`} 
                                     className="px-8 py-4 bg-foreground text-background font-semibold rounded-xl hover:bg-foreground/90 hover:scale-105 transition-all duration-300 shadow-xl flex items-center gap-3 justify-center"
                                 >
                                     <Phone className="w-5 h-5"/>

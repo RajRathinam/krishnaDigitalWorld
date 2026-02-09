@@ -57,7 +57,7 @@ const banners = [
 
 export function PromoBanners() {
     return (
-        <section className="py-8 md:py-12 bg-background">
+        <section className="py-8 hidden md:py-12 bg-background">
             <div className="container px-4 sm:px-6 lg:px-8">
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
                     {banners.map((banner, index) => {
