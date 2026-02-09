@@ -573,7 +573,7 @@ export default function ProductDetail() {
   const colorNames = getColorNames();
   const selectedColorName = colorNames[selectedColor] || '';
   const specs = specifications();
-  return (<div className="min-h-screen bg-background pb-20 md:pb-0">
+  return (<div className="min-h-screen bg-background md:pb-0">
     <Header />
 
     {/* QR Code Modal */}
@@ -638,7 +638,7 @@ export default function ProductDetail() {
           <div className="lg:sticky lg:top-24">
             {/* Main Image */}
             <div className="bg-card rounded-lg border border-border p-4 md:p-8 mb-3 relative">
-              <div className="aspect-square flex items-center justify-center bg-secondary/30 rounded-lg overflow-hidden">
+              <div className="aspect-square flex items-center justify-center bg-white rounded-lg overflow-hidden">
                 {selectedColorImages.length > 0 && selectedColorImages[selectedImage]?.url ? (<img src={getImageUrl(selectedColorImages[selectedImage].url)} alt={selectedColorImages[selectedImage]?.alt || `${product?.name} - ${selectedColorName}`} className="w-full h-full object-contain" onError={(e) => {
                   e.currentTarget.src = '/placeholder.svg';
                 }} />) : (<div className="text-center">
