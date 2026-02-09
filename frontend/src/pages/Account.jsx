@@ -708,12 +708,6 @@ export default function Account() {
                               <p className="text-sm font-medium text-foreground">
                                 Total: {formatPrice(order.finalAmount || order.totalPrice || 0)}
                               </p>
-                              <Link
-                                to={`/order/${order.id}`}
-                                className="text-krishna-blue-link text-sm hover:underline flex items-center gap-1"
-                              >
-                                View Details <ChevronRight className="w-4 h-4" />
-                              </Link>
                             </div>
                           </div>
                         ))}
