@@ -32,6 +32,7 @@ export const ProductManagement = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editingProductId, setEditingProductId] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRefs = useRef([]);
   const { toast } = useToast();
 
@@ -95,6 +96,7 @@ export const ProductManagement = () => {
     setEditingProductId(null);
     setIsEditing(false);
     setIsSubmitting(false);
+    setUploadProgress(0);
     fileInputRefs.current = [];
   };
 
@@ -320,7 +322,13 @@ export const ProductManagement = () => {
       };
 
       if (isEditing && editingProductId) {
-        const res = await api.put(`/products/${editingProductId}`, formData, { headers: { "Content-Type": "multipart/form-data" } });
+        const res = await api.put(`/products/${editingProductId}`, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+          onUploadProgress: (progressEvent) => {
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            setUploadProgress(percentCompleted);
+          }
+        });
         setProducts(prev => prev.map(p => {
           if (String(p.id) === String(editingProductId)) {
             const updated = res.data.data;
@@ -336,7 +344,13 @@ export const ProductManagement = () => {
         }));
         toast({ title: "Success", description: "Product updated successfully" });
       } else {
-        const res = await api.post("/products", formData, { headers: { "Content-Type": "multipart/form-data" } });
+        const res = await api.post("/products", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+          onUploadProgress: (progressEvent) => {
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            setUploadProgress(percentCompleted);
+          }
+        });
         const newProd = res.data.data;
         const parsedProd = {
           ...newProd,
@@ -697,10 +711,10 @@ export const ProductManagement = () => {
                           <Star
                             key={star}
                             className={`h-5 w-5 transition-colors ${parseFloat(form.rating || 0) >= star
-                                ? "text-yellow-500 fill-yellow-500"
-                                : parseFloat(form.rating || 0) >= star - 0.5
-                                  ? "text-yellow-500 fill-yellow-500/50"
-                                  : "text-gray-300"
+                              ? "text-yellow-500 fill-yellow-500"
+                              : parseFloat(form.rating || 0) >= star - 0.5
+                                ? "text-yellow-500 fill-yellow-500/50"
+                                : "text-gray-300"
                               }`}
                             onClick={() => setForm({ ...form, rating: String(star) })}
                             style={{ cursor: "pointer" }}
@@ -796,19 +810,19 @@ export const ProductManagement = () => {
                       <div className="space-y-2">
                         <Label className="text-xs font-semibold uppercase text-muted-foreground">Images</Label>
                         <div className="flex flex-wrap gap-2">
-                    {color.existingImages?.map((img, iIdx) => (
-  <div key={`exist-${iIdx}`} className="relative h-20 w-20 rounded-md border overflow-hidden group">
-    <img src={getImageUrl(img.url)} className="h-full w-full object-cover" />
-    <button className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity"
-      onClick={() => {
-        const newColors = [...colorsList];
-        newColors[idx].existingImages.splice(iIdx, 1);
-        setColorsList(newColors);
-      }}>
-      <Trash2 className="h-4 w-4" />
-    </button>
-  </div>
-))}
+                          {color.existingImages?.map((img, iIdx) => (
+                            <div key={`exist-${iIdx}`} className="relative h-20 w-20 rounded-md border overflow-hidden group">
+                              <img src={getImageUrl(img.url)} className="h-full w-full object-cover" />
+                              <button className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity"
+                                onClick={() => {
+                                  const newColors = [...colorsList];
+                                  newColors[idx].existingImages.splice(iIdx, 1);
+                                  setColorsList(newColors);
+                                }}>
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          ))}
                           {color.files?.map((file, fIdx) => (
                             <div key={`new-${fIdx}`} className="relative h-20 w-20 rounded-md border overflow-hidden group">
                               <img src={URL.createObjectURL(file)} className="h-full w-full object-cover" />
@@ -853,6 +867,21 @@ export const ProductManagement = () => {
               </Tabs>
             </div>
           </div>
+
+          {isSubmitting && uploadProgress > 0 && (
+            <div className="px-6 py-2 bg-muted/30 border-t">
+              <div className="flex justify-between text-xs mb-1">
+                <span>Uploading images...</span>
+                <span>{uploadProgress}%</span>
+              </div>
+              <div className="w-full bg-secondary h-1.5 rounded-full overflow-hidden">
+                <div
+                  className="bg-primary h-full transition-all duration-300"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+            </div>
+          )}
 
           <DialogFooter className="border-t p-4">
             <Button variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isSubmitting}>Cancel</Button>

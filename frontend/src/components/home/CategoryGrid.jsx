@@ -1,48 +1,13 @@
-/**
- * CategoryGrid Component
- * 
- * Displays product categories in a responsive grid layout.
- * Fetches categories from API and displays them with images and hover effects.
- * 
- * Features:
- * - Fetches categories from API
- * - Responsive grid (2 cols mobile, 4 cols desktop)
- * - Loading skeletons
- * - Hover effects and animations
- * - Direct links to category product listings
- * - Error handling
- * 
- * @component
- * @returns {JSX.Element} Category grid component
- */
-
+// CategoryGrid.jsx (Updated - Dynamic from API)
 import { useEffect, useState } from 'react';
 import { Link } from "react-router-dom";
 import { categoryApi } from '@/services/api';
 import { Skeleton } from "@/components/ui/skeleton";
 import { SplitHeading } from "@/components/ui/split-heading";
-import { AlertCircle } from "lucide-react";
-import { ChevronsUp } from "lucide-react";
-
-// Category images - 4 images for 4 categories
-const CATEGORY_IMAGES = [
-  '/categories/electronic.PNG',
-  '/categories/furniture.PNG',
-  '/categories/home.PNG',
-  '/categories/plastic.jpeg',
-];
+import { AlertCircle, ChevronsUp } from "lucide-react";
 
 // Maximum number of categories to display
 const MAX_CATEGORIES = 4;
-
-/**
- * Get category image by index (rotates through available images)
- * @param {number} categoryIndex - Index of the category
- * @returns {string} Image URL
- */
-const getCategoryImage = (categoryIndex) => {
-  return CATEGORY_IMAGES[categoryIndex % CATEGORY_IMAGES.length];
-};
 
 export function CategoryGrid() {
   const [categories, setCategories] = useState([]);
@@ -51,25 +16,25 @@ export function CategoryGrid() {
 
   useEffect(() => {
     let canceled = false;
-    
+
     const fetchCategories = async () => {
       try {
         setLoading(true);
         setError(null);
-        
+
         const res = await categoryApi.getCategories();
         const data = res?.data || [];
-        
+
         if (!canceled && Array.isArray(data)) {
-          // Take only first 4 categories and assign images
-          const categoriesWithImages = data
+          // Filter only active categories and take first 4
+          const activeCategories = data.filter(cat => cat.isActive === true);
+          const categoriesWithImages = activeCategories
             .slice(0, MAX_CATEGORIES)
-            .map((cat, index) => ({
+            .map(cat => ({
               ...cat,
-              image: cat.image || getCategoryImage(index),
               slug: cat.slug || cat.name?.toLowerCase().replace(/\s+/g, '-')
             }));
-          
+
           setCategories(categoriesWithImages);
         } else if (!canceled) {
           setError('Invalid category data received');
@@ -95,9 +60,9 @@ export function CategoryGrid() {
       <div className="container p-3 sm:p-6 lg:p-8">
         {/* Section Header */}
         <div className="text-center mb-10 lg:mb-14">
-          <SplitHeading 
-            text="Browse by Category" 
-            className="text-3xl md:text-4xl font-bold tracking-tight" 
+          <SplitHeading
+            text="Browse by Category"
+            className="text-3xl md:text-4xl font-bold tracking-tight"
           />
           <p className="text-muted-foreground mt-2 text-sm md:text-base">
             Explore our wide range of product categories
@@ -131,8 +96,8 @@ export function CategoryGrid() {
           ) : (
             // Categories Grid - 2 cols on mobile, 4 cols on desktop
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-              {categories.map((cat, index) => (
-                <div key={cat.id || index} className="group aspect-square">
+              {categories.map((cat) => (
+                <div key={cat.id} className="group aspect-square">
                   <Link
                     to={`/category/${cat.slug || cat.name?.toLowerCase().replace(/\s+/g, '-')}`}
                     className="block h-full"
@@ -140,27 +105,30 @@ export function CategoryGrid() {
                   >
                     {/* Card Container - Square Shape */}
                     <div className="relative h-full rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300">
-                      {/* Background Image */}
-                      <div 
+                      {/* Background Image - Dynamic from API */}
+                      <div
                         className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
-                        style={{ backgroundImage: `url(${cat.image})` }}
+                        style={{
+                          backgroundImage: `url(${cat.image || '/categories/placeholder.jpg'})`
+                        }}
                       />
-  
-<div className="absolute bottom-0 left-0 right-0 z-10 p-4 flex justify-center">
-<ChevronsUp 
-    size={28} 
-    className="text-white animate-bounce"/>
-</div>
 
-                  </div>
+                      {/* Overlay for better text visibility */}
+                      <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors duration-300" />
+
+
+
+                      {/* Chevron indicator */}
+                      <div className="absolute bottom-0 left-0 right-0 z-10 p-4 flex justify-center">
+                        <ChevronsUp size={28} className="text-white animate-bounce" />
+                      </div>
+                    </div>
                   </Link>
                 </div>
               ))}
             </div>
           )}
         </div>
-
-    
       </div>
     </section>
   );

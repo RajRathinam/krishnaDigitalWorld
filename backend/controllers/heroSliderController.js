@@ -3,6 +3,7 @@ import { HeroSlider } from '../models/index.js';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import { processHeroImage, deleteFile } from '../utils/imageProcessor.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -19,7 +20,19 @@ export const createHeroSlider = async (req, res) => {
             });
         }
 
-        const imagePath = `/uploads/hero/${req.file.filename}`;
+        const filename = `hero-${Date.now()}.webp`;
+        const tempPath = req.file.path;
+        const finalPath = path.join(__dirname, '..', 'uploads/hero', filename);
+        const imagePath = `/uploads/hero/${filename}`;
+
+        try {
+            await processHeroImage(tempPath, finalPath);
+            // Delete the original uploaded file (temp)
+            deleteFile(tempPath);
+        } catch (procError) {
+            deleteFile(tempPath);
+            throw new Error('Failed to process image: ' + procError.message);
+        }
 
         const newSlide = await HeroSlider.create({
             title,
@@ -106,7 +119,19 @@ export const updateHeroSlider = async (req, res) => {
             if (fs.existsSync(oldPath)) {
                 fs.unlinkSync(oldPath);
             }
-            updateData.image = `/uploads/hero/${req.file.filename}`;
+
+            const filename = `hero-${Date.now()}.webp`;
+            const tempPath = req.file.path;
+            const finalPath = path.join(__dirname, '..', 'uploads/hero', filename);
+
+            try {
+                await processHeroImage(tempPath, finalPath);
+                deleteFile(tempPath);
+                updateData.image = `/uploads/hero/${filename}`;
+            } catch (procError) {
+                deleteFile(tempPath);
+                throw new Error('Failed to process image: ' + procError.message);
+            }
         }
 
         await slider.update(updateData);

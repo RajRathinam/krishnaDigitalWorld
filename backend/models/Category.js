@@ -28,26 +28,38 @@ const Category = sequelize.define('Category', {
     references: {
       model: 'categories',
       key: 'id'
-    }
+    },
+    field: 'parent_id'
   },
   subcategories: {
     type: DataTypes.JSON,
     allowNull: true,
-    defaultValue: [],
-    comment: 'Array of subcategory names like ["TV", "Washing Machine", "Refrigerator"]'
+    defaultValue: []
+  },
+  subcategoryImages: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    defaultValue: {},
+    field: 'subcategory_images' // This maps to the correct column name
+  },
+  image: {
+    type: DataTypes.STRING(255),
+    allowNull: true
   },
   isActive: {
     type: DataTypes.BOOLEAN,
-    defaultValue: true
+    defaultValue: true,
+    field: 'is_active'
   },
   attributesSchema: {
     type: DataTypes.JSON,
     allowNull: true,
-    comment: 'Schema for product attributes specific to this category'
+    field: 'attributes_schema'
   }
 }, {
   tableName: 'categories',
-  timestamps: true
+  timestamps: true,
+  underscored: true
 });
 
 export default Category;

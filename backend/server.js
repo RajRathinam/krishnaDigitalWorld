@@ -114,6 +114,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 console.log('✅ Serving static files from /uploads directory');
 
 // Request logging

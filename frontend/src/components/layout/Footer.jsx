@@ -58,11 +58,11 @@ const footerLinks = {
     { name: "Warranty Info", path: "/warranty-info", icon: Shield },
     { name: "Installation Support", path: "/installation-support", icon: Home }
   ],
-  "Shop By Category": [
-    { name: "Kitchen Appliances", path: "/products?category=kitchen", query: "kitchen" },
-    { name: "Home & Utility", path: "/products?category=home-utility", query: "home-utility" },
-    { name: "Energy Efficient", path: "/products?category=energy-efficient", query: "energy-efficient" }
-  ]
+  // "Shop By Category": [
+  //   { name: "Kitchen Appliances", path: "/products?category=kitchen", query: "kitchen" },
+  //   { name: "Home & Utility", path: "/products?category=home-utility", query: "home-utility" },
+  //   { name: "Energy Efficient", path: "/products?category=energy-efficient", query: "energy-efficient" }
+  // ]
 };
 
 // Helper function to parse social media data from API

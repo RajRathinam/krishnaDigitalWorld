@@ -1,7 +1,12 @@
-// controllers/productController.js
 import { Product, Category, Brand, Review, User, Model, sequelize, Sequelize } from '../models/index.js';
 import { generateProductSlug } from '../utils/slugGenerator.js';
 import { deleteImages } from '../middleware/upload.js';
+import { processProductImage, deleteFile } from '../utils/imageProcessor.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * @desc    Get all products with filters including subcategory
@@ -686,6 +691,25 @@ export const createProduct = async (req, res) => {
     if (hasUploadedFiles) {
       console.log('Processing uploaded files:', req.uploadedFiles.length);
 
+      // Optimize each uploaded file sequentially to save memory
+      for (let i = 0; i < req.uploadedFiles.length; i++) {
+        const file = req.uploadedFiles[i];
+        const tempPath = path.join(__dirname, '..', file.url);
+        const filename = `prod-${Date.now()}-${i}.webp`;
+        const finalUrl = `/uploads/${filename}`;
+        const finalPath = path.join(__dirname, '..', 'uploads', filename);
+
+        try {
+          await processProductImage(tempPath, finalPath);
+          deleteFile(tempPath);
+          file.url = finalUrl;
+          file.publicId = filename;
+        } catch (procErr) {
+          console.error(`Failed to process image ${file.url}:`, procErr);
+          // Continue with original file if processing fails, or throw if preferred
+        }
+      }
+
       // Handle fileColorMapping if provided
       if (req.body.fileColorMapping) {
         let fileColorMapping;
@@ -901,9 +925,9 @@ export const createProduct = async (req, res) => {
     const isProductBestSeller = isBestSeller === true || isBestSeller === 'true' || isBestSeller === '1';
     const isProductDealOfTheDay = isDealOfTheDay === true || isDealOfTheDay === 'true' || isDealOfTheDay === '1';
 
-// Handle sellerId - ALWAYS use the authenticated user's ID
-const sellerIdValue = req.user?.id || null;
-console.log('Using sellerId from authenticated user:', sellerIdValue);
+    // Handle sellerId - ALWAYS use the authenticated user's ID
+    const sellerIdValue = req.user?.id || null;
+    console.log('Using sellerId from authenticated user:', sellerIdValue);
     // Create product with subcategory string
     const product = await Product.create({
       code,
