@@ -5,6 +5,7 @@ import { categoryApi } from '@/services/api';
 import { Skeleton } from "@/components/ui/skeleton";
 import { SplitHeading } from "@/components/ui/split-heading";
 import { AlertCircle, ChevronsUp } from "lucide-react";
+import { getImageUrl } from '@/lib/utils';
 
 // Maximum number of categories to display
 const MAX_CATEGORIES = 4;
@@ -32,7 +33,9 @@ export function CategoryGrid() {
             .slice(0, MAX_CATEGORIES)
             .map(cat => ({
               ...cat,
-              slug: cat.slug || cat.name?.toLowerCase().replace(/\s+/g, '-')
+              slug: cat.slug || cat.name?.toLowerCase().replace(/\s+/g, '-'),
+              // Process image URL through getImageUrl
+              imageUrl: cat.image ? getImageUrl(cat.image) : null
             }));
 
           setCategories(categoriesWithImages);
@@ -55,9 +58,29 @@ export function CategoryGrid() {
     return () => { canceled = true; };
   }, []);
 
+  // Fallback image for categories without images
+  const getCategoryImage = (category) => {
+    if (category.imageUrl) {
+      return category.imageUrl;
+    }
+    // Generate a gradient based on category name for consistent fallback
+    const colors = [
+      'from-blue-500 to-blue-600',
+      'from-green-500 to-green-600',
+      'from-purple-500 to-purple-600',
+      'from-red-500 to-red-600',
+      'from-yellow-500 to-yellow-600',
+      'from-pink-500 to-pink-600',
+      'from-indigo-500 to-indigo-600',
+      'from-teal-500 to-teal-600'
+    ];
+    const colorIndex = (category.id || 0) % colors.length;
+    return colors[colorIndex];
+  };
+
   return (
-    <section className="lg:py-16 bg-background">
-      <div className="container p-3 sm:p-6 lg:p-8">
+    <section className="py-12 lg:py-16 bg-background">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-10 lg:mb-14">
           <SplitHeading
@@ -104,23 +127,36 @@ export function CategoryGrid() {
                     aria-label={`Browse ${cat.name} category`}
                   >
                     {/* Card Container - Square Shape */}
-                    <div className="relative h-full rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300">
+                    <div className="relative h-full rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300">
                       {/* Background Image - Dynamic from API */}
-                      <div
-                        className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
-                        style={{
-                          backgroundImage: `url(${cat.image || '/categories/placeholder.jpg'})`
-                        }}
-                      />
+                      {cat.imageUrl ? (
+                        <img
+                          src={cat.imageUrl}
+                          alt={cat.name}
+                          className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                          onError={(e) => {
+                            console.error('Failed to load category image:', cat.imageUrl);
+                            e.target.style.display = 'none';
+                            e.target.parentElement.style.background = `linear-gradient(135deg, #667eea 0%, #764ba2 100%)`;
+                          }}
+                        />
+                      ) : (
+                        <div className={`absolute inset-0 bg-gradient-to-br ${getCategoryImage(cat)}`} />
+                      )}
 
                       {/* Overlay for better text visibility */}
-                      <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors duration-300" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent group-hover:from-black/80 transition-colors duration-300" />
 
+                      {/* Category Name */}
+                      <div className="absolute bottom-0 left-0 right-0 z-10 p-4">
+                        <h3 className="text-white text-lg sm:text-xl font-bold text-center drop-shadow-lg">
+                          {cat.name}
+                        </h3>
+                      </div>
 
-
-                      {/* Chevron indicator */}
-                      <div className="absolute bottom-0 left-0 right-0 z-10 p-4 flex justify-center">
-                        <ChevronsUp size={28} className="text-white animate-bounce" />
+                      {/* Chevron indicator - hidden on mobile, visible on hover on desktop */}
+                      <div className="absolute bottom-12 left-0 right-0 z-10 flex justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <ChevronsUp size={24} className="text-white animate-bounce" />
                       </div>
                     </div>
                   </Link>
