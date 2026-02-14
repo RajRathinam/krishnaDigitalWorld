@@ -182,23 +182,44 @@ const TermsConditions = () => {
                     <div className="absolute top-20 left-10 w-72 h-72 bg-accent/20 rounded-full blur-3xl animate-float"/>
                     <div className="absolute bottom-10 right-10 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-float" style={{ animationDelay: "1s" }}/>
                     
-                    <div className="container mx-auto px-4 relative z-10">
-                        <div className="max-w-4xl mx-auto text-center">
-                            <div data-aos="fade-up">
-                                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent font-medium text-sm mb-6">
-                                    <FileText className="w-4 h-4"/>
-                                    Legal Information
-                                </span>
-                            </div>
-                            <h1 data-aos="fade-up" data-aos-delay="100" className="font-heading text-3xl md:text-6xl font-bold text-foreground mb-6 leading-tight">
-                                Terms & <span className="text-accent">Conditions</span>
-                            </h1>
-                            <p data-aos="fade-up" data-aos-delay="200" className="text-sm md:text-xl text-muted-foreground max-w-2xl mx-auto">
-                                Welcome to {shopInfo?.shopName || "Sri Krishna Home Appliances"}. By accessing or using our website, store 
-                                services, or purchasing our products, you agree to comply with these Terms & Conditions.
-                            </p>
-                        </div>
-                    </div>
+                <div className="container mx-auto px-4 relative z-10">
+    <div className="max-w-4xl mx-auto text-center">
+        <div data-aos="fade-up">
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent font-medium text-sm mb-6">
+                <FileText className="w-4 h-4"/>
+                Legal Information
+            </span>
+        </div>
+
+        <h1 
+            data-aos="fade-up" 
+            data-aos-delay="100" 
+            className="font-heading text-3xl md:text-6xl font-bold text-foreground mb-6 leading-tight"
+        >
+            Terms & <span className="text-accent">Conditions</span>
+        </h1>
+
+        <p 
+            data-aos="fade-up" 
+            data-aos-delay="200" 
+            className="text-sm md:text-xl text-muted-foreground max-w-2xl mx-auto"
+        >
+            Welcome to {shopInfo?.shopName || "Sri Krishna Home Appliances"}. 
+            By accessing or using our website, store services, or purchasing our products, 
+            you agree to comply with these Terms & Conditions.
+        </p>
+
+        {/* Ownership Line */}
+        <p 
+            data-aos="fade-up" 
+            data-aos-delay="300"
+            className="text-xs md:text-base text-muted-foreground mt-4"
+        >
+            This website is owned and operated by <span className="text-accent font-heading">Sri Krishna Home Appliances & Furnitures</span>.
+        </p>
+    </div>
+</div>
+
                 </section>
 
                 {/* Important Notice */}

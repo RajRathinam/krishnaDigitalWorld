@@ -149,7 +149,7 @@ export function CategoryGrid() {
 
                       {/* Category Name */}
                       <div className="absolute bottom-0 left-0 right-0 z-10 p-4">
-                        <h3 className="text-white text-lg sm:text-xl font-bold text-center drop-shadow-lg">
+                        <h3 className="text-white text-sm sm:text-xl font-semibold tracking-wider text-center drop-shadow-lg">
                           {cat.name}
                         </h3>
                       </div>

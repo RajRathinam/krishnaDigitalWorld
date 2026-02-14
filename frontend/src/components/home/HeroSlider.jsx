@@ -161,7 +161,7 @@ export function HeroSlider() {
   if (slides.length === 0) return null;
 
   return (
-    <section className="p-3 sm:p-6 lg:p-6">
+    <section className="p-3 sm:p-6 lg:px-24 ">
       <div
         className="relative rounded-xl w-full h-[250px] min-h-[250px] sm:h-[350px] md:h-[380px] lg:h-[530px] overflow-hidden mx-auto max-w-8xl group"
         aria-label="Hero banner carousel"
