@@ -3,15 +3,40 @@ import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
-import { LayoutDashboard, LogOut, Settings, UserCircle, Package, ShoppingCart, Cake, BarChart3, PanelLeftClose, PanelLeftOpen, UserCog, Blocks, Store, Tag, ChevronRight, Image as ImageIcon } from "lucide-react";
+import { 
+  LayoutDashboard, 
+  LogOut, 
+  Settings, 
+  UserCircle, 
+  Package, 
+  ShoppingCart, 
+  Cake, 
+  BarChart3, 
+  PanelLeftClose, 
+  PanelLeftOpen, 
+  UserCog, 
+  Blocks, 
+  Store, 
+  Tag, 
+  ChevronRight, 
+  Image as ImageIcon,
+  Video, // Add Video icon for advertisements
+  PlayCircle // Alternative icon
+} from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, } from "@/components/ui/dropdown-menu";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
-import api from "@/lib/api"; // Ensure api is imported for logout fallback
+import { getImageUrl, getVideoUrl, formatDate } from "@/lib/utils";
 
 const sidebarVariants = {
   open: {
@@ -45,6 +70,7 @@ export function AdminCollapsibleSidebar({ activeSection, showFooter = true, isCo
     { id: "brands", title: "Brands", icon: Tag, path: "/brands" },
     { id: "categories", title: "Categories", icon: Blocks, path: "/categories" },
     { id: "hero-slider", title: "Hero Slider", icon: ImageIcon, path: "/hero-slider" },
+    { id: "advertisements", title: "Advertisements", icon: Video, path: "/advertisements" }, // New Advertisement item
     { id: "settings", title: "Settings", icon: Settings, path: "/settings" },
   ];
 
@@ -71,7 +97,7 @@ export function AdminCollapsibleSidebar({ activeSection, showFooter = true, isCo
   // Get user initials for avatar
   const getUserInitials = () => {
     if (user?.name) {
-      return user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 1);
+      return user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
     }
     return 'AD';
   };
@@ -148,10 +174,11 @@ export function AdminCollapsibleSidebar({ activeSection, showFooter = true, isCo
             {menuItems.map((item) => (
               <Button
                 key={item.id}
-                variant={activeSection === item.id ? "secondary" : "ghost"}
+                variant={location.pathname === item.path || (item.path !== "/" && location.pathname.startsWith(item.path)) ? "secondary" : "ghost"}
                 className={cn(
                   "w-full justify-start overflow-hidden",
-                  activeSection === item.id && "bg-primary/10 text-primary font-medium hover:bg-primary/15",
+                  (location.pathname === item.path || (item.path !== "/" && location.pathname.startsWith(item.path))) && 
+                  "bg-primary/10 text-primary font-medium hover:bg-primary/15",
                   isCollapsed ? "px-2 justify-center" : ""
                 )}
                 onClick={() => navigate(item.path)}
@@ -172,10 +199,11 @@ export function AdminCollapsibleSidebar({ activeSection, showFooter = true, isCo
             {managementItems.map((item) => (
               <Button
                 key={item.id}
-                variant={activeSection === item.id ? "secondary" : "ghost"}
+                variant={location.pathname === item.path || location.pathname.startsWith(item.path) ? "secondary" : "ghost"}
                 className={cn(
                   "w-full justify-start overflow-hidden",
-                  activeSection === item.id && "bg-primary/10 text-primary font-medium hover:bg-primary/15",
+                  (location.pathname === item.path || location.pathname.startsWith(item.path)) && 
+                  "bg-primary/10 text-primary font-medium hover:bg-primary/15",
                   isCollapsed ? "px-2 justify-center" : ""
                 )}
                 onClick={() => navigate(item.path)}

@@ -22,6 +22,7 @@ import {
   settingsRoutes,
   heroSliderRoutes
 } from './routes/index.js';
+import advertisementRoutes from './routes/advertisementRoutes.js';
 import { apiLimiter } from './middleware/rateLimiter.js';
 import { checkBirthdaysAndSendWishes } from './utils/birthdayWish.js';
 import birthdayRoutes from './routes/birthdayRoutes.js';
@@ -146,6 +147,7 @@ app.use('/api/admin/orders', adminOrderRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/coupons', couponRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/advertisements', advertisementRoutes);
 app.use('/api/brands', brandRoutes);
 app.use('/api/models', modelRoutes);
 app.use('/api/birthdays', birthdayRoutes);

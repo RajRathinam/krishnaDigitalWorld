@@ -34,7 +34,7 @@ const diskStorage = multer.diskStorage({
 /**
  * File filter for image uploads
  */
-const fileFilter = (req, file, cb) => {
+export const fileFilter = (req, file, cb) => {  // <-- ADDED export here
   // Accept images only
   if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
     return cb(new Error('Only image files are allowed!'), false);
@@ -47,7 +47,7 @@ const fileFilter = (req, file, cb) => {
  */
 export const upload = multer({
   storage: diskStorage,
-  fileFilter: fileFilter,
+  fileFilter: fileFilter,  // Now this references the exported function
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB limit
     files: 20 // Maximum 20 files

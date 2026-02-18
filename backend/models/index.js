@@ -14,7 +14,12 @@ import Model from './Model.js';
 import ShopInfo from './ShopInfo.js';
 import HeroSlider from './HeroSlider.js';
 import Sequelize from 'sequelize';
+// Add to your models/index.js
+import Advertisement from './Advertisement.js';
 
+// Add associations if needed
+Advertisement.belongsTo(User, { as: 'creator', foreignKey: 'createdBy' });
+User.hasMany(Advertisement, { as: 'advertisements', foreignKey: 'createdBy' });
 // Define associations - ONLY ONCE PER ASSOCIATION
 
 // User associations
@@ -86,5 +91,5 @@ export {
   UserCoupon,
   Model,
   ShopInfo,
-  HeroSlider
+  HeroSlider,Advertisement
 };

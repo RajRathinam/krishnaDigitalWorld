@@ -28,11 +28,12 @@ import {
   TrustBadges,
   BrandShowcase,
   BundleOffers,
-  FeaturedProjects
+  FeaturedProjects,
+  AdvertisementCarousel
 } from "@/components/home";
-
 // Import SubcategorySlider
 import { SubcategorySlider } from "@/components/home";
+
 
 const Index = () => {
   /**
@@ -92,6 +93,9 @@ const Index = () => {
           <FeaturedProjects />
         </div>
 
+        <div data-aos="fade-up" data-aos-delay="100">
+          <AdvertisementCarousel />
+        </div>
         {/* Brand Showcase - Featured brands */}
         <div data-aos="fade-up" data-aos-delay="100">
           <BrandShowcase />
@@ -101,7 +105,7 @@ const Index = () => {
         <div data-aos="fade-up" data-aos-delay="100">
           <BundleOffers />
         </div>
-
+ {/* Bundle Offers - Special combo deals */}
         {/* Trust Badges - Social proof and guarantees */}
         <div data-aos="fade-up" data-aos-delay="100">
           <TrustBadges />

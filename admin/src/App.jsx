@@ -20,6 +20,7 @@ import { AdminSettings } from "@/components/AdminSettings";
 import { HeroSliderManagement } from "@/components/HeroSliderManagement";
 import AddBrand from "@/components/AddBrand";
 import AddCategory from "@/components/AddCategory";
+import AddAdvertisement from "@/components/AddAdvertisement"; // Import Advertisement component
 
 import "./index.css";
 
@@ -48,6 +49,7 @@ function App() {
                   <Route path="hero-slider" element={<HeroSliderManagement />} />
                   <Route path="brands" element={<AddBrand />} />
                   <Route path="categories" element={<AddCategory />} />
+                  <Route path="advertisements" element={<AddAdvertisement />} /> {/* New Advertisement route */}
                 </Route>
               </Route>
               <Route path="*" element={<NotFound />} />
