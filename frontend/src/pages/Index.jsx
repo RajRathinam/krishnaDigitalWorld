@@ -93,14 +93,14 @@ const Index = () => {
           <FeaturedProjects />
         </div>
 
-        <div data-aos="fade-up" data-aos-delay="100">
-          <AdvertisementCarousel />
-        </div>
         {/* Brand Showcase - Featured brands */}
         <div data-aos="fade-up" data-aos-delay="100">
           <BrandShowcase />
         </div>
 
+        <div data-aos="fade-up" data-aos-delay="100">
+          <AdvertisementCarousel />
+        </div>
         {/* Bundle Offers - Special combo deals */}
         <div data-aos="fade-up" data-aos-delay="100">
           <BundleOffers />

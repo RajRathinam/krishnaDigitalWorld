@@ -118,8 +118,7 @@ export function ProductShowcase() {
 
     return (
         <section className="w-full mt-6 px-3 md:px-4 lg:px-8">
-      <div className="bg-card bg-[#0b1c2f] rounded-xl p-4 md:p-5 border border-border/50 relative overflow-hidden">     <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-accent/10 to-transparent rounded-full blur-2xl pointer-events-none" />
-
+ <div className="bg-[#0a1929] rounded-xl p-4 md:p-5 border border-border/50 relative overflow-hidden">
                 {/* Section Header */}
                 <div className="flex items-center justify-between mb-4 relative">
                     <span className="text-lg md:text-xl font-bold text-white">Top Picks For <span className="text-accent">You</span></span>

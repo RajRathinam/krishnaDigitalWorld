@@ -62,7 +62,7 @@ const upload = multer({
   }),
   fileFilter: fileFilter,
   limits: { 
-    fileSize: 5 * 1024 * 1024, // 5MB
+    fileSize: 50 * 1024 * 1024, // 5MB
     files: 21 // 1 category image + 20 subcategory images
   }
 });
