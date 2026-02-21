@@ -365,9 +365,9 @@ export function HeroSlider() {
               aria-label={`Slide ${i + 1}`}
               className="relative overflow-hidden rounded-full transition-all duration-300"
               style={{
-                width: i === current ? 24 : 8,
-                height: 8,
-                background: i === current ? "hsl(45,100%,52%)" : "rgba(255,255,255,0.4)",
+                width: i === current ? 22 : 6,
+                height: 6,
+                background: i === current ? "rgba(242,233,234)" : "rgba(255,255,255,0.4)",
               }}
             >
               {/* fill bar on active */}

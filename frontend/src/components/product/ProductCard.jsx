@@ -576,7 +576,6 @@ export function ProductCard({ product, variant = "default", selectedColor }) {
             {/* Rating */}
             <div className="flex items-center gap-2 mb-3">
                 {renderStars(rating)}
-                <span className="text-xs text-muted-foreground">({reviews.toLocaleString()})</span>
             </div>
 
             {/* Price */}

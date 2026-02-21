@@ -249,7 +249,7 @@ export function DealOfTheDay() {
                             {/* Countdown Timer */}
                             <div className="flex items-center gap-2 mt-2 bg-red-100 dark:bg-red-900/30 px-3 py-1 rounded-full w-max">
                                 <Clock className="w-4 h-4 text-red-600 dark:text-red-400" />
-                                <span className="text-sm text-red-600 dark:text-red-400 font-bold tracking-wide font-mono">
+                                <span className="text-xs text-red-600 dark:text-red-400 font-bold  font-mono">
                                     Ends in {formatTime(timeRemaining.hours, timeRemaining.minutes, timeRemaining.seconds)}
                                 </span>
                             </div>

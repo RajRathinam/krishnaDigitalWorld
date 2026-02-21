@@ -81,7 +81,8 @@ export function CategoryGrid() {
   return (
     <section className="py-4 lg:py-16 bg-background">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
+        <div className="bg-[#B2A4D4]/30 rounded-xl p-4 md:p-5 border border-border/50 relative overflow-hidden">
+          {/* Section Header */}
         <div className="text-center mb-4 lg:mb-14">
           <SplitHeading
             text="Browse by Category"
@@ -164,6 +165,7 @@ export function CategoryGrid() {
               ))}
             </div>
           )}
+        </div>
         </div>
       </div>
     </section>

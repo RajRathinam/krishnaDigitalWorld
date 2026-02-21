@@ -804,7 +804,7 @@ export default function ProductDetail() {
 
           {/* Reviews */}
           <div className="mb-6">
-            <div className="flex items-center justify-between mb-4">
+            {/* <div className="flex items-center justify-between mb-4">
               <h2 className="font-bold text-foreground">Customer Reviews</h2>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground mr-1">Rate this product:</span>
@@ -826,7 +826,7 @@ export default function ProductDetail() {
                   ))}
                 </div>
               </div>
-            </div>
+            </div> */}
 
             {/* Rating Summary */}
             <div className="bg-card rounded-lg border border-border p-4 mb-4">
