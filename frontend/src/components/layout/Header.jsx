@@ -625,33 +625,7 @@ export function Header() {
             )}
 
             {/* Store Info for non-logged in users */}
-            {!user && shopInfo && (
-              <div className="p-4 bg-secondary/30 border-b border-border">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
-                    <MapPin className="w-5 h-5 text-accent" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-foreground text-sm">Visit Our Store</p>
-                    <button 
-                      onClick={() => openGoogleMaps(
-                        shopInfo?.address,
-                        shopInfo?.city,
-                        shopInfo?.state,
-                        shopInfo?.pincode,
-                        shopInfo?.country
-                      )}
-                      className="text-xs text-muted-foreground flex items-center gap-1 hover:text-accent transition-colors"
-                    >
-                      {shopInfo?.address ? 
-                        `${shopInfo.address}, ${shopInfo.city}` : 
-                        'Locate on Maps'}
-                      <ExternalLink className="w-3 h-3" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
+           
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto py-2">
