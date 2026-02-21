@@ -1,31 +1,55 @@
-import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { productApi, categoryApi } from "@/services/api";
 import { toast } from "sonner";
-import { Search, ShoppingCart, User, Menu, Heart, X, ChevronDown, ChevronRight } from "lucide-react";
+import { 
+  Search, 
+  ShoppingCart, 
+  User, 
+  Menu, 
+  Heart, 
+  X, 
+  ChevronDown, 
+  ChevronRight,
+  MapPin,
+  Phone,
+  Package,
+  Clock,
+  Gift,
+  Star,
+  Percent,
+  Shield,
+  Truck,
+  TrendingUp,
+  ExternalLink
+} from "lucide-react";
 import { SearchModal } from "@/components/ui/search-modal";
 import { Link } from "react-router-dom";
 import { useCart } from '@/contexts/CartContext';
+import { useShopInfo } from '@/contexts/ShopInfoContext';
+import { cn } from "@/lib/utils";
 
 const quickLinks = [
-  { label: "Today's Deals", href: "/deals", highlight: true },
-  { label: "New Arrivals", href: "/new-arrivals", highlight: true },
-  { label: "Best Sellers", href: "/best-sellers", highlight: true }
+  { label: "Today's Deals", href: "/deals", icon: Gift, highlight: true },
+  { label: "New Arrivals", href: "/new-arrivals", icon: Star, highlight: true },
+  { label: "Best Sellers", href: "/best-sellers", icon: TrendingUp, highlight: true }
+];
+
+const serviceFeatures = [
+  { icon: Clock, text: "24/7 Support", subtext: "Dedicated assistance" },
+  { icon: Shield, text: "Secure Payment", subtext: "100% protected" },
+  { icon: Gift, text: "Special Offers", subtext: "Daily deals & discounts" }
 ];
 
 // Helper function to ensure something is an array
 const ensureArray = (value) => {
-  if (Array.isArray(value))
-    return value;
-  if (value === null || value === undefined)
-    return [];
+  if (Array.isArray(value)) return value;
+  if (value === null || value === undefined) return [];
   if (typeof value === 'string') {
     try {
-      // Try to parse if it's a JSON string
       const parsed = JSON.parse(value);
       return Array.isArray(parsed) ? parsed : [value];
-    }
-    catch {
+    } catch {
       return [value];
     }
   }
@@ -35,15 +59,53 @@ const ensureArray = (value) => {
   return [];
 };
 
+// Function to open Google Maps with store location
+const openGoogleMaps = (address, city, state, pincode, country = 'India') => {
+  const fullAddress = [address, city, state, pincode, country]
+    .filter(part => part && part.trim() !== '')
+    .join(', ');
+  
+  const encodedAddress = encodeURIComponent(fullAddress);
+  // Use Google Maps URL that works on both mobile and desktop
+  window.open(`https://www.google.com/maps/search/?api=1&query=${encodedAddress}`, '_blank');
+};
+
 export function Header() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [openCategory, setOpenCategory] = useState(null);
+  const [openDropdown, setOpenDropdown] = useState(null);
   const [user, setUser] = useState(null);
   const [searchData, setSearchData] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [isScrolled, setIsScrolled] = useState(false);
   const { cartCount, cartTotal, isLoading } = useCart();
+  const { shopInfo, loading: shopInfoLoading } = useShopInfo();
+  
+  const dropdownRef = useRef(null);
+  const menuRef = useRef(null);
+
+  // Handle scroll effect
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setOpenDropdown(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Check if a category is active
   const isCategoryActive = (categorySlug) => {
@@ -72,7 +134,6 @@ export function Header() {
       try {
         const res = await categoryApi.getCategories();
         const data = res?.data || [];
-        console.log('Raw categories data:', data);
         
         const transformedCategories = ensureArray(data).map(cat => {
           const subcategoriesArray = ensureArray(cat.subcategories)
@@ -83,15 +144,15 @@ export function Header() {
             id: cat.id || cat._id || Math.random().toString(36).substr(2, 9),
             name: cat.name || 'Unnamed Category',
             slug: cat.slug || cat.name?.toLowerCase()?.replace(/\s+/g, '-') || 'category',
-            subcategories: subcategoriesArray
+            subcategories: subcategoriesArray,
+            image: cat.image || null
           };
         });
         
         if (!cancelled) {
           setCategories(transformedCategories);
         }
-      }
-      catch (err) {
+      } catch (err) {
         console.error('Failed to load categories', err);
         toast.error('Failed to load categories');
       }
@@ -112,14 +173,13 @@ export function Header() {
           title: p.name || 'Unnamed Product',
           description: p.description || p.shortDescription || '',
           category: p.category?.name || p.category?.slug || 'Products',
+          price: p.price || 0,
+          image: p.images?.[0] || p.image || null,
           href: `/product/${p.slug || p.id}`,
         }));
-        if (!cancelled)
-          setSearchData(items);
-      }
-      catch (err) {
+        if (!cancelled) setSearchData(items);
+      } catch (err) {
         console.error('Failed to load search data', err);
-        toast.error(err?.message || 'Failed to load products for search');
       }
     })();
     return () => { cancelled = true; };
@@ -131,8 +191,7 @@ export function Header() {
     if (storedUser) {
       try {
         setUser(JSON.parse(storedUser));
-      }
-      catch (err) {
+      } catch (err) {
         console.error('Failed to parse user from localStorage', err);
       }
     }
@@ -158,328 +217,660 @@ export function Header() {
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isMenuOpen]);
 
-  return (<>
-    <header className="sticky top-0 left-0 right-0 z-40 bg-card/80 backdrop-blur-md border-b border-border transition-all duration-200">
-      {/* Top Bar - Hidden on mobile to save space */}
-      <div className="hidden lg:block bg-primary text-primary-foreground">
-        <div className="container flex items-center justify-between py-1.5 text-xs">
-          <p>Free shipping on orders over ₹999</p>
-          <div className="flex items-center gap-6">
-            <Link to="/help" className="hover:underline opacity-90 hover:opacity-100">Help Center</Link>
-            <Link to="/account" className="hover:underline opacity-90 hover:opacity-100">Track Order</Link>
-          </div>
-        </div>
-      </div>
+  // Format phone number for display
+  const formatPhoneNumber = (phone) => {
+    if (!phone) return '+91 98765 43210'; // Default fallback
+    // You can add formatting logic here if needed
+    return phone;
+  };
 
-      {/* Main Header */}
-      <div className="container flex items-center gap-3 lg:gap-6 py-2.5 lg:py-4">
-        {/* Mobile Menu Toggle */}
-        <button type="button" onClick={() => setIsMenuOpen(true)} className="lg:hidden p-2 -ml-2 text-foreground hover:text-accent transition-colors active:scale-95" aria-label="Open menu">
-          <Menu className="w-6 h-6" />
-        </button>
-
-        {/* Logo */}
-        <Link to="/" className="flex items-center shrink-0">
-          <div className="flex items-center gap-2">
-            <img src="/SK_Logo.png" alt="Krishna Stores" className="h-10 w-auto lg:h-12" />
-            <div className="flex flex-col">
-              <span className="text-xl lg:text-2xl font-bold text-foreground tracking-wide leading-tight">
-                <span className="text-accent">Sri</span> Krishna
-              </span>
-              <span className="text-xs lg:text-sm font-medium text-muted-foreground tracking-wide">
-                Digital World
-              </span>
-            </div>
-          </div>
-        </Link>
-
-        {/* Desktop Navigation */}
-        <nav className="hidden lg:flex items-center gap-0.5 ml-4">
-          {categories.map((cat) => (
-            <div key={cat.id} className="relative group">
-              <Link 
-                to={`/products?category=${cat.slug}`} 
-                className={`flex items-center gap-1 px-3 py-2 text-sm font-medium whitespace-nowrap rounded-md transition-all duration-200 ${
-                  isCategoryActive(cat.slug) 
-                    ? 'text-accent font-semibold'  // Only change text color for active category
-                    : 'text-foreground/80 hover:text-accent'
-                }`}
+  return (
+    <>
+      <header className={cn(
+        "sticky top-0 left-0 right-0 z-40 transition-all duration-300",
+        isScrolled 
+          ? "bg-card/95 backdrop-blur-md shadow-md border-b border-border" 
+          : "bg-card border-b border-border"
+      )}>
+        {/* Top Bar - Enhanced with shop info */}
+        <div className="hidden lg:block bg-gradient-to-r from-primary/90 to-primary text-primary-foreground">
+          <div className="container flex items-center justify-between py-2 text-xs">
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2">
+                <Phone className="w-3.5 h-3.5" />
+                <a 
+                  href={`tel:${shopInfo?.phone || '+919876543210'}`} 
+                  className="hover:underline cursor-pointer"
+                >
+                  {formatPhoneNumber(shopInfo?.phone)}
+                </a>
+              </div>
+              <button 
+                onClick={() => openGoogleMaps(
+                  shopInfo?.address,
+                  shopInfo?.city,
+                  shopInfo?.state,
+                  shopInfo?.pincode,
+                  shopInfo?.country
+                )}
+                className="flex items-center gap-2 hover:underline cursor-pointer"
               >
-                {cat.name}
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                  isCategoryActive(cat.slug) 
-                    ? 'text-accent opacity-100' 
-                    : 'opacity-50 group-hover:rotate-180'
-                }`} />
-              </Link>
-              
-              {/* Dropdown */}
-              <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                <div className="bg-card/95 backdrop-blur-md rounded-lg border border-border shadow-lg p-3 min-w-[200px] animate-fade-up">
-                  {ensureArray(cat.subcategories).map((sub, index) => (
-                    <Link 
-                      key={`${cat.id}-sub-${index}`} 
-                      to={`/products?category=${cat.slug}&subcategory=${encodeURIComponent(sub)}`} 
-                      className={`block px-3 py-2 text-sm rounded-md transition-colors ${
-                        isSubcategoryActive(cat.slug, sub)
-                          ? 'text-accent font-semibold'  // Only text color for active subcategory
-                          : 'text-foreground/80 hover:text-accent hover:bg-accent/5'
-                      }`}
-                    >
-                      {sub}
-                    </Link>
-                  ))}
-                  
-                  <div className="border-t border-border mt-2 pt-2">
-                    <Link 
-                      to={`/products?category=${cat.slug}`} 
-                      className={`block px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                        isCategoryActive(cat.slug) && !location.search.includes('subcategory')
-                          ? 'text-accent font-semibold'  // Only text color
-                          : 'text-accent hover:bg-accent/10'
-                      }`}
-                    >
-                      View All
-                    </Link>
-                  </div>
-                </div>
+                <MapPin className="w-3.5 h-3.5" />
+                <span>Store Locator</span>
+                <ExternalLink className="w-3 h-3 opacity-70" />
+              </button>
+              <div className="flex items-center gap-2">
+                <Package className="w-3.5 h-3.5" />
+                <Link to="/account" className="hover:underline">Track Order</Link>
               </div>
             </div>
-          ))}
-          
-          <div className="h-5 w-px bg-border mx-2" />
-          
-          {quickLinks.map((item) => (
-            <Link 
-              key={item.label} 
-              to={item.href} 
-              className={`px-3 py-2 text-sm hover:bg-accent/10 hover:text-accent font-medium transition-colors whitespace-nowrap rounded-md ${
-                isQuickLinkActive(item.href) 
-                  ? 'bg-accent/10 text-accent hover:bg-accent/20'  // Active: bg-accent with accent-foreground text
-                  : 'text-gray-600'  // Inactive: bg-accent/10 with accent text
-              }`}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-
-        {/* Spacer */}
-        <div className="hidden lg:block flex-1 min-w-0" />
-
-        {/* Desktop Search */}
-        <div className="hidden lg:block w-full max-w-xs xl:max-w-sm">
-          <SearchModal data={searchData}>
-            <button type="button" className="w-full flex items-center gap-3 px-4 py-2 bg-secondary/50 border border-border rounded-full text-muted-foreground text-sm text-left hover:border-accent/50 hover:bg-secondary transition-all duration-300 group">
-              <Search className="w-4 h-4 shrink-0 group-hover:text-accent transition-colors" />
-              <span className="flex-1 truncate">Search products...</span>
-              <kbd className="hidden xl:inline-flex h-5 items-center gap-1 rounded bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground shrink-0 border border-border">
-                ⌘K
-              </kbd>
-            </button>
-          </SearchModal>
-        </div>
-
-        {/* Actions - Desktop Only */}
-        <div className="hidden lg:flex items-center gap-2">
-         
-
-          {/* Account */}
-          <Link to="/account" onClick={(e) => {
-            const storedUser = localStorage.getItem('user');
-            if (!storedUser) {
-              e.preventDefault();
-              openSignup();
-            }
-          }} className={`p-2.5 rounded-full transition-all duration-300 ${
-            location.pathname === '/account' 
-              ? 'text-accent' 
-              : 'text-foreground hover:text-accent hover:bg-accent/10'
-          }`} aria-label="Account">
-            <User className="w-5 h-5" />
-          </Link>
-
-          {/* Cart */}
-          <Link to="/cart" onClick={(e) => {
-            const storedUser = localStorage.getItem('user');
-            if (!storedUser) {
-              e.preventDefault();
-              openSignup();
-            }
-          }} className={`flex items-center gap-2 p-2.5 rounded-full transition-all duration-300 group ${
-            location.pathname === '/cart' 
-              ? 'text-accent' 
-              : 'text-foreground hover:text-accent hover:bg-accent/10'
-          }`} aria-label="Cart">
-            <div className="relative">
-              <ShoppingCart className="w-5 h-5 group-hover:scale-110 transition-transform" />
-              <span className="absolute -top-1.5 -right-1.5 bg-accent text-accent-foreground text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow-sm">
-                {isLoading ? '...' : cartCount}
-              </span>
-            </div>
-          </Link>
-        </div>
-      </div>
-    </header>
-
-{/* Mobile Menu Overlay */}
-{isMenuOpen && (
-  <div className="lg:hidden fixed inset-0 z-[100]">
-    <div className={`absolute inset-0 bg-foreground/40 transition-opacity duration-300 ${isClosing ? 'opacity-0' : 'opacity-100'}`} onClick={handleCloseMenu} />
-
-    <div className={`absolute inset-y-0 left-0 w-[280px] max-w-[75vw] bg-card shadow-elevated flex flex-col transition-transform duration-300 ease-out ${isClosing ? '-translate-x-full' : 'translate-x-0 animate-slide-in-left'}`}>
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border">
-        <span className="text-lg font-bold text-foreground">
-          Menu
-        </span>
-        <button onClick={handleCloseMenu} className="p-2 -mr-2 text-foreground hover:text-accent transition-colors" aria-label="Close menu">
-          <X className="w-5 h-5" />
-        </button>
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto py-2">
-        {/* Categories */}
-        <div className="px-2">
-          <p className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            Shop by Category
-          </p>
-          {categories.map((cat) => {
-            // Get first 4 subcategories
-            const subcategories = ensureArray(cat.subcategories);
-            const firstFourSubcategories = subcategories.slice(0, 4);
-            const hasMoreSubcategories = subcategories.length > 4;
-            
-            return (
-              <div key={cat.id}>
+            <div className="flex items-center gap-6">
+              <Link to="/help" className="hover:underline opacity-90 hover:opacity-100 flex items-center gap-1">
+                Help Center
+              </Link>
+              {!user && (
                 <button 
-                  onClick={() => setOpenCategory(openCategory === cat.id ? null : cat.id)} 
-                  className={`w-full flex items-center justify-between px-3 py-3 rounded-md transition-colors ${
-                    isCategoryActive(cat.slug)
-                      ? 'text-accent font-semibold'
-                      : 'text-foreground hover:bg-secondary'
-                  }`}
+                  onClick={openSignup}
+                  className="hover:underline opacity-90 hover:opacity-100"
                 >
-                  <span className="text-sm font-medium">{cat.name}</span>
-                  <ChevronRight className={`w-4 h-4 transition-transform ${
-                    openCategory === cat.id ? 'rotate-90' : ''
-                  } ${
-                    isCategoryActive(cat.slug) ? 'text-accent' : 'text-muted-foreground'
-                  }`} />
+                  Sign In / Register
                 </button>
-                
-                {openCategory === cat.id && (
-                  <div className="ml-3 mb-2 border-l-2 border-border pl-3">
-                    {/* Show only first 4 subcategories */}
-                    {firstFourSubcategories.map((sub, index) => (
-                      <Link 
-                        key={`${cat.id}-mobile-sub-${index}`} 
-                        to={`/products?category=${cat.slug}&subcategory=${encodeURIComponent(sub)}`} 
-                        className={`block px-3 py-2 text-sm transition-colors ${
-                          isSubcategoryActive(cat.slug, sub)
-                            ? 'text-accent font-semibold'
-                            : 'text-muted-foreground hover:text-foreground'
-                        }`} 
-                        onClick={handleCloseMenu}
-                      >
-                        {sub}
-                      </Link>
-                    ))}
-                    
-             
-                    
-                    {/* Regular "View All" link for the category */}
-                    <Link 
-                      to={`/products?category=${cat.slug}`} 
-                      className={`block px-3 py-2 text-sm font-medium mt-1 ${
-                        isCategoryActive(cat.slug) && !location.search.includes('subcategory')
-                          ? 'text-accent font-semibold'
-                          : 'text-accent'
-                      }`} 
-                      onClick={handleCloseMenu}
-                    >
-                      View All Products
-                    </Link>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Main Header */}
+        <div className="container">
+          {/* Desktop Header */}
+          <div className="hidden lg:flex justify-between items-center gap-6 py-4">
+            {/* Logo */}
+            <Link to="/" className="flex items-center shrink-0 group">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <img 
+                    src="/SK_Logo.png" 
+                    alt="Krishna Stores" 
+                    className="h-12 w-auto transition-transform" 
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-2xl font-bold text-foreground tracking-wide leading-tight">
+                    <span className="text-accent">Sri</span> Krishna
+                  </span>
+                  <span className="text-xs font-medium text-muted-foreground tracking-wide">
+                    Digital World
+                  </span>
+                </div>
+              </div>
+            </Link>
+
+            {/* Desktop Search - Opens Modal */}
+            <div className="flex-1 max-w-2xl">
+              <SearchModal data={searchData}>
+                <button 
+                  type="button" 
+                  className="w-full flex items-center gap-3 px-5 py-3 bg-secondary/50 border-2 border-border rounded-xl text-muted-foreground text-sm text-left hover:border-accent/50 hover:bg-secondary transition-all duration-300 group"
+                >
+                  <Search className="w-4 h-4 shrink-0 group-hover:text-accent transition-colors" />
+                  <span className="flex-1 truncate">Search for products, brands, and more...</span>
+                  <kbd className="hidden xl:inline-flex h-5 items-center gap-1 rounded bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground shrink-0 border border-border">
+                    ⌘K
+                  </kbd>
+                </button>
+              </SearchModal>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-3">
+              {/* Wishlist with text */}
+              <Link 
+                to="/wishlist" 
+                className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-accent/10 transition-all duration-300 group"
+                aria-label="Wishlist"
+              >
+                <div className="relative">
+                  <Heart className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                  <span className="absolute -top-2 -right-2 bg-accent text-accent-foreground text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow-sm">
+                    0
+                  </span>
+                </div>
+                <span className="text-sm font-medium hidden xl:inline">Wishlist</span>
+              </Link>
+
+              {/* Account Dropdown */}
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  onClick={() => setOpenDropdown(openDropdown === 'account' ? null : 'account')}
+                  className={cn(
+                    "flex items-center gap-2 p-3 rounded-xl transition-all duration-300",
+                    openDropdown === 'account' || location.pathname === '/account'
+                      ? "bg-accent/20 text-accent"
+                      : "hover:bg-accent/10 hover:text-accent"
+                  )}
+                >
+                  <User className="w-5 h-5" />
+                  <span className="text-sm font-medium hidden xl:inline">
+                    {user ? user.name?.split(' ')[0] : 'Account'}
+                  </span>
+                  <ChevronDown className={cn(
+                    "w-4 h-4 transition-transform duration-200 hidden xl:block",
+                    openDropdown === 'account' && "rotate-180"
+                  )} />
+                </button>
+
+                {openDropdown === 'account' && (
+                  <div className="absolute right-0 top-full mt-2 w-64 bg-card rounded-xl border border-border shadow-lg py-2 animate-fade-up">
+                    {user ? (
+                      <>
+                        <div className="px-4 py-3 border-b border-border">
+                          <p className="font-semibold">{user.name}</p>
+                          <p className="text-xs text-muted-foreground">{user.email}</p>
+                        </div>
+                        <Link to="/account" className="block px-4 py-2 text-sm hover:bg-accent/10 transition-colors">
+                          My Account
+                        </Link>
+                        <Link to="/account" className="block px-4 py-2 text-sm hover:bg-accent/10 transition-colors">
+                          My Orders
+                        </Link>
+                        <Link to="/account" className="block px-4 py-2 text-sm hover:bg-accent/10 transition-colors">
+                          Wishlist
+                        </Link>
+                      </>
+                    ) : (
+                      <>
+                        <div className="px-4 py-3">
+                          <button 
+                            onClick={openSignup}
+                            className="w-full px-4 py-2 bg-accent text-accent-foreground rounded-lg text-sm font-medium hover:bg-accent/90 transition-colors"
+                          >
+                            Sign In
+                          </button>
+                          <p className="text-xs text-center text-muted-foreground mt-2">
+                            New customer? <button onClick={openSignup} className="text-accent hover:underline">Register</button>
+                          </p>
+                        </div>
+                        <div className="border-t border-border my-2" />
+                        <Link to="/track-order" className="block px-4 py-2 text-sm hover:bg-accent/10 transition-colors">
+                          Track Order
+                        </Link>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
-            );
-          })}
-        </div>
 
-        <div className="h-px bg-border mx-4 my-3" />
+              {/* Cart with text */}
+              <Link 
+                to="/cart" 
+                className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-accent/10 transition-all duration-300 group"
+                aria-label="Cart"
+              >
+                <div className="relative">
+                  <ShoppingCart className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                  <span className="absolute -top-2 -right-2 bg-accent text-accent-foreground text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow-sm">
+                    {isLoading ? '...' : cartCount}
+                  </span>
+                </div>
+                <span className="text-sm font-medium hidden xl:inline">Cart</span>
+              </Link>
+            </div>
+          </div>
 
-        {/* Quick Links */}
-        <div className="px-2">
-          <p className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            Quick Links
-          </p>
-          {quickLinks.map((item) => (
-            <Link 
-              key={item.label} 
-              to={item.href} 
-              className={`block px-3 py-3 rounded-md transition-colors text-sm font-medium ${
-                isQuickLinkActive(item.href) 
-                  ? 'bg-accent/10 text-accent hover:bg-accent/20'
-                  : 'text-gray-600'
-              }`}
+          {/* Navigation Bar */}
+          <div className="hidden lg:flex items-center justify-between py-2 border-t border-border">
+            {/* Categories - Show only first 4 categories from backend */}
+            <div className="flex items-center gap-1">
+              {categories.slice(0, 4).map((cat) => (
+                <div key={cat.id} className="relative group">
+                  <Link 
+                    to={`/products?category=${cat.slug}`} 
+                    className={cn(
+                      "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all",
+                      isCategoryActive(cat.slug)
+                        ? "bg-accent/10 text-accent"
+                        : "text-foreground hover:bg-secondary hover:text-accent"
+                    )}
+                  >
+                    {cat.name}
+                    {cat.subcategories.length > 0 && (
+                      <ChevronDown className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 group-hover:rotate-180 transition-all" />
+                    )}
+                  </Link>
+                  
+                  {/* Subcategories Dropdown - Shows on hover */}
+                  {cat.subcategories.length > 0 && (
+                    <div className="absolute left-0 top-full pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 min-w-[200px]">
+                      <div className="bg-card rounded-lg border border-border shadow-lg p-2">
+                        {cat.subcategories.map((sub, index) => (
+                          <Link
+                            key={`${cat.id}-sub-${index}`}
+                            to={`/products?category=${cat.slug}&subcategory=${encodeURIComponent(sub)}`}
+                            className={cn(
+                              "block px-3 py-2 text-sm rounded-md transition-colors",
+                              isSubcategoryActive(cat.slug, sub)
+                                ? "text-accent font-semibold bg-accent/5"
+                                : "text-muted-foreground hover:text-accent hover:bg-accent/5"
+                            )}
+                          >
+                            {sub}
+                          </Link>
+                        ))}
+                        
+                        {/* View All link */}
+                        <div className="border-t border-border mt-2 pt-2">
+                          <Link
+                            to={`/products?category=${cat.slug}`}
+                            className="block px-3 py-2 text-sm font-medium text-accent hover:bg-accent/5 rounded-md transition-colors"
+                          >
+                            View All 
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+              
+              {/* More Categories Link - If there are more than 4 categories */}
+              {categories.length > 4 && (
+                <Link
+                  to="/categories"
+                  className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-accent transition-colors"
+                >
+                  +{categories.length - 4} more
+                </Link>
+              )}
+            </div>
+
+            {/* Quick Links */}
+            <nav className="flex items-center gap-1">
+              {quickLinks.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.label}
+                    to={item.href}
+                    className={cn(
+                      "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all",
+                      isQuickLinkActive(item.href)
+                        ? "bg-accent/10 text-accent"
+                        : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                    )}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
+
+            {/* Service Features */}
+            <div className="flex items-center gap-4">
+              {serviceFeatures.map((feature, idx) => {
+                const Icon = feature.icon;
+                return (
+                  <div key={idx} className="flex items-center gap-2 text-xs">
+                    <Icon className="w-4 h-4 text-accent" />
+                    <div>
+                      <p className="font-medium text-foreground">{feature.text}</p>
+                      <p className="text-muted-foreground">{feature.subtext}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Mobile Header */}
+          <div className="lg:hidden flex items-center gap-3 py-3">
+            <button
+              onClick={() => setIsMenuOpen(true)}
+              className="p-2 -ml-2 text-foreground hover:text-accent transition-colors"
+              aria-label="Open menu"
             >
-              {item.label}
+              <Menu className="w-6 h-6" />
+            </button>
+
+            <Link to="/" className="flex items-center shrink-0">
+              <img src="/SK_Logo.png" alt="Krishna Stores" className="h-8 w-auto" />
+              <div className="ml-2 flex flex-col">
+                <span className="text-lg font-bold text-foreground tracking-wide leading-tight">
+                  <span className="text-accent">Sri</span> Krishna
+                </span>
+                <span className="text-[10px] font-medium text-muted-foreground tracking-wide leading-tight">
+                  Digital World
+                </span>
+              </div>
             </Link>
-          ))}
-        </div>
 
-        <div className="h-px bg-border mx-4 my-3" />
+            <div className="flex-1" />
 
-        {/* Account */}
-        <div className="px-2">
-          <p className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            Account
-          </p>
-          <Link 
-            to="/account" 
-            className={`flex items-center gap-3 px-3 py-3 rounded-md transition-colors ${
-              location.pathname === '/account'
-                ? 'text-accent'
-                : 'text-foreground hover:bg-secondary'
-            }`} 
-            onClick={(e) => {
-              handleCloseMenu();
-              const storedUser = localStorage.getItem('user');
-              if (!storedUser) {
-                e.preventDefault();
-                openSignup();
-              }
-            }}
-          >
-            <User className={`w-4 h-4 ${
-              location.pathname === '/account' ? 'text-accent' : 'text-muted-foreground'
-            }`} />
-            <span className="text-sm">Sign In / Register</span>
-          </Link>
-          <Link 
-            to="/cart" 
-            className={`flex items-center gap-3 px-3 py-3 rounded-md transition-colors ${
-              location.pathname === '/cart'
-                ? 'text-accent'
-                : 'text-foreground hover:bg-secondary'
-            }`} 
-            onClick={handleCloseMenu}
-          >
-            <ShoppingCart className={`w-4 h-4 ${
-              location.pathname === '/cart' ? 'text-accent' : 'text-muted-foreground'
-            }`} />
-            <span className="text-sm">Your Cart ({cartCount})</span>
-          </Link>
+            <Link 
+              to="/cart" 
+              className="relative p-2 text-foreground hover:text-accent transition-colors"
+            >
+              <ShoppingCart className="w-5 h-5" />
+              <span className="absolute -top-1 -right-1 bg-accent text-accent-foreground text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                {isLoading ? '...' : cartCount}
+              </span>
+            </Link>
+
+            {/* Mobile Search - Opens Modal */}
+            <SearchModal data={searchData}>
+              <button className="p-2 text-foreground hover:text-accent transition-colors">
+                <Search className="w-5 h-5" />
+              </button>
+            </SearchModal>
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
-)}
-  </>);
+      </header>
+
+      {/* Mobile Menu Overlay */}
+      {isMenuOpen && (
+        <div className="lg:hidden fixed inset-0 z-[100]">
+          <div 
+            className={cn(
+              "absolute inset-0 bg-foreground/40 transition-opacity duration-300",
+              isClosing ? "opacity-0" : "opacity-100"
+            )} 
+            onClick={handleCloseMenu} 
+          />
+
+          <div 
+            ref={menuRef}
+            className={cn(
+              "absolute inset-y-0 left-0 w-[300px] max-w-[80vw] bg-card shadow-elevated flex flex-col transition-transform duration-300 ease-out",
+              isClosing ? "-translate-x-full" : "translate-x-0"
+            )}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-border">
+              <div className="flex items-center gap-2">
+                <img src="/SK_Logo.png" alt="Krishna Stores" className="h-8 w-auto" />
+                <div className="flex flex-col">
+                  <span className="font-bold leading-tight">
+                    <span className="text-accent">Sri</span> Krishna
+                  </span>
+                  <span className="text-[10px] font-medium text-muted-foreground tracking-wide leading-tight">
+                    Digital World
+                  </span>
+                </div>
+              </div>
+              <button 
+                onClick={handleCloseMenu} 
+                className="p-2 -mr-2 text-foreground hover:text-accent transition-colors"
+                aria-label="Close menu"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* User Info if logged in */}
+            {user && (
+              <div className="p-4 bg-secondary/30 border-b border-border">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
+                    <User className="w-5 h-5 text-accent" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">{user.name}</p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Phone className="w-3 h-3" />
+                      {user.phone || "Phone not available"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Store Info for non-logged in users */}
+            {!user && shopInfo && (
+              <div className="p-4 bg-secondary/30 border-b border-border">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
+                    <MapPin className="w-5 h-5 text-accent" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground text-sm">Visit Our Store</p>
+                    <button 
+                      onClick={() => openGoogleMaps(
+                        shopInfo?.address,
+                        shopInfo?.city,
+                        shopInfo?.state,
+                        shopInfo?.pincode,
+                        shopInfo?.country
+                      )}
+                      className="text-xs text-muted-foreground flex items-center gap-1 hover:text-accent transition-colors"
+                    >
+                      {shopInfo?.address ? 
+                        `${shopInfo.address}, ${shopInfo.city}` : 
+                        'Locate on Maps'}
+                      <ExternalLink className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto py-2">
+              {/* Categories */}
+              <div className="px-2">
+                <p className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Shop by Category
+                </p>
+                {categories.map((cat) => {
+                  const subcategories = ensureArray(cat.subcategories);
+                  const firstFourSubcategories = subcategories.slice(0, 4);
+                  
+                  return (
+                    <div key={cat.id}>
+                      <button 
+                        onClick={() => setOpenCategory(openCategory === cat.id ? null : cat.id)} 
+                        className={cn(
+                          "w-full flex items-center justify-between px-3 py-3 rounded-md transition-colors",
+                          isCategoryActive(cat.slug)
+                            ? "text-accent font-semibold bg-accent/5"
+                            : "text-foreground hover:bg-secondary"
+                        )}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">{cat.name}</span>
+                        </div>
+                        <ChevronRight className={cn(
+                          "w-4 h-4 transition-transform",
+                          openCategory === cat.id ? "rotate-90" : "",
+                          isCategoryActive(cat.slug) ? "text-accent" : "text-muted-foreground"
+                        )} />
+                      </button>
+                      
+                      {openCategory === cat.id && (
+                        <div className="ml-8 mb-2 border-l-2 border-border pl-3">
+                          {firstFourSubcategories.map((sub, index) => (
+                            <Link 
+                              key={`${cat.id}-mobile-sub-${index}`} 
+                              to={`/products?category=${cat.slug}&subcategory=${encodeURIComponent(sub)}`} 
+                              className={cn(
+                                "block px-3 py-2 text-sm transition-colors",
+                                isSubcategoryActive(cat.slug, sub)
+                                  ? "text-accent font-semibold"
+                                  : "text-muted-foreground hover:text-foreground"
+                              )} 
+                              onClick={handleCloseMenu}
+                            >
+                              {sub}
+                            </Link>
+                          ))}
+                          
+                          <Link 
+                            to={`/products?category=${cat.slug}`} 
+                            className="block px-3 py-2 text-sm font-medium text-accent hover:underline" 
+                            onClick={handleCloseMenu}
+                          >
+                            View All 
+                          </Link>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="h-px bg-border mx-4 my-3" />
+
+              {/* Quick Links */}
+              <div className="px-2">
+                <p className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Quick Links
+                </p>
+                {quickLinks.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Link 
+                      key={item.label} 
+                      to={item.href} 
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-3 rounded-md transition-colors text-sm",
+                        isQuickLinkActive(item.href) 
+                          ? "bg-accent/10 text-accent"
+                          : "text-foreground hover:bg-secondary"
+                      )}
+                      onClick={handleCloseMenu}
+                    >
+                      <Icon className="w-4 h-4" />
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </div>
+
+              <div className="h-px bg-border mx-4 my-3" />
+
+              {/* Account Links */}
+              <div className="px-2">
+                <p className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Account
+                </p>
+                {!user ? (
+                  <>
+                    <button
+                      onClick={() => {
+                        handleCloseMenu();
+                        openSignup();
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-3 rounded-md text-foreground hover:bg-secondary transition-colors text-sm"
+                    >
+                      <User className="w-4 h-4 text-muted-foreground" />
+                      Sign In / Register
+                    </button>
+                    <Link 
+                      to="/account" 
+                      className="flex items-center gap-3 px-3 py-3 rounded-md text-foreground hover:bg-secondary transition-colors text-sm"
+                      onClick={handleCloseMenu}
+                    >
+                      <Package className="w-4 h-4 text-muted-foreground" />
+                      Track Order
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Link 
+                      to="/account" 
+                      className="flex items-center gap-3 px-3 py-3 rounded-md text-foreground hover:bg-secondary transition-colors text-sm"
+                      onClick={handleCloseMenu}
+                    >
+                      <User className="w-4 h-4 text-muted-foreground" />
+                      My Account
+                    </Link>
+                    <Link 
+                      to="/account" 
+                      className="flex items-center gap-3 px-3 py-3 rounded-md text-foreground hover:bg-secondary transition-colors text-sm"
+                      onClick={handleCloseMenu}
+                    >
+                      <Package className="w-4 h-4 text-muted-foreground" />
+                      My Orders
+                    </Link>
+                  </>
+                )}
+                <Link 
+                  to="/account" 
+                  className="flex items-center gap-3 px-3 py-3 rounded-md text-foreground hover:bg-secondary transition-colors text-sm"
+                  onClick={handleCloseMenu}
+                >
+                  <Heart className="w-4 h-4 text-muted-foreground" />
+                  Wishlist
+                </Link>
+                <Link 
+                  to="/cart" 
+                  className="flex items-center gap-3 px-3 py-3 rounded-md text-foreground hover:bg-secondary transition-colors text-sm"
+                  onClick={handleCloseMenu}
+                >
+                  <ShoppingCart className="w-4 h-4 text-muted-foreground" />
+                  Cart ({cartCount})
+                </Link>
+              </div>
+
+              <div className="h-px bg-border mx-4 my-3" />
+
+              {/* Help & Support */}
+              <div className="px-2">
+                <p className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Support
+                </p>
+                <Link 
+                  to="/help" 
+                  className="flex items-center gap-3 px-3 py-3 rounded-md text-foreground hover:bg-secondary transition-colors text-sm"
+                  onClick={handleCloseMenu}
+                >
+                  <Phone className="w-4 h-4 text-muted-foreground" />
+                  Help Center
+                </Link>
+                <button 
+                  onClick={() => {
+                    handleCloseMenu();
+                    openGoogleMaps(
+                      shopInfo?.address,
+                      shopInfo?.city,
+                      shopInfo?.state,
+                      shopInfo?.pincode,
+                      shopInfo?.country
+                    );
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded-md text-foreground hover:bg-secondary transition-colors text-sm"
+                >
+                  <MapPin className="w-4 h-4 text-muted-foreground" />
+                  <span className="flex-1 text-left">Store Locator</span>
+                  <ExternalLink className="w-3 h-3 text-muted-foreground" />
+                </button>
+              </div>
+
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-border bg-secondary/30">
+              <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <Truck className="w-3 h-3" />
+                  <span>Free Shipping</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  <span>24/7 Support</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Shield className="w-3 h-3" />
+                  <span>Secure</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Gift className="w-3 h-3" />
+                  <span>Special Offers</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
 }
-
-
-
-

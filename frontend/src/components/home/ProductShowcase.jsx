@@ -121,7 +121,7 @@ export function ProductShowcase() {
  <div className="bg-[#0a1929] rounded-xl p-4 md:p-5 border border-border/50 relative overflow-hidden">
                 {/* Section Header */}
                 <div className="flex items-center justify-between mb-4 relative">
-                    <span className="text-lg md:text-xl font-bold text-white">Top Picks For <span className="text-accent">You</span></span>
+                    <span className="text-lg font-heading md:text-xl font-bold text-white">Top Picks For <span className="text-accent">You</span></span>
                     <Link 
                         to="/products" 
                         className="text-accent hover:underline text-sm font-medium flex items-center gap-1 group"
