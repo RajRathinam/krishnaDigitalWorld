@@ -92,7 +92,7 @@ const BestSellerCard = ({ item, rank }) => {
       )}
 
       {/* Image area */}
-      <div className="relative aspect-square overflow-hidden bg-gray-50">
+      <div className="relative aspect-square overflow-hidden bg-white">
         <div className="absolute inset-0 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
           style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 60%)" }} />
         <img
@@ -199,7 +199,7 @@ export function BestSellers() {
             <div className="mt-6 flex justify-center sm:hidden">
               <Link
                 to="/best-sellers"
-                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full border border-gray-200 text-sm font-semibold text-gray-600 hover:border-yellow-400 hover:text-accent transition-all"
+                className="inline-flex items-center gap-2 text-sm font-semibold text-accent hover:text-accent/80 transition-colors"
               >
                 View all best sellers <ArrowRight className="w-4 h-4" />
               </Link>
