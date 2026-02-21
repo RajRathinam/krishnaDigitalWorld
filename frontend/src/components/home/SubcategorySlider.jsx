@@ -3,8 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { categoryApi } from "@/services/api";
 import { toast } from "sonner";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { getImageUrl } from "@/lib/utils"; // IMPORT THIS
+import { getImageUrl } from "@/lib/utils";
 
 const ensureArray = (value) => {
   if (Array.isArray(value)) return value;
@@ -17,9 +16,7 @@ const ensureArray = (value) => {
       return [value];
     }
   }
-  if (typeof value === 'object') {
-    return Object.values(value);
-  }
+  if (typeof value === 'object') return Object.values(value);
   return [];
 };
 
@@ -29,71 +26,191 @@ const ensureObject = (value) => {
   try {
     const parsed = JSON.parse(value);
     return (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : {};
-  } catch (e) {
+  } catch {
     return {};
   }
 };
 
-// Skeleton component for loading state
+// ─── Bento grid layouts ───────────────────────────────────────────────────────
+// Each layout is an array of Tailwind grid-placement classes (one per card).
+// All layouts use a 6-column base so cards can be mixed freely.
+const BENTO_LAYOUTS = [
+  // Layout A — "Hero left"
+  {
+    cols: 6,
+    rows: 4,
+    cards: [
+      { span: "col-span-2 row-span-2", label: "large" },
+      { span: "col-span-2 row-span-1", label: "medium" },
+      { span: "col-span-2 row-span-1", label: "medium" },
+      { span: "col-span-1 row-span-2", label: "small" },
+      { span: "col-span-1 row-span-2", label: "small" },
+      { span: "col-span-2 row-span-2", label: "large" },
+      { span: "col-span-2 row-span-2", label: "large" },
+      { span: "col-span-2 row-span-2", label: "large" },
+    ],
+  },
+  // Layout B — "Hero right"
+  {
+    cols: 6,
+    rows: 4,
+    cards: [
+      { span: "col-span-1 row-span-2", label: "small" },
+      { span: "col-span-1 row-span-2", label: "small" },
+      { span: "col-span-2 row-span-1", label: "medium" },
+      { span: "col-span-2 row-span-2", label: "large" },
+      { span: "col-span-2 row-span-1", label: "medium" },
+      { span: "col-span-2 row-span-2", label: "large" },
+      { span: "col-span-2 row-span-2", label: "large" },
+      { span: "col-span-2 row-span-2", label: "large" },
+    ],
+  },
+  // Layout C — "Triple tall"
+  {
+    cols: 6,
+    rows: 4,
+    cards: [
+      { span: "col-span-2 row-span-4", label: "xlarge" },
+      { span: "col-span-2 row-span-2", label: "large" },
+      { span: "col-span-2 row-span-2", label: "large" },
+      { span: "col-span-1 row-span-2", label: "small" },
+      { span: "col-span-1 row-span-2", label: "small" },
+      { span: "col-span-2 row-span-2", label: "large" },
+      { span: "col-span-2 row-span-2", label: "large" },
+      { span: "col-span-2 row-span-2", label: "large" },
+    ],
+  },
+  // Layout D — "Mosaic"
+  {
+    cols: 6,
+    rows: 5,
+    cards: [
+      { span: "col-span-3 row-span-2", label: "large" },
+      { span: "col-span-3 row-span-3", label: "xlarge" },
+      { span: "col-span-2 row-span-3", label: "large" },
+      { span: "col-span-1 row-span-1", label: "tiny" },
+      { span: "col-span-1 row-span-2", label: "small" },
+      { span: "col-span-2 row-span-2", label: "medium" },
+      { span: "col-span-3 row-span-2", label: "large" },
+      { span: "col-span-1 row-span-2", label: "small" },
+    ],
+  },
+  // Layout E — "Balanced bento"
+  {
+    cols: 6,
+    rows: 4,
+    cards: [
+      { span: "col-span-2 row-span-2", label: "large" },
+      { span: "col-span-2 row-span-2", label: "large" },
+      { span: "col-span-2 row-span-2", label: "large" },
+      { span: "col-span-3 row-span-2", label: "large" },
+      { span: "col-span-1 row-span-1", label: "tiny" },
+      { span: "col-span-1 row-span-1", label: "tiny" },
+      { span: "col-span-1 row-span-2", label: "small" },
+      { span: "col-span-2 row-span-2", label: "large" },
+    ],
+  },
+];
+
+// Card size → padding / image size inside bento cell
+const cardStyle = {
+  xlarge: { padding: "p-8",  img: "w-28 h-28" },
+  large:  { padding: "p-6",  img: "w-20 h-20" },
+  medium: { padding: "p-4",  img: "w-16 h-16" },
+  small:  { padding: "p-3",  img: "w-12 h-12" },
+  tiny:   { padding: "p-2",  img: "w-8  h-8"  },
+};
+
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
 const SubcategorySkeleton = () => (
   <section className="container mx-auto px-3 py-2">
-    {/* Mobile Skeleton */}
     <div className="md:hidden">
       <div className="flex gap-2 overflow-x-auto scrollbar-hide py-2 px-2">
-        {[...Array(8)].map((_, index) => (
-          <div key={index} className="flex flex-col items-center shrink-0">
+        {[...Array(8)].map((_, i) => (
+          <div key={i} className="flex flex-col items-center shrink-0">
             <div className="w-14 h-14 rounded-full bg-gray-200 animate-pulse" />
-            <div className="mt-2 text-center w-20">
-              <div className="h-3 w-16 mx-auto bg-gray-200 rounded animate-pulse" />
-            </div>
+            <div className="mt-2 w-16 h-3 bg-gray-200 rounded animate-pulse" />
           </div>
         ))}
       </div>
     </div>
-
-    {/* Desktop & Tablet Skeleton */}
-    <div className="hidden md:block relative py-6 md:py-10">
-      <div className="flex gap-4 sm:gap-6 overflow-x-auto scrollbar-hide px-2 py-4">
-        {[...Array(6)].map((_, index) => (
-          <div key={index} className="flex flex-col items-center shrink-0 w-36 md:w-44 lg:w-48">
-            <div className="w-full aspect-square rounded-2xl md:rounded-[2rem] bg-gray-100 animate-pulse p-4 sm:p-6 lg:p-8 flex items-center justify-center">
-              <div className="w-32 h-32 md:w-40 md:h-40 rounded-full bg-gray-200" />
-            </div>
-            <div className="mt-3 text-center w-full px-1">
-              <div className="h-4 w-3/4 mx-auto bg-gray-200 rounded animate-pulse mb-2" />
-              <div className="h-3 w-1/2 mx-auto bg-gray-200 rounded animate-pulse" />
-            </div>
-          </div>
+    <div className="hidden md:block py-6">
+      <div className="grid grid-cols-6 gap-3 h-80">
+        {[...Array(8)].map((_, i) => (
+          <div key={i} className="bg-gray-100 rounded-2xl animate-pulse" />
         ))}
-      </div>
-      
-      {/* Skeleton Navigation Arrows */}
-      <div className="absolute left-0 top-1/2 -translate-y-1/2 z-10">
-        <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse" />
-      </div>
-      <div className="absolute right-0 top-1/2 -translate-y-1/2 z-10">
-        <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse" />
       </div>
     </div>
   </section>
 );
 
+// ─── Bento Card ───────────────────────────────────────────────────────────────
+const BentoCard = ({ subcategory, label = "medium" }) => {
+  const s = cardStyle[label] ?? cardStyle.medium;
+  const isLarge = label === "xlarge" || label === "large";
+
+  return (
+    <Link
+      to={subcategory.href}
+      className="group relative flex flex-col items-center justify-center overflow-hidden rounded-2xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl"
+      style={{
+        background: "linear-gradient(145deg, #ffffff 0%, hsl(45,100%,96%) 100%)",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.04)",
+      }}
+    >
+      {/* Accent corner tab */}
+      <div
+        className="absolute top-0 right-0 w-8 h-8 rounded-bl-2xl rounded-tr-xl opacity-50"
+        style={{
+          background: "linear-gradient(135deg, hsl(45,100%,62%), hsl(45,90%,50%))",
+        }}
+      />
+
+      {/* Hover glow */}
+      <div
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl blur-2xl pointer-events-none"
+        style={{ background: "hsl(45,95%,70%)" }}
+      />
+
+      {/* Content */}
+      <div className={`relative z-10 flex flex-col items-center justify-center gap-2 ${s.padding} w-full h-full`}>
+        <img
+          src={subcategory.image}
+          alt={subcategory.name}
+          className={`${s.img} object-contain group-hover:scale-110 transition-transform duration-500 drop-shadow-sm`}
+          loading="lazy"
+          onError={(e) => {
+            e.target.src = "/placeholder-image.png";
+            e.target.onerror = null;
+          }}
+        />
+        <p
+          className={`font-semibold text-gray-800 group-hover:text-accent transition-colors text-center leading-tight ${
+            isLarge ? "text-sm" : "text-xs"
+          }`}
+        >
+          {subcategory.name}
+        </p>
+        {/* Animated underline */}
+        <div
+          className="h-0.5 w-0 group-hover:w-8 transition-all duration-300 rounded-full"
+          style={{ background: "hsl(45,95%,50%)" }}
+        />
+      </div>
+    </Link>
+  );
+};
+
+// ─── Main component ───────────────────────────────────────────────────────────
 export function SubcategorySlider() {
   const [subcategories, setSubcategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const scrollContainerRef = useRef(null);
 
-  const scroll = (direction) => {
-    if (scrollContainerRef.current) {
-      const scrollAmount = 300;
-      scrollContainerRef.current.scrollBy({
-        left: direction === 'left' ? -scrollAmount : scrollAmount,
-        behavior: 'smooth'
-      });
-    }
-  };
+  // Pick a random layout once per mount (i.e., each page refresh)
+  const [layout] = useState(
+    () => BENTO_LAYOUTS[Math.floor(Math.random() * BENTO_LAYOUTS.length)]
+  );
 
-  // Fetch all categories and their subcategory images from database
   useEffect(() => {
     let cancelled = false;
     setIsLoading(true);
@@ -103,66 +220,66 @@ export function SubcategorySlider() {
         const res = await categoryApi.getCategories();
         const data = res?.data || [];
 
-        // Process categories and their subcategory images from database
-        const processedSubcategories = ensureArray(data).flatMap(cat => {
+        const processedSubcategories = ensureArray(data).flatMap((cat) => {
           const subcategoriesArray = ensureArray(cat.subcategories)
-            .map(item => String(item).trim())
-            .filter(item => item.length > 0);
-          
+            .map((item) => String(item).trim())
+            .filter((item) => item.length > 0);
+
           const subcategoryImages = ensureObject(cat.subcategoryImages);
 
-          // Create an array of subcategory objects with their database images
           return subcategoriesArray
             .map((sub, index) => {
               const imagePath = subcategoryImages[sub];
-              
-              // Only include subcategories that have an image in the database
               if (!imagePath) return null;
-              
               return {
                 id: `${cat.id || cat._id}-sub-${index}`,
                 name: sub,
-                categorySlug: cat.slug || cat.name?.toLowerCase()?.replace(/\s+/g, '-') || 'category',
-                href: `/products?category=${cat.slug || cat.name?.toLowerCase()?.replace(/\s+/g, '-')}&subcategory=${encodeURIComponent(sub)}`,
-                // Use the image from database with getImageUrl
-                image: getImageUrl(imagePath)
+                categorySlug:
+                  cat.slug ||
+                  cat.name?.toLowerCase()?.replace(/\s+/g, "-") ||
+                  "category",
+                href: `/products?category=${
+                  cat.slug || cat.name?.toLowerCase()?.replace(/\s+/g, "-")
+                }&subcategory=${encodeURIComponent(sub)}`,
+                image: getImageUrl(imagePath),
               };
             })
-            .filter(Boolean); // Remove null entries
+            .filter(Boolean);
         });
 
         if (!cancelled) {
-          console.log('Loaded subcategories with images:', processedSubcategories.length);
           setSubcategories(processedSubcategories);
           setIsLoading(false);
         }
       } catch (err) {
-        console.error('Failed to load subcategories', err);
-        toast.error('Failed to load categories');
-        if (!cancelled) {
-          setIsLoading(false);
-        }
+        console.error("Failed to load subcategories", err);
+        toast.error("Failed to load categories");
+        if (!cancelled) setIsLoading(false);
       }
     })();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  if (isLoading) {
-    return <SubcategorySkeleton />;
-  }
+  if (isLoading) return <SubcategorySkeleton />;
+  if (subcategories.length === 0) return null;
 
-  if (subcategories.length === 0) {
-    return null; // Don't show anything if no subcategories have images
-  }
+  // Pair each layout slot with a subcategory (cycle if fewer subcategories than slots)
+  const gridItems = layout.cards.map((card, i) => ({
+    ...card,
+    subcategory: subcategories[i % subcategories.length],
+  }));
 
   return (
     <section className="container mx-auto px-3 py-2">
-      {/* Mobile: Horizontal Scroll */}
+
+      {/* ── Mobile: horizontal scroll ── */}
       <div className="md:hidden">
         <div
           className="flex gap-2 overflow-x-auto scrollbar-hide py-2 px-2 scroll-smooth"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
           {subcategories.map((subcategory) => (
             <Link
@@ -170,25 +287,30 @@ export function SubcategorySlider() {
               to={subcategory.href}
               className="group flex flex-col items-center shrink-0 hover:scale-105 transition-transform duration-300"
             >
-              {/* Circle for mobile */}
-              <div className="relative w-14 h-14 overflow-hidden transition-all duration-300">
+              <div className="relative w-16 h-16 flex items-center justify-center">
+                <div
+                  className="absolute w-14 h-14"
+                  style={{
+                    background:
+                      "linear-gradient(160deg, hsl(45,100%,62%) 0%, hsl(45,92%,48%) 100%)",
+                    borderRadius: "55% 45% 40% 60% / 65% 35% 65% 35%",
+                    boxShadow:
+                      "0 4px 8px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.08), inset 0 1px 2px rgba(255,255,255,0.35)",
+                  }}
+                />
                 <img
                   src={subcategory.image}
                   alt={subcategory.name}
-                  className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
+                  className="relative z-10 w-11 h-11 object-contain group-hover:scale-110 transition-transform duration-300"
                   loading="lazy"
                   onError={(e) => {
-                    console.error('Failed to load image:', subcategory.image);
-                    // Fallback to a placeholder
-                    e.target.src = '/placeholder-image.png';
-                    e.target.onerror = null; // Prevent infinite loop
+                    e.target.src = "/placeholder-image.png";
+                    e.target.onerror = null;
                   }}
                 />
               </div>
-
-              {/* Subcategory name below image */}
               <div className="mt-2 text-center w-20">
-                <p className="text-xs font-medium text-gray-700 group-hover:text-blue-600 transition-colors truncate">
+                <p className="text-xs font-medium text-gray-700 group-hover:text-accent transition-colors truncate">
                   {subcategory.name}
                 </p>
               </div>
@@ -196,73 +318,80 @@ export function SubcategorySlider() {
           ))}
         </div>
       </div>
+{/* Desktop & Tablet: Fixed Bento Grid, Random Subcategories */}
+<div className="hidden md:block py-6 md:py-10">
+  {(() => {
+    // Shuffle subcategories on each render/refresh
+    const shuffled = [...subcategories].sort(() => Math.random() - 0.5);
 
-      {/* Desktop & Tablet: Slider Layout */}
-      <div className="hidden md:block relative group/section py-6 md:py-10">
-        {/* Navigation Arrows */}
-        <button
-          onClick={() => scroll('left')}
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-white/90 shadow-lg border border-gray-100 p-2 rounded-full flex items-center justify-center opacity-0 group-hover/section:opacity-100 transition-opacity hover:bg-white"
-          aria-label="Scroll left"
-        >
-          <ChevronLeft className="w-6 h-6 text-gray-700" />
-        </button>
+    // Fixed 5-slot layout
+    const slots = [
+      { cls: "col-span-2 row-span-3",                  size: "large"  },
+      { cls: "col-span-2 row-span-2 col-start-3",      size: "medium" },
+      { cls: "col-span-2 row-span-2 col-start-1 row-start-4", size: "medium" },
+      { cls: "col-span-2 row-span-3 col-start-3 row-start-3", size: "large"  },
+      { cls: "row-span-5 col-start-5 row-start-1",     size: "small"  },
+    ];
 
-        <button
-          onClick={() => scroll('right')}
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-white/90 shadow-lg border border-gray-100 p-2 rounded-full flex items-center justify-center opacity-0 group-hover/section:opacity-100 transition-opacity hover:bg-white"
-          aria-label="Scroll right"
-        >
-          <ChevronRight className="w-6 h-6 text-gray-700" />
-        </button>
+    const imgSize = { large: "w-24 h-24", medium: "w-16 h-16", small: "w-10 h-10" };
+    const textSize = { large: "text-sm",  medium: "text-xs",   small: "text-xs"  };
+    const padding  = { large: "p-6",      medium: "p-4",       small: "p-3"      };
 
-        {/* Scrollable Container */}
-        <div
-          ref={scrollContainerRef}
-          className="flex gap-4 sm:gap-6 overflow-x-auto scrollbar-hide px-2 py-4 scroll-smooth"
-        >
-          {subcategories.map((subcategory) => (
+    return (
+      <div className="grid grid-cols-5 grid-rows-5 gap-3" style={{ height: "480px" }}>
+        {slots.map((slot, i) => {
+          const sub = shuffled[i % shuffled.length];
+          if (!sub) return null;
+          return (
             <Link
-              key={subcategory.id}
-              to={subcategory.href}
-              className="flex flex-col items-center shrink-0 w-36 md:w-44 lg:w-48 group transition-all duration-300 hover:translate-y-[-4px]"
+              key={`${sub.id}-${i}`}
+              to={sub.href}
+              className={`${slot.cls} group relative flex flex-col items-center justify-center overflow-hidden rounded-2xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl`}
+              style={{
+                background: "linear-gradient(145deg, #ffffff 0%, hsl(45,100%,96%) 100%)",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.04)",
+              }}
             >
-              {/* Card Container */}
-              <div className="relative w-full aspect-square rounded-2xl md:rounded-[2rem] overflow-hidden bg-white border border-gray-100 shadow-sm group-hover:shadow-md transition-all duration-300 p-4 sm:p-6 lg:p-8 flex items-center justify-center">
+              {/* Accent corner */}
+              <div
+                className="absolute top-0 right-0 w-8 h-8 rounded-bl-2xl rounded-tr-xl opacity-50"
+                style={{ background: "linear-gradient(135deg, hsl(45,100%,62%), hsl(45,90%,50%))" }}
+              />
+
+              {/* Hover glow */}
+              <div
+                className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-300 pointer-events-none"
+                style={{ background: "hsl(45,95%,60%)" }}
+              />
+
+              {/* Content */}
+              <div className={`relative z-10 flex flex-col items-center justify-center gap-2 ${padding[slot.size]} w-full h-full`}>
                 <img
-                  src={subcategory.image}
-                  alt={subcategory.name}
-                  className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
+                  src={sub.image}
+                  alt={sub.name}
+                  className={`${imgSize[slot.size]} object-contain group-hover:scale-110 transition-transform duration-500 drop-shadow-sm`}
                   loading="lazy"
-                  onError={(e) => {
-                    console.error('Failed to load image:', subcategory.image);
-                    // Fallback to a placeholder
-                    e.target.src = '/placeholder-image.png';
-                    e.target.onerror = null; // Prevent infinite loop
-                  }}
+                  onError={(e) => { e.target.src = "/placeholder-image.png"; e.target.onerror = null; }}
+                />
+                <p className={`${textSize[slot.size]} font-semibold text-gray-800 group-hover:text-accent transition-colors text-center leading-tight`}>
+                  {sub.name}
+                </p>
+                <div
+                  className="h-0.5 w-0 group-hover:w-8 transition-all duration-300 rounded-full"
+                  style={{ background: "hsl(45,95%,50%)" }}
                 />
               </div>
-
-              {/* Subcategory Label */}
-              <div className="mt-3 text-center w-full px-1">
-                <p className="text-sm font-semibold text-gray-800 group-hover:text-blue-600 transition-colors truncate">
-                  {subcategory.name}
-                </p>
-              </div>
             </Link>
-          ))}
-        </div>
+          );
+        })}
       </div>
+    );
+  })()}
+</div>
 
-      {/* Custom Scrollbar */}
       <style>{`
-        .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-        }
-        .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
     </section>
   );

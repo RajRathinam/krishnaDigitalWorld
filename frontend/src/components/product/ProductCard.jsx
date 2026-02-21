@@ -621,7 +621,7 @@ export function ProductCard({ product, variant = "default", selectedColor }) {
         </div>)}
 
         {/* Image */}
-        <div className="aspect-square bg-white rounded-lg flex items-center justify-center mb-3 overflow-hidden group-hover:bg-secondary/50 transition-colors relative">
+        <div className="aspect-square bg-white rounded-lg flex items-center justify-center mb-3 overflow-hidden group-hover:bg-white transition-colors relative">
             <img src={getImageUrl(displayImageUrl)} alt={name} className="w-full h-full object-contain transform group-hover:scale-105 transition-transform duration-500" onError={(e) => {
                 e.currentTarget.src = '/placeholder.svg';
             }} />

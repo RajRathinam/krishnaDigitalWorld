@@ -156,7 +156,7 @@ export function BestSellers() {
 
             <div className="container relative z-10 px-4 sm:px-6 lg:px-8">
                 {/* Section Header */}
-                <div className="flex items-center gap-3 mb-8 md:mb-12">
+                <div className="flex items-center gap-3 mb-4 md:mb-12">
                     {/* Trending Icon */}
                     <div className="p-3 bg-purple-100 dark:bg-purple-900/20 rounded-xl">
                         <TrendingUp className="w-6 h-6 text-purple-600 dark:text-purple-400" />
