@@ -7,12 +7,12 @@ import {
   clearCart,
   getCartItemCount
 } from '../controllers/cartController.js';
-import { authenticate, requireCustomer } from '../middleware/auth.js';
+import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// All cart routes require authentication and customer role
-router.use(authenticate, requireCustomer);
+// All cart routes require authentication (any role — customer, admin, subadmin)
+router.use(authenticate);
 
 router.get('/', getCart);
 router.post('/items', addToCart);

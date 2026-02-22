@@ -21,12 +21,14 @@ import {
   Shield,
   Truck,
   TrendingUp,
-  ExternalLink
+  ExternalLink,
+  LogOut
 } from "lucide-react";
 import { SearchModal } from "@/components/ui/search-modal";
 import { Link } from "react-router-dom";
 import { useCart } from '@/contexts/CartContext';
 import { useShopInfo } from '@/contexts/ShopInfoContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { cn } from "@/lib/utils";
 
 const quickLinks = [
@@ -37,8 +39,7 @@ const quickLinks = [
 
 const serviceFeatures = [
   { icon: Clock, text: "24/7 Support", subtext: "Dedicated assistance" },
-  { icon: Shield, text: "Secure Payment", subtext: "100% protected" },
-  { icon: Gift, text: "Special Offers", subtext: "Daily deals & discounts" }
+  { icon: Shield, text: "Secure Payment", subtext: "100% protected" }
 ];
 
 // Helper function to ensure something is an array
@@ -73,11 +74,11 @@ const openGoogleMaps = (address, city, state, pincode, country = 'India') => {
 export function Header() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, logout } = useAuth(); // Import logout from useAuth
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [openCategory, setOpenCategory] = useState(null);
   const [openDropdown, setOpenDropdown] = useState(null);
-  const [user, setUser] = useState(null);
   const [searchData, setSearchData] = useState([]);
   const [categories, setCategories] = useState([]);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -185,18 +186,6 @@ export function Header() {
     return () => { cancelled = true; };
   }, []);
 
-  // Load user from localStorage
-  useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (err) {
-        console.error('Failed to parse user from localStorage', err);
-      }
-    }
-  }, []);
-
   const handleCloseMenu = () => {
     setIsClosing(true);
     setTimeout(() => {
@@ -206,6 +195,14 @@ export function Header() {
   };
 
   const openSignup = () => window.dispatchEvent(new Event('openSignup'));
+
+  const handleLogout = async () => {
+    await logout();
+    setOpenDropdown(null);
+    handleCloseMenu();
+    toast.success('Signed out successfully');
+    navigate('/');
+  };
 
   useEffect(() => {
     const handleEscape = (e) => {
@@ -220,7 +217,6 @@ export function Header() {
   // Format phone number for display
   const formatPhoneNumber = (phone) => {
     if (!phone) return '+91 98765 43210'; // Default fallback
-    // You can add formatting logic here if needed
     return phone;
   };
 
@@ -261,7 +257,7 @@ export function Header() {
               </button>
               <div className="flex items-center gap-2">
                 <Package className="w-3.5 h-3.5" />
-                <Link to="/account" className="hover:underline">Track Order</Link>
+                <Link to="/account/orders" className="hover:underline">Track Order</Link>
               </div>
             </div>
             <div className="flex items-center gap-6">
@@ -325,7 +321,7 @@ export function Header() {
             <div className="flex items-center gap-3">
               {/* Wishlist with text */}
               <Link 
-                to="/wishlist" 
+                to="/account/wishlist" 
                 className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-accent/10 transition-all duration-300 group"
                 aria-label="Wishlist"
               >
@@ -344,7 +340,7 @@ export function Header() {
                   onClick={() => setOpenDropdown(openDropdown === 'account' ? null : 'account')}
                   className={cn(
                     "flex items-center gap-2 p-3 rounded-xl transition-all duration-300",
-                    openDropdown === 'account' || location.pathname === '/account'
+                    openDropdown === 'account' || location.pathname.startsWith('/account')
                       ? "bg-accent/20 text-accent"
                       : "hover:bg-accent/10 hover:text-accent"
                   )}
@@ -367,31 +363,68 @@ export function Header() {
                           <p className="font-semibold">{user.name}</p>
                           <p className="text-xs text-muted-foreground">{user.email}</p>
                         </div>
-                        <Link to="/account" className="block px-4 py-2 text-sm hover:bg-accent/10 transition-colors">
+                        <Link 
+                          to="/account/profile" 
+                          className="block px-4 py-2 text-sm hover:bg-accent/10 transition-colors"
+                          onClick={() => setOpenDropdown(null)}
+                        >
                           My Account
                         </Link>
-                        <Link to="/account" className="block px-4 py-2 text-sm hover:bg-accent/10 transition-colors">
+                        <Link 
+                          to="/account/orders" 
+                          className="block px-4 py-2 text-sm hover:bg-accent/10 transition-colors"
+                          onClick={() => setOpenDropdown(null)}
+                        >
                           My Orders
                         </Link>
-                        <Link to="/account" className="block px-4 py-2 text-sm hover:bg-accent/10 transition-colors">
+                        <Link 
+                          to="/account/wishlist" 
+                          className="block px-4 py-2 text-sm hover:bg-accent/10 transition-colors"
+                          onClick={() => setOpenDropdown(null)}
+                        >
                           Wishlist
                         </Link>
+                        <Link 
+                          to="/account/addresses" 
+                          className="block px-4 py-2 text-sm hover:bg-accent/10 transition-colors"
+                          onClick={() => setOpenDropdown(null)}
+                        >
+                          Addresses
+                        </Link>
+                        <div className="border-t border-border my-2"></div>
+                        <button
+                          onClick={handleLogout}
+                          className="w-full flex items-center gap-2 px-4 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          Sign Out
+                        </button>
                       </>
                     ) : (
                       <>
                         <div className="px-4 py-3">
                           <button 
-                            onClick={openSignup}
+                            onClick={() => {
+                              openSignup();
+                              setOpenDropdown(null);
+                            }}
                             className="w-full px-4 py-2 bg-accent text-accent-foreground rounded-lg text-sm font-medium hover:bg-accent/90 transition-colors"
                           >
                             Sign In
                           </button>
                           <p className="text-xs text-center text-muted-foreground mt-2">
-                            New customer? <button onClick={openSignup} className="text-accent hover:underline">Register</button>
+                            New customer? <button onClick={() => {
+                              openSignup();
+                              setOpenDropdown(null);
+                            }} className="text-accent hover:underline">Register</button>
                           </p>
                         </div>
                         <div className="border-t border-border my-2" />
-                        <Link to="/track-order" className="block px-4 py-2 text-sm hover:bg-accent/10 transition-colors">
+                        <Link 
+                          to="/account/orders" 
+                          className="block px-4 py-2 text-sm hover:bg-accent/10 transition-colors"
+                          onClick={() => setOpenDropdown(null)}
+                        >
                           Track Order
                         </Link>
                       </>
@@ -624,9 +657,6 @@ export function Header() {
               </div>
             )}
 
-            {/* Store Info for non-logged in users */}
-           
-
             {/* Content */}
             <div className="flex-1 overflow-y-auto py-2">
               {/* Categories */}
@@ -739,7 +769,7 @@ export function Header() {
                       Sign In / Register
                     </button>
                     <Link 
-                      to="/account" 
+                      to="/account/orders" 
                       className="flex items-center gap-3 px-3 py-3 rounded-md text-foreground hover:bg-secondary transition-colors text-sm"
                       onClick={handleCloseMenu}
                     >
@@ -750,7 +780,7 @@ export function Header() {
                 ) : (
                   <>
                     <Link 
-                      to="/account" 
+                      to="/account/profile" 
                       className="flex items-center gap-3 px-3 py-3 rounded-md text-foreground hover:bg-secondary transition-colors text-sm"
                       onClick={handleCloseMenu}
                     >
@@ -758,17 +788,25 @@ export function Header() {
                       My Account
                     </Link>
                     <Link 
-                      to="/account" 
+                      to="/account/orders" 
                       className="flex items-center gap-3 px-3 py-3 rounded-md text-foreground hover:bg-secondary transition-colors text-sm"
                       onClick={handleCloseMenu}
                     >
                       <Package className="w-4 h-4 text-muted-foreground" />
                       My Orders
                     </Link>
+                    <Link 
+                      to="/account/addresses" 
+                      className="flex items-center gap-3 px-3 py-3 rounded-md text-foreground hover:bg-secondary transition-colors text-sm"
+                      onClick={handleCloseMenu}
+                    >
+                      <MapPin className="w-4 h-4 text-muted-foreground" />
+                      Addresses
+                    </Link>
                   </>
                 )}
                 <Link 
-                  to="/account" 
+                  to="/account/wishlist" 
                   className="flex items-center gap-3 px-3 py-3 rounded-md text-foreground hover:bg-secondary transition-colors text-sm"
                   onClick={handleCloseMenu}
                 >
@@ -783,6 +821,20 @@ export function Header() {
                   <ShoppingCart className="w-4 h-4 text-muted-foreground" />
                   Cart ({cartCount})
                 </Link>
+                
+                {/* Logout button for mobile */}
+                {user && (
+                  <>
+                    <div className="h-px bg-border mx-4 my-3" />
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-3 px-3 py-3 rounded-md text-destructive hover:bg-destructive/10 transition-colors text-sm"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Sign Out
+                    </button>
+                  </>
+                )}
               </div>
 
               <div className="h-px bg-border mx-4 my-3" />
@@ -818,7 +870,6 @@ export function Header() {
                   <ExternalLink className="w-3 h-3 text-muted-foreground" />
                 </button>
               </div>
-
             </div>
 
             {/* Footer */}

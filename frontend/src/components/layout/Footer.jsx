@@ -424,13 +424,14 @@ export function Footer() {
               href="https://infygrid.in"
               target="_blank"
               rel="noopener noreferrer"
-              className="focus:outline-none rounded"
+              className="focus:outline-none flex gap-1 rounded"
             >
               <img
-                src="/infygrid_logo.png"
+                src="/sk.png"
                 alt="Infygrid"
                 className="h-4 w-auto object-contain hover:opacity-80 transition-opacity"
               />
+              Sri krishna groups
             </a>
           </div>
         </div>

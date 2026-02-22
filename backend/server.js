@@ -20,7 +20,8 @@ import {
   brandRoutes,
   modelRoutes,
   settingsRoutes,
-  heroSliderRoutes
+  heroSliderRoutes,
+  paymentRoutes
 } from './routes/index.js';
 import advertisementRoutes from './routes/advertisementRoutes.js';
 import { apiLimiter } from './middleware/rateLimiter.js';
@@ -154,6 +155,7 @@ app.use('/api/birthdays', birthdayRoutes);
 app.use('/api/admin/settings', settingsRoutes);
 app.use('/api/hero-slider', heroSliderRoutes);
 app.use('/api', settingsRoutes); // Public shop info route
+app.use('/api/payments', paymentRoutes); // PhonePe PG v2
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

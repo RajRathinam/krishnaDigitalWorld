@@ -9,6 +9,7 @@ import ProductListing from "./pages/ProductListing";
 import ProductDetail from "./pages/ProductDetail";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
+import PaymentReturn from "./pages/PaymentReturn";
 import Account from "./pages/Account";
 import Help from "./pages/Help";
 import NotFound from "./pages/NotFound";
@@ -24,6 +25,13 @@ import { SignupDialog } from "@/components/home/SignupDialog";
 import { CartProvider } from '@/contexts/CartContext';
 import { ShopInfoProvider } from '@/contexts/ShopInfoContext';
 
+// Import account layout and tab components
+import { AccountLayout } from "@/components/account/AccountLayout";
+import AccountProfile from "@/components/account/AccountProfile";
+import AccountOrders from "@/components/account/AccountOrders";
+import AccountWishlist from "@/components/account/AccountWishlist";
+import AccountAddresses from "@/components/account/AccountAddresses";
+import OrderDetail from "./components/account/OrderDetail";
 // Import new policy pages
 import Careers from "@/components/contentPages/Careers";
 import OurPromise from "@/components/contentPages/OurPromise";
@@ -50,20 +58,20 @@ const App = () => {
   useEffect(() => {
     const onOpen = () => setShowSignup(true);
     window.addEventListener('openSignup', onOpen);
-    
+
     // Check auth status immediately (don't wait for splash)
     const checkAuthStatus = () => {
       const token = localStorage.getItem('authToken');
       const user = localStorage.getItem('user');
       const forceSignup = localStorage.getItem('forceSignup');
-      
+
       // If forceSignup flag is set, show signup and clear the flag
       if (forceSignup === 'true') {
         localStorage.removeItem('forceSignup');
         setTimeout(() => {
           setShowSignup(true);
         }, 500);
-      } 
+      }
       // If user is already authenticated, don't show signup dialog
       else if (token && user) {
         setShowSignup(false);
@@ -77,13 +85,13 @@ const App = () => {
           }, 3000); // 3 second delay after splash screen
         }
       }
-      
+
       setIsCheckingAuth(false);
     };
-    
+
     // Start auth check immediately
     checkAuthStatus();
-    
+
     return () => window.removeEventListener('openSignup', onOpen);
   }, []);
 
@@ -128,7 +136,18 @@ const App = () => {
                     <Route path="/product/:slug" element={<ProductDetail />} />
                     <Route path="/cart" element={<Cart />} />
                     <Route path="/checkout" element={<Checkout />} />
-                    <Route path="/account" element={<Account />} />
+                    <Route path="/payment/return" element={<PaymentReturn />} />
+                    
+                    {/* Account Routes */}
+                    <Route path="/account" element={<AccountLayout />}>
+                      <Route index element={<AccountProfile />} />
+                      <Route path="profile" element={<AccountProfile />} />
+                      <Route path="orders" element={<AccountOrders />} />
+                      <Route path="/account/orders/:id" element={<OrderDetail />} />
+                      <Route path="wishlist" element={<AccountWishlist />} />
+                      <Route path="addresses" element={<AccountAddresses />} />
+                    </Route>
+                    
                     <Route path="/help" element={<Help />} />
                     <Route path="/deals" element={<TodaysDeals />} />
                     <Route path="/new-arrivals" element={<NewArrivals />} />
@@ -151,7 +170,7 @@ const App = () => {
                   <Route path="*" element={<NotFound />} />
                 </Routes>
                 <MobileBottomNav />
-                
+
                 {/* Only show signup dialog if user is not authenticated */}
                 <SignupDialog open={showSignup} onOpenChange={handleSignupOpenChange} />
               </ShopInfoProvider>

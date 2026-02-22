@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import {
   Plus, Search, Filter, Edit, Trash2, MoreVertical, Upload, Loader2,
   Package, CheckCircle, XCircle, AlertTriangle, Star, Image as ImageIcon,
-  Tag, Layers, DollarSign, BarChart3, Settings
+  Tag, Layers, DollarSign, BarChart3, Settings, RefreshCw
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
@@ -477,6 +477,9 @@ export const ProductManagement = () => {
                     ))}
                   </SelectContent>
                 </Select>
+                <Button onClick={fetchData} variant="outline" title="Refresh stock">
+                  <RefreshCw className="h-4 w-4 mr-2" /> Refresh
+                </Button>
                 <Button onClick={handleOpenAdd}>
                   <Plus className="h-4 w-4 mr-2" /> Add Product
                 </Button>
@@ -557,9 +560,25 @@ export const ProductManagement = () => {
                             {product.discountPrice && <span className="text-xs text-muted-foreground line-through">₹{product.discountPrice}</span>}
                           </div>
                         </TableCell><TableCell>
-                          <Badge variant={stock > 0 ? "secondary" : "destructive"} className={stock > 0 ? "bg-green-100 text-green-800 hover:bg-green-200" : ""}>
-                            {stock} in stock
-                          </Badge>
+                          {typeof product.stock === 'object' && product.stock !== null ? (
+                            <div className="space-y-0.5">
+                              {Object.entries(product.stock).map(([color, qty]) => (
+                                <div key={color} className="flex items-center gap-1">
+                                  <Badge
+                                    variant={Number(qty) > 0 ? "secondary" : "destructive"}
+                                    className={`text-[10px] px-1.5 py-0 h-4 ${Number(qty) > 0 ? "bg-green-100 text-green-800" : ""}`}
+                                  >
+                                    {color}: {qty}
+                                  </Badge>
+                                </div>
+                              ))}
+                              <span className="text-[10px] text-muted-foreground">Total: {stock}</span>
+                            </div>
+                          ) : (
+                            <Badge variant={stock > 0 ? "secondary" : "destructive"} className={stock > 0 ? "bg-green-100 text-green-800 hover:bg-green-200" : ""}>
+                              {stock} in stock
+                            </Badge>
+                          )}
                         </TableCell><TableCell>
                           <div className="flex flex-col gap-1">
                             {product.isActive ? (

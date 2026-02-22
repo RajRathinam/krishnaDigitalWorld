@@ -7,7 +7,7 @@ import {
   trackOrder,
   getOrderByNumber
 } from '../controllers/orderController.js';
-import { authenticate, requireCustomer } from '../middleware/auth.js';
+import { authenticate } from '../middleware/auth.js';
 import { validateOrderData } from '../middleware/validation.js';
 
 const router = express.Router();
@@ -15,8 +15,8 @@ const router = express.Router();
 // Public route
 router.get('/track/:trackingId', trackOrder);
 
-// Protected routes (customer only)
-router.use(authenticate, requireCustomer);
+// Protected routes (any authenticated user)
+router.use(authenticate);
 
 router.post('/', validateOrderData, createOrder);
 router.get('/', getOrders);

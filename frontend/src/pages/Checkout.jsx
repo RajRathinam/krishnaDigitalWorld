@@ -351,6 +351,61 @@ export default function Checkout() {
       setIsPlacingOrder(false);
     }
   };
+  // ── PhonePe / UPI payment handler ────────────────────
+  const handlePhonePePayment = async () => {
+    if (isPlacingOrder) return;
+    try {
+      if (!user) {
+        toast.error("Please sign in to place an order");
+        return;
+      }
+      if (!selectedAddressData) {
+        toast.error("Please select a delivery address");
+        return;
+      }
+      setIsPlacingOrder(true);
+
+      const shippingAddress = {
+        name: selectedAddressData.name,
+        phone: selectedAddressData.phone,
+        street: selectedAddressData.street,
+        city: selectedAddressData.city,
+        state: selectedAddressData.state,
+        zipCode: selectedAddressData.pincode,
+        country: "India",
+      };
+
+      toast.loading("Preparing payment…", { id: "phonepe-init" });
+
+      const response = await api.post("/payments/initiate", {
+        shippingAddress,
+        billingAddress: shippingAddress,
+        deliveryType: deliveryOption,
+        notes: `Delivery: ${deliveryOption === "express" ? "Express (₹99)" : "Standard (Free)"}`,
+      });
+
+      toast.dismiss("phonepe-init");
+
+      if (response.data.success) {
+        const { redirectUrl } = response.data.data;
+        if (!redirectUrl) {
+          toast.error("Could not get PhonePe payment URL. Please try again.");
+          return;
+        }
+        toast.success("Redirecting to PhonePe…");
+        // Hard redirect — PhonePe requires a full page redirect
+        window.location.href = redirectUrl;
+      } else {
+        toast.error(response.data.message || "Payment initiation failed");
+      }
+    } catch (err) {
+      toast.dismiss("phonepe-init");
+      const msg = err?.response?.data?.message || "Payment initiation failed. Please try again.";
+      toast.error(msg);
+    } finally {
+      setIsPlacingOrder(false);
+    }
+  };
   const handleScratchComplete = () => {
     toast.success("🎉 You won 10% off on your next order!", {
       description: "Coupon code: LUCKY10",
@@ -585,7 +640,7 @@ export default function Checkout() {
     <h2 className="text-lg font-bold text-foreground">Payment Method</h2>
 
     <div className="space-y-2">
-      {/* Cash on Delivery - Enabled */}
+      {/* Cash on Delivery */}
       <label className={`block p-4 rounded-lg border-2 cursor-pointer transition-colors ${paymentMethod === "cod" ? "border-accent bg-accent/5" : "border-border hover:border-accent/50"}`}>
         <div className="flex items-center gap-3">
           <input type="radio" name="payment" checked={paymentMethod === "cod"} onChange={() => setPaymentMethod("cod")} className="w-4 h-4 text-accent focus:ring-accent" />
@@ -597,77 +652,90 @@ export default function Checkout() {
         </div>
       </label>
 
-      {/* Other payment methods - Disabled with coming soon message */}
-      {[
-        { id: "upi", label: "UPI", desc: "Google Pay, PhonePe, Paytm", icon: Smartphone },
-        { id: "card", label: "Credit / Debit Card", desc: "Visa, Mastercard, Rupay", icon: CreditCard },
-        { id: "netbanking", label: "Net Banking", desc: "All major banks", icon: Building2 },
-      ].map((method) => (<div key={method.id} className="block p-4 rounded-lg border-2 border-border bg-muted/30 cursor-not-allowed relative">
-        <div className="flex items-center gap-3 opacity-50">
-          <input type="radio" name="payment" disabled className="w-4 h-4" />
-          <method.icon className="w-5 h-5 text-muted-foreground" />
+      {/* PhonePe / UPI — ACTIVE */}
+      <label className={`block p-4 rounded-lg border-2 cursor-pointer transition-colors ${paymentMethod === "upi" ? "border-accent bg-accent/5" : "border-border hover:border-accent/50"}`}>
+        <div className="flex items-center gap-3">
+          <input type="radio" name="payment" checked={paymentMethod === "upi"} onChange={() => setPaymentMethod("upi")} className="w-4 h-4 text-accent focus:ring-accent" />
+          <Smartphone className="w-5 h-5 text-muted-foreground" />
           <div className="flex-1">
-            <span className="font-medium text-foreground">{method.label}</span>
-            <p className="text-xs text-muted-foreground">{method.desc}</p>
+            <span className="font-medium text-foreground">UPI / Cards / Net Banking</span>
+            <p className="text-xs text-muted-foreground">Pay via PhonePe — UPI, Debit/Credit Card, Net Banking</p>
           </div>
+          <span className="text-xs bg-krishna-green/10 text-krishna-green px-2 py-1 rounded font-medium">Secure</span>
         </div>
-        <span className="absolute top-2 right-2 text-xs bg-muted px-2 py-1 rounded text-muted-foreground">
-          Coming Soon
-        </span>
-      </div>))}
+      </label>
     </div>
 
     <Confetti isActive={showConfetti} />
 
     <AnimatePresence mode="wait">
-      {!orderPlaced ? (<motion.button key="place-order" onClick={handlePlaceOrder} disabled={isPlacingOrder} className="w-full py-3 bg-accent hover:bg-krishna-orange-hover disabled:bg-muted disabled:cursor-not-allowed text-primary font-medium rounded-lg transition-colors flex items-center justify-center gap-2" whileHover={{ scale: isPlacingOrder ? 1 : 1.02 }} whileTap={{ scale: isPlacingOrder ? 1 : 0.98 }} initial={{ opacity: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.2 }}>
-        {isPlacingOrder ? (<>
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-          Processing...
-        </>) : (<>
-          <Lock className="w-4 h-4" />
-          Place Order • {formatPrice(total)}
-        </>)}
-      </motion.button>) : (<motion.div key="order-success" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} className="text-center space-y-4">
-        <div className="bg-krishna-green/10 p-6 rounded-lg">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <Check className="w-12 h-12 text-krishna-green" />
-            <PartyPopper className="w-12 h-12 text-krishna-yellow" />
-          </div>
-          <h3 className="text-xl font-bold text-foreground mb-2">Order Placed Successfully!</h3>
-          <p className="text-muted-foreground mb-4">
-            Thank you for your order. You will receive a confirmation SMS shortly.
-          </p>
-          {showScratch && (<div className="mb-4 relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-yellow-300 via-yellow-500 to-yellow-300 opacity-20 blur-xl animate-pulse"></div>
-            <div className="relative bg-card border-2 border-dashed border-accent/50 rounded-xl p-4 shadow-lg hover:shadow-xl transition-shadow cursor-pointer">
-              <ScratchToReveal
-                width={250}
-                height={150}
-                minScratchPercentage={40}
-                onComplete={handleScratchComplete}
-                className="mx-auto rounded-lg overflow-hidden"
-                gradientColors={["#FFD700", "#FFA500", "#FFD700"]}
-              >
-                <div className="flex flex-col items-center justify-center w-full h-full bg-gradient-to-br from-indigo-900 to-purple-900 text-white p-4 text-center">
-                  <h4 className="text-2xl font-black text-yellow-400 mb-1">10% OFF</h4>
-                  <p className="text-sm font-medium opacity-90">Coupon Code:</p>
-                  <div className="bg-white/20 px-3 py-1 rounded mt-1 font-mono font-bold tracking-widest border border-white/30">LUCKY10</div>
-                </div>
-              </ScratchToReveal>
+      {!orderPlaced ? (
+        <motion.button
+          key="place-order"
+          onClick={paymentMethod === "upi" ? handlePhonePePayment : handlePlaceOrder}
+          disabled={isPlacingOrder}
+          className="w-full py-3 bg-accent hover:bg-krishna-orange-hover disabled:bg-muted disabled:cursor-not-allowed text-primary font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+          whileHover={{ scale: isPlacingOrder ? 1 : 1.02 }}
+          whileTap={{ scale: isPlacingOrder ? 1 : 0.98 }}
+          initial={{ opacity: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          transition={{ duration: 0.2 }}
+        >
+          {isPlacingOrder ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+              {paymentMethod === "upi" ? "Connecting to PhonePe…" : "Processing…"}
+            </>
+          ) : (
+            <>
+              <Lock className="w-4 h-4" />
+              {paymentMethod === "upi"
+                ? `Pay ₹${total.toLocaleString("en-IN")} via PhonePe`
+                : `Place Order • ${formatPrice(total)}`}
+            </>
+          )}
+        </motion.button>
+      ) : (
+        <motion.div key="order-success" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} className="text-center space-y-4">
+          <div className="bg-krishna-green/10 p-6 rounded-lg">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <Check className="w-12 h-12 text-krishna-green" />
+              <PartyPopper className="w-12 h-12 text-krishna-yellow" />
             </div>
-            <p className="text-xs font-medium text-accent mt-3 animate-bounce">✨ Scratch above to reveal your surprise reward! ✨</p>
-          </div>)}
-        </div>
-        <div className="flex gap-3">
-          <button onClick={() => navigate("/")} className="flex-1 py-2 bg-accent text-primary font-medium rounded-lg hover:bg-krishna-orange-hover transition-colors">
-            Continue Shopping
-          </button>
-          <button onClick={() => navigate("/account")} className="flex-1 py-2 border border-border font-medium rounded-lg hover:bg-muted transition-colors">
-            View Orders
-          </button>
-        </div>
-      </motion.div>)}
+            <h3 className="text-xl font-bold text-foreground mb-2">Order Placed Successfully!</h3>
+            <p className="text-muted-foreground mb-4">
+              Thank you for your order. You will receive a confirmation SMS shortly.
+            </p>
+            {showScratch && (<div className="mb-4 relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-yellow-300 via-yellow-500 to-yellow-300 opacity-20 blur-xl animate-pulse"></div>
+              <div className="relative bg-card border-2 border-dashed border-accent/50 rounded-xl p-4 shadow-lg hover:shadow-xl transition-shadow cursor-pointer">
+                <ScratchToReveal
+                  width={250}
+                  height={150}
+                  minScratchPercentage={40}
+                  onComplete={handleScratchComplete}
+                  className="mx-auto rounded-lg overflow-hidden"
+                  gradientColors={["#FFD700", "#FFA500", "#FFD700"]}
+                >
+                  <div className="flex flex-col items-center justify-center w-full h-full bg-gradient-to-br from-indigo-900 to-purple-900 text-white p-4 text-center">
+                    <h4 className="text-2xl font-black text-yellow-400 mb-1">10% OFF</h4>
+                    <p className="text-sm font-medium opacity-90">Coupon Code:</p>
+                    <div className="bg-white/20 px-3 py-1 rounded mt-1 font-mono font-bold tracking-widest border border-white/30">LUCKY10</div>
+                  </div>
+                </ScratchToReveal>
+              </div>
+              <p className="text-xs font-medium text-accent mt-3 animate-bounce">✨ Scratch above to reveal your surprise reward! ✨</p>
+            </div>)}
+          </div>
+          <div className="flex gap-3">
+            <button onClick={() => navigate("/")} className="flex-1 py-2 bg-accent text-sm text-primary font-medium rounded-lg hover:bg-krishna-orange-hover transition-colors">
+              Continue Shopping
+            </button>
+            <button onClick={() => navigate("/account/orders")} className="flex-1 py-2 text-sm border border-border font-medium rounded-lg hover:bg-muted transition-colors">
+              View Orders
+            </button>
+          </div>
+        </motion.div>)}
     </AnimatePresence>
 
 
@@ -697,8 +765,10 @@ export default function Checkout() {
 
             <div className="space-y-3 mb-4 pb-4 border-b border-border">
               {cart.items.map((item) => (<div key={`${item.productId}-${item.colorName || ""}`} className="flex gap-3">
-                <div className="w-12 h-12 bg-muted rounded flex items-center justify-center shrink-0">
-                  <Tv className="w-6 h-6 text-muted-foreground" />
+                <div className="w-12 h-12 bg-muted rounded overflow-hidden flex items-center justify-center shrink-0">
+                  {item.imageUrl
+                    ? <img src={item.imageUrl} alt={item.productName || "Product"} className="w-full h-full object-cover" />
+                    : <Tv className="w-6 h-6 text-muted-foreground" />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-foreground line-clamp-1">

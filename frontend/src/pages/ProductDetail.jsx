@@ -693,7 +693,7 @@ export default function ProductDetail() {
           </div>
 
           {/* Price Section */}
-          <div className="bg-card rounded-lg border border-border p-4 mb-4">
+          <div className="bg-card rounded-lg border border-border p-4 md:mb-4">
             <div className="flex items-baseline gap-2 flex-wrap mb-2">
               {discount > 0 && (<span className="text-xs text-muted-foreground">-{discount}%</span>)}
               <span className="text-2xl md:text-3xl font-bold text-foreground">{formatPrice(price)}</span>
@@ -759,16 +759,10 @@ export default function ProductDetail() {
             </button>
           </div>
 
-          {/* Seller Info */}
-          <div className="text-sm text-muted-foreground mb-6">
-            Sold by: <span className="text-accent cursor-pointer hover:underline">
-              {product.seller?.name || 'Unknown Seller'}
-            </span>
-          </div>
 
           {/* Description */}
           <div className="mb-6">
-            <h2 className="font-bold text-foreground mb-3">Description</h2>
+            <h2 className="font-bold text-foreground md:mb-3">Description</h2>
             <p className="text-sm text-muted-foreground leading-relaxed">{product.description}</p>
           </div>
 
@@ -893,7 +887,7 @@ export default function ProductDetail() {
       {relatedLoading ? (<div className="mt-12 text-center py-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto mb-4"></div>
         <p className="text-muted-foreground">Loading related products...</p>
-      </div>) : Array.isArray(relatedProducts) && relatedProducts.length > 0 ? (<div className="mt-12">
+      </div>) : Array.isArray(relatedProducts) && relatedProducts.length > 0 ? (<div className="md:mt-12">
         <h2 className="section-title mb-6">You May Also Like</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {relatedProducts.map((relatedProduct) => (<ProductCard key={relatedProduct.id} product={relatedProduct} variant="compact" />))}

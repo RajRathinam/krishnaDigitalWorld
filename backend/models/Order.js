@@ -82,6 +82,23 @@ const Order = sequelize.define('Order', {
       model: 'coupons',
       key: 'id'
     }
+  },
+  // ── PhonePe PG v2 fields ────────────────────
+  merchantOrderId: {
+    type: DataTypes.STRING(120),
+    unique: true,
+    allowNull: true,
+    field: 'merchantOrderId'
+  },
+  phonePeTransactionId: {
+    type: DataTypes.STRING(120),
+    allowNull: true,
+    field: 'phonePeTransactionId'
+  },
+  phonePeResponse: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    field: 'phonePeResponse'
   }
 }, {
   tableName: 'orders',

@@ -12,6 +12,7 @@ import brandRoutes from './brandRoutes.js';
 import modelRoutes from './modelRoutes.js';
 import settingsRoutes from './settingsRoutes.js';
 import heroSliderRoutes from './heroSliderRoutes.js';
+import paymentRoutes from './paymentRoutes.js';
 
 export {
   authRoutes,
@@ -27,5 +28,6 @@ export {
   brandRoutes,
   modelRoutes,
   settingsRoutes,
-  heroSliderRoutes
+  heroSliderRoutes,
+  paymentRoutes
 };

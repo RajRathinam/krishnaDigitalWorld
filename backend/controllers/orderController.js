@@ -1,6 +1,17 @@
 import { Order, Cart, Product, User, Coupon, UserCoupon, sequelize, Sequelize } from '../models/index.js';
 import { generateOrderNumber } from '../utils/helpers.js';
 
+// Helper: always returns a plain JS object for stock, handles both string and object
+const safeParseStock = (raw) => {
+  if (!raw) return {};
+  if (typeof raw === 'string') {
+    try { const p = JSON.parse(raw); return (typeof p === 'object' && p !== null && !Array.isArray(p)) ? p : {}; } catch { return {}; }
+  }
+  if (typeof raw === 'number') return { _total: raw }; // wrap numeric in object for uniform handling
+  if (typeof raw === 'object' && !Array.isArray(raw)) return raw;
+  return {};
+};
+
 /**
  * @desc    Create new order from cart
  * @route   POST /api/orders
@@ -100,14 +111,22 @@ export const createOrder = async (req, res) => {
         });
       }
 
-      // Check stock availability (simple numeric stock check)
-      const availableStock = product.stock;
+      // Check per-color stock availability using safe parse
+      const stockObj = safeParseStock(product.stock);
+      let availableStock;
+      if (item.colorName && stockObj[item.colorName] !== undefined) {
+        availableStock = Number(stockObj[item.colorName]) || 0;
+      } else {
+        availableStock = Object.values(stockObj).reduce((s, v) => s + (Number(v) || 0), 0);
+      }
 
-      if (!product.availability || availableStock < item.quantity) {
+      console.log(`📦 Stock check: product=${product.id} color=${item.colorName} available=${availableStock} requested=${item.quantity} stockRaw=`, product.stock);
+
+      if (availableStock < item.quantity) {
         await transaction.rollback();
         return res.status(400).json({
           success: false,
-          message: `Product "${product.name}"${item.colorName ? ` (${item.colorName})` : ''} is out of stock or insufficient quantity. Available: ${availableStock}`
+          message: `Product "${product.name}"${item.colorName ? ` (${item.colorName})` : ''} is out of stock. Available: ${availableStock}, Requested: ${item.quantity}`
         });
       }
 
@@ -255,18 +274,45 @@ export const createOrder = async (req, res) => {
       couponId
     }, { transaction });
 
-    // Deduct stock for all products in order (SIMPLE NUMERIC STOCK)
-    for (const item of cart.items) {
+    // Deduct stock per color for all ordered items
+    for (const item of orderItems) {
       const product = await Product.findByPk(item.productId, { transaction });
 
       if (product) {
-        // Simple numeric stock decrement
-        const newStock = Math.max(0, product.stock - item.quantity);
+        const stockObj = safeParseStock(product.stock);
+        console.log(`🔻 Deducting stock: product=${item.productId} colorName=${item.colorName} qty=${item.quantity} stockBefore=`, JSON.stringify(stockObj));
 
-        await product.update({
-          stock: newStock,
-          availability: newStock > 0
-        }, { transaction });
+        let updatedStock;
+        if (item.colorName && stockObj[item.colorName] !== undefined) {
+          // Specific color deduction
+          updatedStock = { ...stockObj };
+          updatedStock[item.colorName] = Math.max(0, (Number(updatedStock[item.colorName]) || 0) - item.quantity);
+        } else if (item.colorName) {
+          // colorName provided but not found in stock keys — try case-insensitive match
+          const matchKey = Object.keys(stockObj).find(k => k.toLowerCase() === item.colorName.toLowerCase());
+          updatedStock = { ...stockObj };
+          if (matchKey) {
+            updatedStock[matchKey] = Math.max(0, (Number(updatedStock[matchKey]) || 0) - item.quantity);
+          }
+        } else {
+          // No colorName — deduct from first key or total
+          updatedStock = { ...stockObj };
+          const firstKey = Object.keys(updatedStock)[0];
+          if (firstKey) updatedStock[firstKey] = Math.max(0, (Number(updatedStock[firstKey]) || 0) - item.quantity);
+        }
+
+        const totalRemaining = Object.values(updatedStock).reduce((s, v) => s + (Number(v) || 0), 0);
+        console.log(`✅ Stock after deduction:`, JSON.stringify(updatedStock), `total=${totalRemaining}`);
+
+        // Raw SQL update to bypass Sequelize JSON double-serialization
+        // stock in DB is stored as a plain JSON string
+        await sequelize.query(
+          'UPDATE products SET stock = ?, availability = ? WHERE id = ?',
+          {
+            replacements: [JSON.stringify(updatedStock), totalRemaining > 0 ? 1 : 0, item.productId],
+            transaction
+          }
+        );
       }
     }
 
@@ -382,7 +428,7 @@ export const getOrder = async (req, res) => {
   try {
     const order = await Order.findOne({
       where: {
-        id: req.params.id,
+        order_number: req.params.id,
         userId: req.user.id
       },
       include: [
@@ -406,11 +452,22 @@ export const getOrder = async (req, res) => {
       });
     }
 
+    // Parse orderItems if it's a string
+    let orderItems = order.orderItems;
+    if (typeof orderItems === 'string') {
+      try {
+        orderItems = JSON.parse(orderItems);
+      } catch (e) {
+        console.error(`Error parsing orderItems for order ${order.id}:`, e);
+        orderItems = [];
+      }
+    }
+
     // Enrich order items with product details
     const enrichedItems = await Promise.all(
-      order.orderItems.map(async (item) => {
+      orderItems.map(async (item) => {
         const product = await Product.findByPk(item.productId, {
-          attributes: ['id', 'name', 'slug', 'images']
+          attributes: ['id', 'name', 'slug', 'images', 'colorsAndImages']
         });
 
         return {
@@ -437,7 +494,6 @@ export const getOrder = async (req, res) => {
     });
   }
 };
-
 /**
  * @desc    Cancel order
  * @route   PUT /api/orders/:id/cancel
@@ -478,18 +534,36 @@ export const cancelOrder = async (req, res) => {
       paymentStatus: order.paymentStatus === 'paid' ? 'refunded' : 'failed'
     }, { transaction });
 
-    // Restore product stock (SIMPLE NUMERIC STOCK)
+    // Restore product stock per color
     for (const item of order.orderItems) {
       const product = await Product.findByPk(item.productId, { transaction });
 
       if (product) {
-        // Simple numeric stock increment
-        const newStock = (product.stock || 0) + item.quantity;
+        const stockObj = safeParseStock(product.stock);
+        console.log(`🔄 Restoring stock: product=${item.productId} colorName=${item.colorName} qty=${item.quantity} before=`, JSON.stringify(stockObj));
 
-        await product.update({
-          stock: newStock,
-          availability: newStock > 0
-        }, { transaction });
+        let restoredStock = { ...stockObj };
+        if (item.colorName && restoredStock[item.colorName] !== undefined) {
+          restoredStock[item.colorName] = (Number(restoredStock[item.colorName]) || 0) + item.quantity;
+        } else if (item.colorName) {
+          const matchKey = Object.keys(restoredStock).find(k => k.toLowerCase() === item.colorName.toLowerCase());
+          if (matchKey) restoredStock[matchKey] = (Number(restoredStock[matchKey]) || 0) + item.quantity;
+          else restoredStock[item.colorName] = item.quantity; // add color key if missing
+        } else {
+          const firstKey = Object.keys(restoredStock)[0];
+          if (firstKey) restoredStock[firstKey] = (Number(restoredStock[firstKey]) || 0) + item.quantity;
+        }
+
+        const totalRestored = Object.values(restoredStock).reduce((s, v) => s + (Number(v) || 0), 0);
+        console.log(`✅ Stock after restore:`, JSON.stringify(restoredStock), `total=${totalRestored}`);
+
+        await sequelize.query(
+          'UPDATE products SET stock = ?, availability = ? WHERE id = ?',
+          {
+            replacements: [JSON.stringify(restoredStock), totalRestored > 0 ? 1 : 0, item.productId],
+            transaction
+          }
+        );
       }
     }
 

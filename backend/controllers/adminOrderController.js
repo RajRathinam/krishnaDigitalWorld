@@ -173,23 +173,100 @@ export const getOrderDetails = async (req, res) => {
       });
     }
 
+    // Parse orderItems if it's a string
+    let orderItems = order.orderItems;
+    if (typeof orderItems === 'string') {
+      try {
+        orderItems = JSON.parse(orderItems);
+      } catch (e) {
+        console.error('Failed to parse orderItems:', e);
+        orderItems = [];
+      }
+    }
+
+    // Ensure orderItems is an array
+    if (!Array.isArray(orderItems)) {
+      orderItems = [];
+    }
+
     // Enrich order items with product details
     const enrichedItems = await Promise.all(
-      order.orderItems.map(async (item) => {
-        const product = await Product.findByPk(item.productId, {
-          attributes: ['id', 'name', 'slug', 'images', 'sku']
-        });
+      orderItems.map(async (item) => {
+        try {
+          // Ensure item is an object
+          if (typeof item !== 'object' || item === null) {
+            return {};
+          }
 
-        return {
-          ...item,
-          product: product || null
-        };
+          const product = await Product.findByPk(item.productId, {
+            attributes: ['id', 'name', 'slug', 'images', 'sku', 'price']
+          });
+
+          // Parse images if needed
+          let productImages = product?.images || [];
+          if (typeof productImages === 'string') {
+            try {
+              productImages = JSON.parse(productImages);
+            } catch (e) {
+              productImages = [];
+            }
+          }
+
+          return {
+            id: item.id || null,
+            productId: item.productId || null,
+            quantity: item.quantity || 1,
+            price: item.price || 0,
+            totalPrice: item.totalPrice || (item.price * item.quantity) || 0,
+            colorName: item.colorName || item.color || null,
+            product: product ? {
+              id: product.id,
+              name: product.name,
+              slug: product.slug,
+              sku: product.sku,
+              price: product.price,
+              images: Array.isArray(productImages) ? productImages : []
+            } : null
+          };
+        } catch (err) {
+          console.error('Error enriching item:', err);
+          return {
+            ...item,
+            product: null
+          };
+        }
       })
     );
 
+    // Parse addresses if they're strings
+    let shippingAddress = order.shippingAddress;
+    if (shippingAddress && typeof shippingAddress === 'string') {
+      try {
+        shippingAddress = JSON.parse(shippingAddress);
+      } catch (e) {
+        console.error('Failed to parse shippingAddress:', e);
+        shippingAddress = {};
+      }
+    }
+
+    let billingAddress = order.billingAddress;
+    if (billingAddress && typeof billingAddress === 'string') {
+      try {
+        billingAddress = JSON.parse(billingAddress);
+      } catch (e) {
+        console.error('Failed to parse billingAddress:', e);
+        billingAddress = shippingAddress || {};
+      }
+    }
+
+    // Get the order as plain object
+    const orderPlain = order.toJSON();
+
     const enrichedOrder = {
-      ...order.toJSON(),
-      orderItems: enrichedItems
+      ...orderPlain,
+      orderItems: enrichedItems,
+      shippingAddress,
+      billingAddress
     };
 
     res.status(200).json({
@@ -204,7 +281,6 @@ export const getOrderDetails = async (req, res) => {
     });
   }
 };
-
 /**
  * @desc    Update order status (admin)
  * @route   PUT /api/admin/orders/:id/status
