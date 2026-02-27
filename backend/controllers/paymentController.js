@@ -241,14 +241,22 @@ export const initiatePaymentHandler = async (req, res) => {
                 },
             });
         } catch (phonePeError) {
-            console.error('❌ PhonePe initiation failed:', phonePeError);
+            console.error('❌ PhonePe initiation failed details:', phonePeError);
+
+            // Log specifically if it's a mapping error
+            if (phonePeError.message?.includes('Mapping Not Found')) {
+                console.error('🚨 This is a URL Mapping error. Please check if PHONEPE_ENV is correct for these credentials.');
+            }
+
             // Order is already created, just inform the user
             return res.status(503).json({
                 success: false,
-                message: 'Payment gateway temporarily unavailable. Your order has been saved but payment could not be initiated. Please try again.',
+                message: 'Payment gateway error: ' + (phonePeError.message || 'Unknown error'),
+                suggestion: 'Your order has been saved. Please try paying again from your order history.',
                 data: {
                     orderId: order.id,
-                    orderNumber: order.orderNumber
+                    orderNumber: order.orderNumber,
+                    errorDetail: phonePeError
                 }
             });
         }

@@ -108,6 +108,8 @@ export const getAllOrders = async (req, res) => {
             orderStatus: order.orderStatus,
             paymentMethod: order.paymentMethod,
             paymentStatus: order.paymentStatus,
+            merchantOrderId: order.merchantOrderId,
+            phonePeTransactionId: order.phonePeTransactionId,
             totalPrice: order.totalPrice,
             shippingCost: order.shippingCost,
             finalAmount: order.finalAmount,

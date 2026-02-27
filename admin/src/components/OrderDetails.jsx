@@ -267,10 +267,31 @@ export const OrderDetails = () => {
                                     {order.paymentStatus}
                                 </Badge>
                             </div>
-                            {order.paymentId && (
+                            {order.merchantOrderId && (
+                                <div className="pt-2 border-t mt-2">
+                                    <p className="text-xs text-muted-foreground mb-1">Merchant Order ID</p>
+                                    <code className="text-xs bg-muted p-1 rounded block truncate">{order.merchantOrderId}</code>
+                                </div>
+                            )}
+                            {(order.phonePeTransactionId || order.paymentId) && (
                                 <div className="pt-2">
                                     <p className="text-xs text-muted-foreground mb-1">Transaction ID</p>
-                                    <code className="text-xs bg-muted p-1 rounded block truncate">{order.paymentId}</code>
+                                    <code className="text-xs bg-muted p-1 rounded block truncate">
+                                        {order.phonePeTransactionId || order.paymentId}
+                                    </code>
+                                </div>
+                            )}
+                            {order.phonePeResponse && (
+                                <div className="pt-2">
+                                    <p className="text-xs text-muted-foreground mb-1">Provider Data</p>
+                                    <details className="text-[10px] bg-muted p-2 rounded cursor-pointer">
+                                        <summary className="text-muted-foreground">View Raw Response</summary>
+                                        <pre className="mt-2 overflow-auto whitespace-pre-wrap">
+                                            {typeof order.phonePeResponse === 'string'
+                                                ? order.phonePeResponse
+                                                : JSON.stringify(order.phonePeResponse, null, 2)}
+                                        </pre>
+                                    </details>
                                 </div>
                             )}
                         </CardContent>

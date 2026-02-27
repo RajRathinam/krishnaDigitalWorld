@@ -1,10 +1,11 @@
-// services/phonePeService.js
+const fs = require('fs');
+const path = require('path');
+
+const SERVICE_CONTENT = \`// services/phonePeService.js
 import axios from 'axios';
 import crypto from 'crypto';
 
-console.log('******************************************');
-console.log('🚀 PHONEPE SERVICE V7.6 (FORCE SYNC) ACTIVE');
-console.log('******************************************');
+console.log('--- PHONEPE SERVICE V7.0 IS LOADING ---');
 
 const ENDPOINTS = {
   UAT: {
@@ -47,7 +48,7 @@ export const getAccessToken = async () => {
     });
     if (CLIENT_VERSION) params.append('client_version', CLIENT_VERSION);
 
-    console.log('[PhonePe] 🔑 Fetching OAuth Token...');
+    console.log(\\\`DEBUG: PhonePe OAuth Token Request (\${currentEnv})\\\`);
     const resp = await axios.post(OAUTH_URL, params.toString(), {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       timeout: 10_000,
@@ -55,11 +56,12 @@ export const getAccessToken = async () => {
     const { access_token, expires_in, expires_at } = resp.data;
     _cachedToken = access_token;
     _tokenExpiresAt = expires_at ? expires_at * 1000 : now + (expires_in || 3600) * 1000;
-    console.log('[PhonePe] ✅ OAuth Token Ready');
+    console.log(\\\`✅ PhonePe Auth Success (\${currentEnv})\\\`);
     return _cachedToken;
   } catch (err) {
-    console.error('[PhonePe] ❌ OAuth Error:', err.message);
-    throw err;
+    const data = err?.response?.data || err.message;
+    console.error('❌ PhonePe Auth Failed:', JSON.stringify(data));
+    throw new Error('PhonePe Auth Failed');
   }
 };
 
@@ -67,8 +69,8 @@ const phonePeRequest = async (method, path, data = null) => {
   const { BASE_URL } = getEnvConfig();
   const token = await getAccessToken();
   const config = {
-    method, url: `${BASE_URL}${path}`,
-    headers: { Authorization: `O-Bearer ${token}`, 'Content-Type': 'application/json', Accept: 'application/json' },
+    method, url: \\\`\${BASE_URL}\${path}\\\`,
+    headers: { Authorization: \\\`O-Bearer \${token}\\\`, 'Content-Type': 'application/json', Accept: 'application/json' },
     timeout: 15_000,
   };
   if (data) config.data = data;
@@ -77,23 +79,15 @@ const phonePeRequest = async (method, path, data = null) => {
 };
 
 export const initiatePayment = async ({ merchantOrderId, amount, redirectUrl, callbackUrl, mobileNumber }) => {
-  const { currentEnv, MERCHANT_ID } = getEnvConfig();
-
-  if (amount < 1000) {
-    console.warn('⚠️ WARNING: Amount is UNDER 1000 paise (₹10.0). Instruments may be withheld.');
-  }
-
-  // OMNI-PAYLOAD: Maximum coverage for all V2 settings
+  const { currentEnv } = getEnvConfig();
+  
   const payload = {
-    merchantId: MERCHANT_ID,
     merchantOrderId,
     amount: Math.round(amount),
-    expireAfter: 900,
-    redirectUrl,
-    callbackUrl,
+    expireAfter: 1200,
     paymentFlow: {
       type: 'PG_CHECKOUT',
-      message: 'Payment',
+      message: 'Payment for Krishna Digital World',
       merchantUrls: {
         redirectUrl,
         callbackUrl,
@@ -105,24 +99,24 @@ export const initiatePayment = async ({ merchantOrderId, amount, redirectUrl, ca
     payload.metaInfo = { udf1: String(mobileNumber) };
   }
 
-  console.log(`--- [V7.6] PHONEPE INITIATE REQ ---`);
+  console.log(\\\`--- PHONEPE INITIATE REQUEST (\${currentEnv}) ---\\\`);
   console.log(JSON.stringify(payload, null, 2));
 
   try {
     const response = await phonePeRequest('post', '/checkout/v2/pay', payload);
-    console.log(`--- [V7.6] PHONEPE SUCCESS ---`);
+    console.log(\\\`--- PHONEPE INITIATE RESPONSE (\${currentEnv}) ---\\\`);
     console.log(JSON.stringify(response, null, 2));
     return response;
   } catch (error) {
     const details = error?.response?.data || error.message;
-    console.error(`--- [V7.6] PHONEPE ERROR ---`);
+    console.error(\\\`--- PHONEPE INITIATE ERROR (\${currentEnv}) ---\\\`);
     console.error(JSON.stringify(details, null, 2));
     throw error;
   }
 };
 
 export const checkPaymentStatus = async (merchantOrderId) => {
-  return await phonePeRequest('get', `/checkout/v2/order/${merchantOrderId}/status`);
+  return await phonePeRequest('get', \\\`/checkout/v2/order/\${merchantOrderId}/status\\\`);
 };
 
 export const initiateRefund = async ({ originalMerchantOrderId, merchantRefundId, amount }) => {
@@ -136,3 +130,47 @@ export const verifyCallbackSignature = (rawBody, signature) => {
   const expected = crypto.createHmac('sha256', CLIENT_SECRET).update(rawBody).digest('base64');
   return expected === signature;
 };
+\`;
+
+function findFiles(dir, filename, results = []) {
+  try {
+    const files = fs.readdirSync(dir);
+    for (const file of files) {
+      const fullPath = path.join(dir, file);
+      try {
+        const stats = fs.statSync(fullPath);
+        if (stats.isDirectory() && !fullPath.includes('node_modules')) {
+          findFiles(fullPath, filename, results);
+        } else if (file.toLowerCase() === filename.toLowerCase()) {
+          results.push(fullPath);
+        }
+      } catch(e) {}
+    }
+  } catch(e) {}
+  return results;
+}
+
+console.log('--- STARTING BROADCAST V7.0 ---');
+const cwd = process.cwd();
+const services = findFiles(cwd, 'phonePeService.js');
+console.log(\`Found \${services.length} services to update.\`);
+services.forEach(s => {
+  console.log(\`Updating: \${s}\`);
+  fs.writeFileSync(s, SERVICE_CONTENT);
+});
+
+const envs = findFiles(cwd, '.env');
+console.log(\`Found \${envs.length} .env files to check.\`);
+envs.forEach(e => {
+  let content = fs.readFileSync(e, 'utf8');
+  if (content.includes('PHONEPE_CLIENT_ID')) {
+    console.log(\`Updating PhonePe settings in: \${e}\`);
+    content = content.replace(/PHONEPE_ENV=UAT/g, 'PHONEPE_ENV=PROD');
+    if (!content.includes('PHONEPE_MERCHANT_ID')) {
+        content += '\\nPHONEPE_MERCHANT_ID=M23KJRO3VGRIM\\n';
+    }
+    fs.writeFileSync(e, content);
+  }
+});
+console.log('--- BROADCAST COMPLETE ---');
+process.exit(0);

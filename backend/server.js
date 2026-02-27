@@ -1,4 +1,6 @@
 import express from 'express';
+console.log('!!! SERVER STARTING FROM:', import.meta.url);
+// process.exit(1); 
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
@@ -33,6 +35,14 @@ const __dirname = path.dirname(__filename);
 
 // Load environment variables
 dotenv.config();
+
+console.log('###################################');
+console.log('🚀 SERVER STARTING FROM KrishnaDigitalWorld-master/backend');
+console.log('###################################');
+
+console.log('###################################');
+console.log('🚀 SERVER STARTING FROM [alt] krishnaDigitalWorld-master/backend');
+console.log('###################################');
 
 const app = express();
 const PORT = process.env.PORT || 5000;

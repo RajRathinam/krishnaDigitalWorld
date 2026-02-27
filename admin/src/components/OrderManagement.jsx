@@ -470,47 +470,47 @@ export const OrderManagement = () => {
         ))
       ) : (
         [
-          { 
-            label: "Total Orders", 
-            value: stats.total, 
-            icon: Package, 
-            color: "text-primary", 
-            bg: "bg-primary/10" 
+          {
+            label: "Total Orders",
+            value: stats.total,
+            icon: Package,
+            color: "text-primary",
+            bg: "bg-primary/10"
           },
-          { 
-            label: "Pending", 
-            value: stats.pending, 
-            icon: Clock, 
-            color: "text-yellow-600", 
-            bg: "bg-yellow-100" 
+          {
+            label: "Pending",
+            value: stats.pending,
+            icon: Clock,
+            color: "text-yellow-600",
+            bg: "bg-yellow-100"
           },
-          { 
-            label: "Processing", 
-            value: stats.processing, 
-            icon: RefreshCw, 
-            color: "text-blue-600", 
-            bg: "bg-blue-100" 
+          {
+            label: "Processing",
+            value: stats.processing,
+            icon: RefreshCw,
+            color: "text-blue-600",
+            bg: "bg-blue-100"
           },
-          { 
-            label: "Shipped", 
-            value: stats.shipped, 
-            icon: Truck, 
-            color: "text-purple-600", 
-            bg: "bg-purple-100" 
+          {
+            label: "Shipped",
+            value: stats.shipped,
+            icon: Truck,
+            color: "text-purple-600",
+            bg: "bg-purple-100"
           },
-          { 
-            label: "Delivered", 
-            value: stats.delivered, 
-            icon: CheckCircle, 
-            color: "text-green-600", 
-            bg: "bg-green-100" 
+          {
+            label: "Delivered",
+            value: stats.delivered,
+            icon: CheckCircle,
+            color: "text-green-600",
+            bg: "bg-green-100"
           },
-          { 
-            label: "Revenue", 
-            value: formatCurrency(stats.revenue), 
-            icon: CreditCard, 
-            color: "text-emerald-600", 
-            bg: "bg-emerald-100" 
+          {
+            label: "Revenue",
+            value: formatCurrency(stats.revenue),
+            icon: CreditCard,
+            color: "text-emerald-600",
+            bg: "bg-emerald-100"
           },
         ].map((stat, index) => (
           <Card key={index}>
@@ -681,11 +681,18 @@ export const OrderManagement = () => {
                   <TableCell>{getStatusBadge(order.orderStatus)}</TableCell>
 
                   <TableCell>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground capitalize">
-                        {order.paymentMethod}
-                      </span>
-                      {getPaymentStatusBadge(order.paymentStatus)}
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium capitalize">
+                          {order.paymentMethod}
+                        </span>
+                        {getPaymentStatusBadge(order.paymentStatus)}
+                      </div>
+                      {(order.phonePeTransactionId || order.merchantOrderId) && (
+                        <div className="text-[10px] text-muted-foreground font-mono truncate max-w-[100px]">
+                          {order.phonePeTransactionId || order.merchantOrderId}
+                        </div>
+                      )}
                     </div>
                   </TableCell>
 
@@ -808,13 +815,24 @@ export const OrderManagement = () => {
                       <p className="text-sm text-muted-foreground">Payment Status</p>
                       <div>{getPaymentStatusBadge(selectedOrder.paymentStatus)}</div>
                     </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Total Amount</p>
-                      <p className="font-medium text-lg">
-                        {formatCurrency(getFinalAmount(selectedOrder))}
-                      </p>
-                    </div>
                   </div>
+
+                  {(selectedOrder.merchantOrderId || selectedOrder.phonePeTransactionId) && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t mt-2">
+                      {selectedOrder.merchantOrderId && (
+                        <div>
+                          <p className="text-xs text-muted-foreground">Merchant Order ID</p>
+                          <code className="text-[10px] bg-muted px-1 rounded truncate block">{selectedOrder.merchantOrderId}</code>
+                        </div>
+                      )}
+                      {selectedOrder.phonePeTransactionId && (
+                        <div>
+                          <p className="text-xs text-muted-foreground">PhonePe Txn ID</p>
+                          <code className="text-[10px] bg-muted px-1 rounded truncate block">{selectedOrder.phonePeTransactionId}</code>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   <Separator />
 
