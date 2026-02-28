@@ -327,9 +327,6 @@ export function Header() {
               >
                 <div className="relative">
                   <Heart className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                  <span className="absolute -top-2 -right-2 bg-accent text-accent-foreground text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow-sm">
-                    0
-                  </span>
                 </div>
                 <span className="text-sm font-medium hidden xl:inline">Wishlist</span>
               </Link>
@@ -658,7 +655,7 @@ export function Header() {
             )}
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto py-2">
+            <div className="flex-1 overflow-y-auto py-3">
               {/* Categories */}
               <div className="px-2">
                 <p className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
