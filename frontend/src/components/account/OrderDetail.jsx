@@ -28,9 +28,13 @@ import {
   Hash,
   ChevronRight,
   CircleDot,
+  MessageCircle,
+  AlertCircle,
+  PhoneCall,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { baseUrl } from "@/config/baseUrl";
+import { useShopInfo } from "@/contexts/ShopInfoContext";
 
 const API_BASE_URL = baseUrl;
 
@@ -85,12 +89,8 @@ const formatDateShort = (d) =>
     : null;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Orbit ring animation (same as SignupDialog / PaymentReturn)
+// Orbit ring animation
 // ─────────────────────────────────────────────────────────────────────────────
-function rand(min, max) {
-  return Math.random() * (max - min) + min;
-}
-
 function OrbitRing({ radius, speed, delay, dotClass, reverse = false }) {
   return (
     <motion.div
@@ -137,33 +137,33 @@ function OrbitRing({ radius, speed, delay, dotClass, reverse = false }) {
 // Status config
 // ─────────────────────────────────────────────────────────────────────────────
 const STATUS_CONFIG = {
-  pending:    { label: "Pending",    color: "text-orange-500", bg: "bg-orange-500/10", border: "border-orange-500/30", icon: Clock },
-  processing: { label: "Processing", color: "text-primary",    bg: "bg-primary/10",    border: "border-primary/30",    icon: Loader2 },
-  shipped:    { label: "Shipped",    color: "text-blue-500",   bg: "bg-blue-500/10",   border: "border-blue-500/30",   icon: Truck },
-  delivered:  { label: "Delivered",  color: "text-green-500",  bg: "bg-green-500/10",  border: "border-green-500/30",  icon: BadgeCheck },
-  cancelled:  { label: "Cancelled",  color: "text-destructive",bg: "bg-destructive/10",border: "border-destructive/30",icon: X },
+  pending:    { label: "Pending",    color: "text-orange-500",  bg: "bg-orange-500/10",  border: "border-orange-500/30",  icon: Clock      },
+  processing: { label: "Processing", color: "text-primary",     bg: "bg-primary/10",     border: "border-primary/30",     icon: Loader2    },
+  shipped:    { label: "Shipped",    color: "text-blue-500",    bg: "bg-blue-500/10",    border: "border-blue-500/30",    icon: Truck      },
+  delivered:  { label: "Delivered",  color: "text-green-500",   bg: "bg-green-500/10",   border: "border-green-500/30",   icon: BadgeCheck },
+  cancelled:  { label: "Cancelled",  color: "text-destructive", bg: "bg-destructive/10", border: "border-destructive/30", icon: X          },
 };
 
 const PAYMENT_STATUS_CONFIG = {
-  pending:  { label: "Pending",  color: "text-orange-500", bg: "bg-orange-500/10" },
-  paid:     { label: "Paid",     color: "text-green-500",  bg: "bg-green-500/10"  },
-  failed:   { label: "Failed",   color: "text-destructive",bg: "bg-destructive/10"},
-  refunded: { label: "Refunded", color: "text-primary",    bg: "bg-primary/10"    },
+  pending:  { label: "Pending",  color: "text-orange-500",  bg: "bg-orange-500/10"  },
+  paid:     { label: "Paid",     color: "text-green-500",   bg: "bg-green-500/10"   },
+  failed:   { label: "Failed",   color: "text-destructive", bg: "bg-destructive/10" },
+  refunded: { label: "Refunded", color: "text-primary",     bg: "bg-primary/10"     },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Tracking timeline steps
+// Tracking timeline
 // ─────────────────────────────────────────────────────────────────────────────
 const TRACK_STEPS = ["pending", "processing", "shipped", "delivered"];
 
 function TrackingTimeline({ currentStatus }) {
-  const currentIdx = TRACK_STEPS.indexOf(currentStatus);
+  const currentIdx  = TRACK_STEPS.indexOf(currentStatus);
   const isCancelled = currentStatus === "cancelled";
 
   return (
     <div className="relative">
-      {/* Connector line */}
-      <div className="absolute top-4 left-4 right-4 h-0.5 bg-border z-0"
+      <div
+        className="absolute top-4 h-0.5 bg-border z-0"
         style={{ left: "calc(2rem)", right: "calc(2rem)" }}
       />
       <motion.div
@@ -180,10 +180,10 @@ function TrackingTimeline({ currentStatus }) {
 
       <div className="flex justify-between relative z-10">
         {TRACK_STEPS.map((step, i) => {
-          const done = !isCancelled && i <= currentIdx;
+          const done   = !isCancelled && i <= currentIdx;
           const active = !isCancelled && i === currentIdx;
-          const cfg = STATUS_CONFIG[step];
-          const Icon = cfg.icon;
+          const cfg    = STATUS_CONFIG[step];
+          const Icon   = cfg.icon;
 
           return (
             <motion.div
@@ -218,7 +218,6 @@ function TrackingTimeline({ currentStatus }) {
             </motion.div>
           );
         })}
-
       </div>
     </div>
   );
@@ -255,7 +254,7 @@ function InfoRow({ label, value, highlight, mono }) {
     <div className="flex items-start justify-between py-2.5 border-b border-border/40 last:border-0 gap-4">
       <span className="text-muted-foreground text-sm flex-shrink-0">{label}</span>
       <span
-        className={`text-sm font-medium text-right ${
+        className={`text-sm font-medium text-right break-all ${
           highlight ? "text-primary" : mono ? "font-mono text-foreground" : "text-foreground"
         }`}
       >
@@ -266,13 +265,12 @@ function InfoRow({ label, value, highlight, mono }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Product image — same logic as Cart component
+// Product image
 // ─────────────────────────────────────────────────────────────────────────────
 function ProductImage({ item }) {
   const [imgSrc, setImgSrc] = useState(null);
 
   useEffect(() => {
-    // Priority: item.image → colorsAndImages for colorName → product.images[0]
     if (item.image) {
       setImgSrc(item.image);
     } else if (item.product?.colorsAndImages && item.colorName) {
@@ -307,16 +305,14 @@ function ProductImage({ item }) {
 // Hero status badge with orbit rings
 // ─────────────────────────────────────────────────────────────────────────────
 function StatusHero({ status }) {
-  const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.pending;
+  const cfg  = STATUS_CONFIG[status] || STATUS_CONFIG.pending;
   const Icon = cfg.icon;
-  const isSuccess = status === "delivered";
 
   return (
     <div className="relative flex items-center justify-center" style={{ height: 120 }}>
-      {/* Orbit rings */}
-      <OrbitRing radius={44}  speed={8}  delay={0.3} dotClass="bg-primary" />
-      <OrbitRing radius={60}  speed={13} delay={0.5} dotClass="bg-primary/55" reverse />
-      <OrbitRing radius={76}  speed={20} delay={0.7} dotClass="bg-accent" />
+      <OrbitRing radius={44} speed={8}  delay={0.3} dotClass="bg-primary" />
+      <OrbitRing radius={60} speed={13} delay={0.5} dotClass="bg-primary/55" reverse />
+      <OrbitRing radius={76} speed={20} delay={0.7} dotClass="bg-accent" />
 
       <motion.div
         initial={{ scale: 0, rotate: -20 }}
@@ -324,27 +320,159 @@ function StatusHero({ status }) {
         transition={{ delay: 0.1, duration: 0.6, ease: "backOut" }}
         className={`relative z-10 w-16 h-16 rounded-full flex items-center justify-center ${cfg.bg} border ${cfg.border}`}
         style={{
-          boxShadow: `0 0 0 8px hsl(var(--primary) / 0.07), 0 0 0 16px hsl(var(--primary) / 0.03)`,
+          boxShadow: "0 0 0 8px hsl(var(--primary) / 0.07), 0 0 0 16px hsl(var(--primary) / 0.03)",
         }}
       >
-        <motion.div
-          animate={
-            isSuccess
-              ? { rotate: [0, -10, 10, -6, 6, 0] }
-              : status === "processing" || status === "pending"
-              ? {}
-              : {}
-          }
-          transition={{ delay: 0.7, duration: 0.8 }}
-        >
-          <Icon
-            className={`w-8 h-8 ${cfg.color} ${
-              status === "processing" ? "animate-spin" : ""
-            }`}
-          />
-        </motion.div>
+        <Icon className={`w-8 h-8 ${cfg.color} ${status === "processing" ? "animate-spin" : ""}`} />
       </motion.div>
     </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Cancel Request Popup
+// ─────────────────────────────────────────────────────────────────────────────
+function CancelRequestPopup({ order, shopInfo, onClose }) {
+  const phone    = shopInfo?.phone    || null;
+  const shopName = shopInfo?.shopName || "the shop";
+
+  // Build a pre-filled WhatsApp message
+  const whatsappMessage = encodeURIComponent(
+    `Hi, I'd like to cancel my order.\n\nOrder Number: ${order.orderNumber || order.id}\nAmount: ₹${parseFloat(order.finalAmount).toLocaleString("en-IN")}\n\nPlease assist me with the cancellation.`
+  );
+  const whatsappUrl = phone
+    ? `https://wa.me/${phone.replace(/\D/g, "")}?text=${whatsappMessage}`
+    : null;
+
+  const callUrl = phone ? `tel:${phone.replace(/\s/g, "")}` : null;
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.9, y: 20 }}
+          transition={{ type: "spring", stiffness: 280, damping: 22 }}
+          className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="relative bg-destructive/5 border-b border-destructive/20 px-6 pt-6 pb-5 text-center">
+            <button
+              onClick={onClose}
+              className="absolute top-4 right-4 w-7 h-7 rounded-full bg-muted flex items-center justify-center hover:bg-border transition-colors"
+            >
+              <X className="w-3.5 h-3.5 text-muted-foreground" />
+            </button>
+
+            {/* Icon */}
+            <div className="w-14 h-14 rounded-full bg-destructive/10 border border-destructive/25 flex items-center justify-center mx-auto mb-3">
+              <AlertCircle className="w-7 h-7 text-destructive" />
+            </div>
+
+            <h2 className="text-base font-bold text-foreground">Want to Cancel?</h2>
+            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+              Orders can only be cancelled by our team.{" "}
+              <span className="font-medium text-foreground">Please contact {shopName}</span> and
+              we'll process your request right away.
+            </p>
+          </div>
+
+          {/* Order reference */}
+          <div className="mx-5 mt-4 p-3 rounded-xl bg-muted/50 border border-border/60 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs text-muted-foreground">Your order</p>
+              <p className="text-sm font-mono font-semibold text-foreground">
+                {order.orderNumber || `#${order.id}`}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-muted-foreground">Amount</p>
+              <p className="text-sm font-bold text-primary">
+                ₹{parseFloat(order.finalAmount).toLocaleString("en-IN")}
+              </p>
+            </div>
+          </div>
+
+          {/* Contact options */}
+          <div className="p-5 space-y-3">
+            {/* WhatsApp */}
+            {whatsappUrl && (
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-[#25D366]/10 border border-[#25D366]/30 hover:bg-[#25D366]/20 transition-colors group"
+              >
+                {/* WhatsApp icon (inline SVG — no extra dependency) */}
+                <svg
+                  viewBox="0 0 32 32"
+                  className="w-5 h-5 flex-shrink-0 text-[#25D366]"
+                  fill="currentColor"
+                >
+                  <path d="M16 2C8.268 2 2 8.268 2 16c0 2.482.67 4.806 1.836 6.805L2 30l7.394-1.808A13.94 13.94 0 0016 30c7.732 0 14-6.268 14-14S23.732 2 16 2zm0 25.5a11.45 11.45 0 01-5.845-1.604l-.418-.249-4.387 1.072 1.1-4.274-.273-.438A11.469 11.469 0 014.5 16C4.5 9.649 9.649 4.5 16 4.5S27.5 9.649 27.5 16 22.351 27.5 16 27.5zm6.29-8.61c-.344-.172-2.036-1.005-2.352-1.12-.316-.115-.546-.172-.775.172-.23.344-.89 1.12-1.09 1.35-.2.23-.4.258-.744.086-.344-.172-1.453-.536-2.768-1.708-1.023-.913-1.713-2.04-1.914-2.384-.2-.344-.021-.53.15-.702.155-.154.344-.4.516-.6.172-.2.23-.344.344-.573.115-.23.057-.43-.029-.602-.086-.172-.775-1.868-1.062-2.558-.28-.672-.564-.58-.775-.59l-.66-.011c-.23 0-.602.086-.917.43-.316.344-1.205 1.178-1.205 2.872s1.234 3.33 1.406 3.56c.172.23 2.428 3.707 5.884 5.198.822.355 1.463.567 1.963.725.824.263 1.574.226 2.167.137.661-.099 2.036-.833 2.323-1.636.287-.803.287-1.49.2-1.634-.086-.143-.316-.23-.66-.4z" />
+                </svg>
+                <div className="flex-1 text-left">
+                  <p className="text-sm font-semibold text-foreground group-hover:text-[#25D366] transition-colors">
+                    Message on WhatsApp
+                  </p>
+                  {phone && (
+                    <p className="text-xs text-muted-foreground font-mono">{phone}</p>
+                  )}
+                </div>
+                <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
+              </a>
+            )}
+
+            {/* Call */}
+            {callUrl && (
+              <a
+                href={callUrl}
+                className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-primary/5 border border-primary/20 hover:bg-primary/10 transition-colors group"
+              >
+                <div className="w-5 h-5 flex-shrink-0 flex items-center justify-center">
+                  <PhoneCall className="w-5 h-5 text-primary" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
+                    Call Us
+                  </p>
+                  {phone && (
+                    <p className="text-xs text-muted-foreground font-mono">{phone}</p>
+                  )}
+                </div>
+                <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
+              </a>
+            )}
+
+            {/* Fallback if no phone configured */}
+            {!phone && (
+              <div className="p-3 rounded-xl bg-muted/40 border border-border text-center">
+                <p className="text-sm text-muted-foreground">
+                  Please visit the{" "}
+                  <Link to="/contact" className="text-primary font-medium hover:underline">
+                    Contact page
+                  </Link>{" "}
+                  to reach us.
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Footer note */}
+          <p className="text-center text-xs text-muted-foreground pb-5 px-5">
+            Keep your order number handy when you contact us.
+          </p>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
   );
 }
 
@@ -352,11 +480,13 @@ function StatusHero({ status }) {
 // Main OrderDetail Page
 // ─────────────────────────────────────────────────────────────────────────────
 export default function OrderDetail() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const [order, setOrder] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [cancelling, setCancelling] = useState(false);
+  const { id }       = useParams();
+  const navigate     = useNavigate();
+  const { shopInfo } = useShopInfo();
+
+  const [order,           setOrder          ] = useState(null);
+  const [loading,         setLoading        ] = useState(true);
+  const [showCancelPopup, setShowCancelPopup] = useState(false);
 
   useEffect(() => {
     fetchOrder();
@@ -368,51 +498,26 @@ export default function OrderDetail() {
       const res = await apiRequest(`/orders/${id}`);
       if (res.success) {
         let o = res.data;
-        
-        // Parse orderItems if string
+
         if (typeof o.orderItems === "string") {
           try { o.orderItems = JSON.parse(o.orderItems); } catch { o.orderItems = []; }
         }
         if (!Array.isArray(o.orderItems)) o.orderItems = [];
-        
-        // Parse shippingAddress if string
+
         if (typeof o.shippingAddress === "string") {
-          try { 
-            o.shippingAddress = JSON.parse(o.shippingAddress); 
-          } catch { 
-            o.shippingAddress = {}; 
-          }
+          try { o.shippingAddress = JSON.parse(o.shippingAddress); } catch { o.shippingAddress = {}; }
         }
-        
+
         setOrder(o);
-        console.log(o);
       } else {
         toast({ title: "Error", description: res.message || "Order not found", variant: "destructive" });
         navigate("/account/orders");
       }
-    } catch (err) {
+    } catch {
       toast({ title: "Error", description: "Failed to load order", variant: "destructive" });
       navigate("/account/orders");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleCancel = async () => {
-    if (!window.confirm("Are you sure you want to cancel this order?")) return;
-    setCancelling(true);
-    try {
-      const res = await apiRequest(`/orders/${id}/cancel`, { method: "PUT" });
-      if (res.success) {
-        toast({ title: "Order cancelled successfully" });
-        fetchOrder();
-      } else {
-        toast({ title: "Error", description: res.message, variant: "destructive" });
-      }
-    } catch {
-      toast({ title: "Error", description: "Failed to cancel order", variant: "destructive" });
-    } finally {
-      setCancelling(false);
     }
   };
 
@@ -436,30 +541,34 @@ export default function OrderDetail() {
 
   if (!order) return null;
 
-  const orderStatus = order.orderStatus || "pending";
+  const orderStatus   = order.orderStatus   || "pending";
   const paymentStatus = order.paymentStatus || "pending";
-  const statusCfg = STATUS_CONFIG[orderStatus] || STATUS_CONFIG.pending;
-  const paymentCfg = PAYMENT_STATUS_CONFIG[paymentStatus] || PAYMENT_STATUS_CONFIG.pending;
-  const canCancel = ["pending", "processing"].includes(orderStatus);
+  const statusCfg     = STATUS_CONFIG[orderStatus]         || STATUS_CONFIG.pending;
+  const paymentCfg    = PAYMENT_STATUS_CONFIG[paymentStatus] || PAYMENT_STATUS_CONFIG.pending;
 
-  // Parse shippingAddress if it's still a string (fallback)
+  // User can REQUEST cancellation only while order is pending/processing
+  const canRequestCancel = ["pending", "processing"].includes(orderStatus);
+
   let shippingAddr = order.shippingAddress || {};
   if (typeof shippingAddr === "string") {
-    try {
-      shippingAddr = JSON.parse(shippingAddr);
-    } catch {
-      shippingAddr = {};
-    }
+    try { shippingAddr = JSON.parse(shippingAddr); } catch { shippingAddr = {}; }
   }
-  
-  const coupon = order.coupon;
 
   return (
     <div className="min-h-screen bg-background">
 
+      {/* Cancel Request Popup */}
+      {showCancelPopup && (
+        <CancelRequestPopup
+          order={order}
+          shopInfo={shopInfo}
+          onClose={() => setShowCancelPopup(false)}
+        />
+      )}
+
       <div className="md:container max-w-6xl py-6 px-2 md:pb-20">
 
-        {/* Back + title */}
+        {/* Back + title row */}
         <motion.div
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
@@ -467,19 +576,21 @@ export default function OrderDetail() {
         >
           <div>
             <h1 className="text-lg font-bold text-foreground leading-none">
-             {order.orderNumber || `ORD${String(order.id).slice(-6)}`}
+              {order.orderNumber || `ORD${String(order.id).slice(-6)}`}
             </h1>
             <p className="text-xs text-muted-foreground mt-0.5">
               Placed on {formatDateShort(order.created_at || order.createdAt)}
             </p>
           </div>
-          <span className={`ml-auto inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${statusCfg.bg} ${statusCfg.color} ${statusCfg.border}`}>
+          <span
+            className={`ml-auto inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${statusCfg.bg} ${statusCfg.color} ${statusCfg.border}`}
+          >
             <statusCfg.icon className="w-3 h-3" />
             {statusCfg.label}
           </span>
         </motion.div>
 
-        {/* ── Row 1: Status hero (full width) ───────────────────────────── */}
+        {/* ── Status hero ──────────────────────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -493,7 +604,6 @@ export default function OrderDetail() {
                 "radial-gradient(ellipse at 50% 0%, hsl(var(--primary) / 0.1) 0%, transparent 60%)",
             }}
           />
-          {/* Side-by-side: orbit icon LEFT, timeline RIGHT */}
           <div className="flex flex-col sm:flex-row items-center gap-0 sm:gap-6 px-6 pt-6 pb-5 relative">
             {/* Left: icon + message */}
             <div className="flex flex-col items-center sm:items-start sm:w-56 flex-shrink-0">
@@ -505,11 +615,11 @@ export default function OrderDetail() {
                 className="text-center sm:text-left mt-2"
               >
                 <p className="font-bold text-foreground text-sm leading-snug">
-                  {orderStatus === "delivered" && "Your order has been delivered!"}
-                  {orderStatus === "shipped"   && "Your order is on the way!"}
-                  {orderStatus === "processing"&& "Your order is being processed"}
-                  {orderStatus === "pending"   && "Your order is confirmed"}
-                  {orderStatus === "cancelled" && "Order has been cancelled"}
+                  {orderStatus === "delivered"  && "Your order has been delivered!"}
+                  {orderStatus === "shipped"    && "Your order is on the way!"}
+                  {orderStatus === "processing" && "Your order is being processed"}
+                  {orderStatus === "pending"    && "Your order is confirmed"}
+                  {orderStatus === "cancelled"  && "Order has been cancelled"}
                 </p>
                 {order.trackingId && (
                   <p className="text-xs text-muted-foreground mt-1 font-mono break-all">
@@ -519,7 +629,6 @@ export default function OrderDetail() {
               </motion.div>
             </div>
 
-            {/* Divider */}
             <div className="hidden sm:block w-px self-stretch bg-border/50 mx-2" />
 
             {/* Right: tracking timeline */}
@@ -534,111 +643,100 @@ export default function OrderDetail() {
           </div>
         </motion.div>
 
-        {/* ── Row 2: 2-column layout for Order Items and Payment Details ── */}
+        {/* ── 2-col: items + payment ──────────────────────────────────────── */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          {/* LEFT COL: Order Items */}
-          <div className="w-full">
-            <SectionCard title="Order Items" icon={ShoppingBag} delay={0.15}>
-              <div className="space-y-4">
-                {order.orderItems.map((item, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.2 + i * 0.07 }}
-                    className="flex items-center gap-3"
-                  >
-                    <ProductImage item={item} />
-                    <div className="flex-1 min-w-0">
-                      <Link
-                        to={`/product/${item.product?.slug || item.productId}`}
-                        className="text-sm font-medium text-foreground hover:text-primary transition-colors line-clamp-2"
-                      >
-                        {item.name || item.product?.name || `Product #${item.productId}`}
-                      </Link>
-                      <div className="flex flex-wrap gap-x-3 mt-1">
-                        {item.colorName && (
-                          <span className="text-xs text-muted-foreground">
-                            Color: <span className="text-foreground">{item.colorName}</span>
-                          </span>
-                        )}
+
+          {/* Order Items */}
+          <SectionCard title="Order Items" icon={ShoppingBag} delay={0.15}>
+            <div className="space-y-4">
+              {order.orderItems.map((item, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2 + i * 0.07 }}
+                  className="flex items-center gap-3"
+                >
+                  <ProductImage item={item} />
+                  <div className="flex-1 min-w-0">
+                    <Link
+                      to={`/product/${item.product?.slug || item.productId}`}
+                      className="text-sm font-medium text-foreground hover:text-primary transition-colors line-clamp-2"
+                    >
+                      {item.name || item.product?.name || `Product #${item.productId}`}
+                    </Link>
+                    <div className="flex flex-wrap gap-x-3 mt-1">
+                      {item.colorName && (
                         <span className="text-xs text-muted-foreground">
-                          Qty: <span className="text-foreground">{item.quantity}</span>
+                          Color: <span className="text-foreground">{item.colorName}</span>
                         </span>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {formatPrice(item.price)} × {item.quantity}
-                      </p>
+                      )}
+                      <span className="text-xs text-muted-foreground">
+                        Qty: <span className="text-foreground">{item.quantity}</span>
+                      </span>
                     </div>
-                    <div className="text-sm font-bold text-foreground flex-shrink-0">
-                      {formatPrice(item.total || item.price * item.quantity)}
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {formatPrice(item.price)} × {item.quantity}
+                    </p>
+                  </div>
+                  <div className="text-sm font-bold text-foreground flex-shrink-0">
+                    {formatPrice(item.total || item.price * item.quantity)}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
 
-              {/* Price breakdown */}
-              <div className="mt-5 pt-4 border-t border-border/60">
-                <InfoRow label="Subtotal" value={formatPrice(order.totalPrice)} />
-                {parseFloat(order.shippingCost) > 0 ? (
-                  <InfoRow label="Shipping" value={formatPrice(order.shippingCost)} />
-                ) : (
-                  <InfoRow label="Shipping" value="FREE" highlight />
-                )}
-                {parseFloat(order.discountAmount) > 0 && (
-                  <InfoRow label="Discount" value={`− ${formatPrice(order.discountAmount)}`} highlight />
-                )}
-                {coupon && (
-                  <InfoRow
-                    label="Coupon"
-                    value={`${coupon.code} (${
-                      coupon.discountType === "percentage"
-                        ? `${coupon.discountValue}%`
-                        : formatPrice(coupon.discountValue)
-                    } off)`}
-                    highlight
-                  />
-                )}
-                <div className="flex items-center justify-between pt-3 mt-1">
-                  <span className="font-bold text-foreground">Total Paid</span>
-                  <span className="font-bold text-primary text-lg">{formatPrice(order.finalAmount)}</span>
-                </div>
+            {/* Price breakdown */}
+            <div className="mt-5 pt-4 border-t border-border/60">
+              <InfoRow label="Subtotal"  value={formatPrice(order.totalPrice)} />
+              {parseFloat(order.shippingCost) > 0 ? (
+                <InfoRow label="Shipping" value={formatPrice(order.shippingCost)} />
+              ) : (
+                <InfoRow label="Shipping" value="FREE" highlight />
+              )}
+              {parseFloat(order.discountAmount) > 0 && (
+                <InfoRow label="Discount" value={`− ${formatPrice(order.discountAmount)}`} highlight />
+              )}
+              <div className="flex items-center justify-between pt-3 mt-1">
+                <span className="font-bold text-foreground">Total Paid</span>
+                <span className="font-bold text-primary text-lg">{formatPrice(order.finalAmount)}</span>
               </div>
-            </SectionCard>
-          </div>
+            </div>
+          </SectionCard>
 
-          {/* RIGHT COL: Payment Details */}
-          <div className="w-full">
-            <SectionCard title="Payment Details" icon={CreditCard} delay={0.22}>
-              <div className="flex justify-between items-center gap-3 mb-4 p-3 rounded-xl bg-muted/40 border border-border/40">
-                <div className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 ${paymentCfg.bg} ${paymentCfg.color}`}>
-                  {paymentStatus === "paid"     && <BadgeCheck  className="w-3.5 h-3.5" />}
-                  {paymentStatus === "pending"  && <Clock       className="w-3.5 h-3.5" />}
-                  {paymentStatus === "failed"   && <X           className="w-3.5 h-3.5" />}
-                  {paymentStatus === "refunded" && <ReceiptText className="w-3.5 h-3.5" />}
-                  {paymentCfg.label}
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-foreground capitalize">
-                    {order.paymentMethod === "cod"  ? "Cash on Delivery"
-                     : order.paymentMethod === "upi"  ? "UPI"
-                     : order.paymentMethod === "card" ? "Card"
-                     : order.paymentMethod}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Payment method</p>
-                </div>
+          {/* Payment Details */}
+          <SectionCard title="Payment Details" icon={CreditCard} delay={0.22}>
+            <div className="flex justify-between items-center gap-3 mb-4 p-3 rounded-xl bg-muted/40 border border-border/40">
+              <div
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 ${paymentCfg.bg} ${paymentCfg.color}`}
+              >
+                {paymentStatus === "paid"     && <BadgeCheck  className="w-3.5 h-3.5" />}
+                {paymentStatus === "pending"  && <Clock       className="w-3.5 h-3.5" />}
+                {paymentStatus === "failed"   && <X           className="w-3.5 h-3.5" />}
+                {paymentStatus === "refunded" && <ReceiptText className="w-3.5 h-3.5" />}
+                {paymentCfg.label}
               </div>
-              <InfoRow label="Status"    value={paymentCfg.label} />
-              <InfoRow label="Total"     value={formatPrice(order.finalAmount)} highlight />
-              {order.merchantOrderId     && <InfoRow label="Txn Ref"        value={order.merchantOrderId}      mono />}
-              {order.phonePeTransactionId&& <InfoRow label="PhonePe Txn"    value={order.phonePeTransactionId} mono />}
-              <InfoRow label="Ordered"   value={formatDate(order.created_at || order.createdAt)} />
-            </SectionCard>
-          </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground capitalize">
+                  {order.paymentMethod === "cod"  ? "Cash on Delivery"
+                    : order.paymentMethod === "upi"  ? "UPI / PhonePe"
+                    : order.paymentMethod === "card" ? "Card"
+                    : order.paymentMethod}
+                </p>
+                <p className="text-xs text-muted-foreground">Payment method</p>
+              </div>
+            </div>
+            <InfoRow label="Status"  value={paymentCfg.label} />
+            <InfoRow label="Total"   value={formatPrice(order.finalAmount)} highlight />
+            {order.merchantOrderId      && <InfoRow label="Txn Ref"    value={order.merchantOrderId}       mono />}
+            {order.phonePeTransactionId && <InfoRow label="PhonePe ID" value={order.phonePeTransactionId} mono />}
+            <InfoRow label="Ordered" value={formatDate(order.created_at || order.createdAt)} />
+          </SectionCard>
         </div>
 
-        {/* ── Row 3: Remaining sections in a single column ── */}
+        {/* ── Remaining sections ───────────────────────────────────────────── */}
         <div className="space-y-4">
+
           {/* Shipping Address */}
           <SectionCard title="Shipping Address" icon={MapPin} delay={0.3}>
             <div className="flex gap-3">
@@ -646,21 +744,15 @@ export default function OrderDetail() {
                 <User className="w-4 h-4 text-primary" />
               </div>
               <div className="text-sm space-y-0.5">
-                {shippingAddr.name && (
-                  <p className="font-semibold text-foreground">{shippingAddr.name}</p>
-                )}
-                {shippingAddr.street && (
-                  <p className="text-muted-foreground">{shippingAddr.street}</p>
-                )}
+                {shippingAddr.name   && <p className="font-semibold text-foreground">{shippingAddr.name}</p>}
+                {shippingAddr.street && <p className="text-muted-foreground">{shippingAddr.street}</p>}
                 {shippingAddr.city && shippingAddr.state && (
                   <p className="text-muted-foreground">
                     {shippingAddr.city}, {shippingAddr.state} - {shippingAddr.zipCode}
                   </p>
                 )}
-                {shippingAddr.country && (
-                  <p className="text-muted-foreground">{shippingAddr.country}</p>
-                )}
-                {shippingAddr.phone && (
+                {shippingAddr.country && <p className="text-muted-foreground">{shippingAddr.country}</p>}
+                {shippingAddr.phone  && (
                   <p className="text-muted-foreground flex items-center gap-1.5 mt-1">
                     <Phone className="w-3.5 h-3.5" />
                     {shippingAddr.phone}
@@ -670,10 +762,10 @@ export default function OrderDetail() {
             </div>
           </SectionCard>
 
-          {/* Tracking Info (if available) */}
+          {/* Tracking Info */}
           {(order.trackingId || order.estimatedDelivery) && (
             <SectionCard title="Tracking Info" icon={Truck} delay={0.38}>
-              {order.trackingId        && <InfoRow label="Tracking ID" value={order.trackingId} mono />}
+              {order.trackingId        && <InfoRow label="Tracking ID"   value={order.trackingId}                          mono />}
               {order.estimatedDelivery && <InfoRow label="Est. Delivery" value={formatDateShort(order.estimatedDelivery)} highlight />}
               {order.orderStatus === "shipped" && (
                 <motion.div
@@ -683,9 +775,7 @@ export default function OrderDetail() {
                   className="mt-3 p-3 rounded-xl bg-primary/5 border border-primary/20 flex items-center gap-2"
                 >
                   <Truck className="w-4 h-4 text-primary flex-shrink-0" />
-                  <p className="text-xs text-primary font-medium leading-snug">
-                    Your package is on its way!
-                  </p>
+                  <p className="text-xs text-primary font-medium">Your package is on its way!</p>
                 </motion.div>
               )}
             </SectionCard>
@@ -699,7 +789,7 @@ export default function OrderDetail() {
           )}
         </div>
 
-        {/* ── Row 4: Actions (full width) ───────────────────────────────── */}
+        {/* ── Actions ─────────────────────────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -713,14 +803,15 @@ export default function OrderDetail() {
             <ShoppingBag className="w-4 h-4" />
             Continue Shopping
           </button>
-          {canCancel && (
+
+          {/* Request cancellation — opens contact popup instead of cancelling directly */}
+          {canRequestCancel && (
             <button
-              onClick={handleCancel}
-              disabled={cancelling}
+              onClick={() => setShowCancelPopup(true)}
               className="flex-1 py-2.5 h-11 flex items-center justify-center gap-2 border border-destructive/40 text-destructive hover:bg-destructive/5 font-medium rounded-xl transition-colors text-sm"
             >
-              {cancelling ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
-              Cancel Order
+              <MessageCircle className="w-4 h-4" />
+              Request Cancellation
             </button>
           )}
         </motion.div>
@@ -732,7 +823,10 @@ export default function OrderDetail() {
           className="text-center text-xs text-muted-foreground mt-4"
         >
           Having trouble?{" "}
-          <button onClick={() => navigate("/contact")} className="text-primary hover:underline font-medium">
+          <button
+            onClick={() => navigate("/contact")}
+            className="text-primary hover:underline font-medium"
+          >
             Contact support
           </button>
         </motion.p>
