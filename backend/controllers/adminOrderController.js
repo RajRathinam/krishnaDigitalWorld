@@ -14,6 +14,7 @@ export const getAllOrders = async (req, res) => {
       page = 1,
       limit = 20,
       status,
+      paymentMethod,
       search = '',
       dateFrom,
       dateTo,
@@ -28,6 +29,15 @@ export const getAllOrders = async (req, res) => {
 
     if (status && status !== 'all') {
       where.orderStatus = status;
+    }
+
+    if (paymentMethod && paymentMethod !== 'all') {
+      // 'online' means anything that is not 'cod'
+      if (paymentMethod === 'online') {
+        where.paymentMethod = { [Op.ne]: 'cod' };
+      } else {
+        where.paymentMethod = paymentMethod;
+      }
     }
 
     if (search) {
@@ -72,7 +82,7 @@ export const getAllOrders = async (req, res) => {
       where,
       limit: parseInt(limit),
       offset: parseInt(offset),
-      order: [[validSortBy, validSortOrder]], // Use the database column name
+      order: [[validSortBy, validSortOrder]],
       include: [
         {
           model: User,
@@ -82,18 +92,32 @@ export const getAllOrders = async (req, res) => {
       ]
     });
 
+    // Compute total revenue for the FULL filtered result (not just the current page)
+    const totalRevenue = await Order.sum('finalAmount', { where }) || 0;
+
+    // Compute per-status counts for the full filtered set
+    const statusCountRows = await Order.findAll({
+      where,
+      attributes: [
+        'orderStatus',
+        [Sequelize.fn('COUNT', Sequelize.col('id')), 'count']
+      ],
+      group: ['orderStatus'],
+      raw: true
+    });
+    const statusCounts = { pending: 0, processing: 0, shipped: 0, delivered: 0, cancelled: 0 };
+    statusCountRows.forEach(r => {
+      if (statusCounts.hasOwnProperty(r.orderStatus)) statusCounts[r.orderStatus] = parseInt(r.count);
+    });
+
     res.status(200).json({
       success: true,
       data: {
         orders: orders.map(order => {
           let items = order.orderItems;
           try {
-            if (typeof items === 'string') {
-              items = JSON.parse(items);
-            }
-          } catch (e) {
-            items = [];
-          }
+            if (typeof items === 'string') items = JSON.parse(items);
+          } catch (e) { items = []; }
           if (!Array.isArray(items)) items = [];
 
           return {
@@ -117,7 +141,6 @@ export const getAllOrders = async (req, res) => {
             taxAmount: order.taxAmount,
             isCancelled: order.orderStatus === 'cancelled',
             isShipped: order.orderStatus === 'shipped' || order.orderStatus === 'delivered',
-            isShipped: order.orderStatus === 'shipped' || order.orderStatus === 'delivered',
             createdAt: order.createdAt || order.dataValues?.created_at || order.created_at,
             updatedAt: order.updatedAt || order.dataValues?.updated_at || order.updatedAt
           };
@@ -127,9 +150,12 @@ export const getAllOrders = async (req, res) => {
           limit: parseInt(limit),
           total: count,
           totalPages: Math.ceil(count / limit)
-        }
+        },
+        totalRevenue: parseFloat(totalRevenue),
+        statusCounts
       }
     });
+
   } catch (error) {
     console.error('Get all orders admin error:', error);
     console.error('SQL Error details:', {

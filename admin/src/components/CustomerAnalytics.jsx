@@ -30,7 +30,7 @@ export const CustomerAnalytics = () => {
     signupOnlyCustomers: 0,
     customers: [],
   });
-  
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -43,10 +43,10 @@ export const CustomerAnalytics = () => {
       // Use the customer analytics API endpoint
       const response = await api.get("/admin/users/analytics/customers");
       console.log("Customer analytics response:", response.data);
-      
+
       if (response.data.success && response.data.data) {
         const apiData = response.data.data;
-        
+
         // Transform the data to match our interface
         const transformedData = {
           totalCustomers: apiData.totalCustomers || 0,
@@ -70,7 +70,7 @@ export const CustomerAnalytics = () => {
             isActive: customer.isActive !== undefined ? customer.isActive : true,
           })),
         };
-        
+
         setAnalyticsData(transformedData);
       } else {
         toast({
@@ -99,7 +99,7 @@ export const CustomerAnalytics = () => {
   const handleExportCustomers = async () => {
     try {
       setExporting(true);
-      
+
       if (filteredCustomers.length === 0) {
         toast({
           title: "Export Failed",
@@ -190,14 +190,14 @@ export const CustomerAnalytics = () => {
 
   // Filter customers based on search and status
   const filteredCustomers = analyticsData.customers.filter((customer) => {
-    const matchesSearch = 
+    const matchesSearch =
       customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customer.phone.includes(searchTerm) ||
       customer.customerCode.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesFilter = filterStatus === "all" || customer.status === filterStatus;
-    
+
     return matchesSearch && matchesFilter;
   });
 
@@ -328,17 +328,17 @@ export const CustomerAnalytics = () => {
             <div className="flex flex-wrap items-center gap-2">
               <div className="relative flex-1 min-w-[250px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  placeholder="Search by name, email, phone, code..." 
-                  className="pl-9" 
-                  value={searchTerm} 
+                <Input
+                  placeholder="Search by name, email, phone, code..."
+                  className="pl-9"
+                  value={searchTerm}
                   onChange={(e) => {
                     setSearchTerm(e.target.value);
                     setCurrentPage(1); // Reset to first page on search
-                  }} 
+                  }}
                 />
               </div>
-              
+
               <Select value={filterStatus} onValueChange={(value) => {
                 setFilterStatus(value);
                 setCurrentPage(1); // Reset to first page on filter change
@@ -376,7 +376,7 @@ export const CustomerAnalytics = () => {
             </div>
           </div>
         </CardHeader>
-        
+
         <CardContent>
           {filteredCustomers.length === 0 ? (
             <div className="text-center py-12">
@@ -388,9 +388,9 @@ export const CustomerAnalytics = () => {
                   : "No customers have been added yet"}
               </p>
               {(searchTerm || filterStatus !== "all") && (
-                <Button 
-                  variant="outline" 
-                  className="mt-4" 
+                <Button
+                  variant="outline"
+                  className="mt-4"
                   onClick={() => {
                     setSearchTerm("");
                     setFilterStatus("all");
@@ -405,86 +405,83 @@ export const CustomerAnalytics = () => {
             <>
               {/* Table with Horizontal Scroll */}
               <div className="overflow-x-auto w-full">
-                <Table className="min-w-[1200px]">
+                <Table className="min-w-[900px]">
                   <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[200px]">Customer</TableHead>
-                      <TableHead className="w-[200px]">Contact</TableHead>
-                      <TableHead className="w-[100px]">DOB</TableHead>
-                      <TableHead className="w-[80px]">Orders</TableHead>
-                      <TableHead className="w-[120px]">Total Spent</TableHead>
-                      <TableHead className="w-[100px]">Status</TableHead>
-                      <TableHead className="w-[100px]">Joined</TableHead>
-                      <TableHead className="w-[90px]">Verified</TableHead>
+                    <TableRow className="bg-muted/40">
+                      <TableHead className="w-[200px] text-xs font-semibold">Customer</TableHead>
+                      <TableHead className="w-[180px] text-xs font-semibold">Contact</TableHead>
+                      <TableHead className="w-[90px] text-xs font-semibold">DOB</TableHead>
+                      <TableHead className="w-[70px] text-xs font-semibold">Orders</TableHead>
+                      <TableHead className="w-[110px] text-xs font-semibold">Total Spent</TableHead>
+                      <TableHead className="w-[110px] text-xs font-semibold">Status</TableHead>
+                      <TableHead className="w-[110px] text-xs font-semibold">Joined</TableHead>
+                      <TableHead className="w-[100px] text-xs font-semibold">Verified</TableHead>
                       <TableHead className="w-[50px]"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {paginatedCustomers.map((customer) => (
-                      <TableRow key={customer.id} className="hover:bg-muted/50">
-                        <TableCell className="align-top">
-                          <div>
-                            <p className="font-medium truncate max-w-[150px]" title={customer.name}>
-                              {customer.name}
-                            </p>
-                            <p className="text-xs text-muted-foreground font-mono" title={customer.customerCode}>
-                              {customer.customerCode}
-                            </p>
-                          </div>
+                      <TableRow key={customer.id} className="hover:bg-muted/50 text-sm">
+
+                        {/* Customer name + code */}
+                        <TableCell className="align-middle py-3">
+                          <p className="font-medium truncate max-w-[160px]" title={customer.name}>{customer.name}</p>
+                          <p className="text-[11px] text-muted-foreground font-mono mt-0.5">{customer.customerCode}</p>
                         </TableCell>
-                        
-                        <TableCell className="align-top">
-                          <div>
-                            <p className="text-sm truncate max-w-[150px]" title={customer.email}>
-                              {customer.email}
-                            </p>
-                            <p className="text-xs text-muted-foreground" title={customer.phone}>
-                              {customer.phone}
-                            </p>
-                          </div>
+
+                        {/* Email + Phone */}
+                        <TableCell className="align-middle py-3">
+                          <p className="text-sm truncate max-w-[150px]" title={customer.email}>{customer.email}</p>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">{customer.phone}</p>
                         </TableCell>
-                        
-                        <TableCell className="align-top text-sm">
+
+                        {/* DOB */}
+                        <TableCell className="align-middle py-3 text-xs text-muted-foreground whitespace-nowrap">
                           {formatDateDisplay(customer.dateOfBirth)}
                         </TableCell>
-                        
-                        <TableCell className="align-top">
-                          <Badge variant={customer.orders > 0 ? "default" : "secondary"}>
+
+                        {/* Orders */}
+                        <TableCell className="align-middle py-3 text-center">
+                          <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${customer.orders > 0
+                              ? 'bg-primary/10 text-primary'
+                              : 'bg-muted text-muted-foreground'
+                            }`}>
                             {customer.orders}
-                          </Badge>
+                          </span>
                         </TableCell>
-                        
-                        <TableCell className="align-top font-medium">
+
+                        {/* Total Spent */}
+                        <TableCell className="align-middle py-3 font-semibold">
                           {formatCurrency(parseFloat(customer.totalSpent))}
                         </TableCell>
-                        
-                        <TableCell className="align-top">
-                          <Badge 
-                            variant={customer.status === "ordered" ? "success" : "warning"}
-                            className={customer.status === "ordered" 
-                              ? "bg-green-100 text-green-700 hover:bg-green-100" 
-                              : "bg-orange-100 text-orange-700 hover:bg-orange-100"}
-                          >
-                            {customer.status === "ordered" ? "Ordered" : "Signup Only"}
-                          </Badge>
+
+                        {/* Status */}
+                        <TableCell className="align-middle py-3">
+                          <span className={`inline-block text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${customer.status === 'ordered'
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-orange-100 text-orange-700'
+                            }`}>
+                            {customer.status === 'ordered' ? 'Ordered' : 'Signup Only'}
+                          </span>
                         </TableCell>
-                        
-                        <TableCell className="align-top text-sm text-muted-foreground">
-                          {customer.joinDate}
+
+                        {/* Joined */}
+                        <TableCell className="align-middle py-3 text-xs text-muted-foreground whitespace-nowrap">
+                          {formatDateDisplay(customer.joinDate)}
                         </TableCell>
-                        
-                        <TableCell className="align-top">
-                          <Badge 
-                            variant="outline"
-                            className={customer.isVerified 
-                              ? "bg-green-100 text-green-700 border-green-200" 
-                              : "bg-gray-100 text-gray-700 border-gray-200"}
-                          >
-                            {customer.isVerified ? "Verified" : "Not Verified"}
-                          </Badge>
+
+                        {/* Verified */}
+                        <TableCell className="align-middle py-3">
+                          <span className={`inline-block text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${customer.isVerified
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-gray-100 text-gray-500'
+                            }`}>
+                            {customer.isVerified ? 'Verified' : 'Not Verified'}
+                          </span>
                         </TableCell>
-                        
-                        <TableCell className="align-top">
+
+                        {/* Actions */}
+                        <TableCell className="align-middle py-3">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -495,9 +492,9 @@ export const CustomerAnalytics = () => {
                               <DropdownMenuItem onClick={() => handleViewCustomer(customer.id)}>
                                 <Eye className="h-4 w-4 mr-2" /> View Details
                               </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                onClick={() => handleSendEmail(customer.email)} 
-                                disabled={!customer.email || customer.email === "No email"}
+                              <DropdownMenuItem
+                                onClick={() => handleSendEmail(customer.email)}
+                                disabled={!customer.email || customer.email === 'No email'}
                               >
                                 <Mail className="h-4 w-4 mr-2" /> Send Email
                               </DropdownMenuItem>
@@ -528,7 +525,7 @@ export const CustomerAnalytics = () => {
                       <ChevronLeft className="h-4 w-4 mr-1" />
                       Previous
                     </Button>
-                    
+
                     <div className="flex items-center gap-1">
                       {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                         let pageNum;
@@ -541,7 +538,7 @@ export const CustomerAnalytics = () => {
                         } else {
                           pageNum = currentPage - 2 + i;
                         }
-                        
+
                         return (
                           <Button
                             key={pageNum}
@@ -555,7 +552,7 @@ export const CustomerAnalytics = () => {
                         );
                       })}
                     </div>
-                    
+
                     <Button
                       variant="outline"
                       size="sm"

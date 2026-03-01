@@ -206,27 +206,27 @@ export const AdminOverview = () => {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Stats Grid */}
-   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-  {statCards.map((stat) => (
-    <Card key={stat.title}>
-      <CardContent className="p-6">
-        <div className="flex items-center gap-4">
-          <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${stat.color.replace('text-', 'bg-').replace('-600', '-100')} ${stat.color}`}>
-            <stat.icon className="h-6 w-6" />
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground">{stat.title}</p>
-            <p className="text-2xl font-bold">{stat.value}</p>
-            {/* <div className={`flex items-center gap-1 mt-1 text-xs ${stat.trend === "up" ? "text-emerald-600" : "text-rose-600"}`}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {statCards.map((stat) => (
+          <Card key={stat.title}>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${stat.color.replace('text-', 'bg-').replace('-600', '-100')} ${stat.color}`}>
+                  <stat.icon className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">{stat.title}</p>
+                  <p className="text-2xl font-bold">{stat.value}</p>
+                  {/* <div className={`flex items-center gap-1 mt-1 text-xs ${stat.trend === "up" ? "text-emerald-600" : "text-rose-600"}`}>
               {stat.trend === "up" ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
               {stat.change}
             </div> */}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  ))}
-</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Recent Orders */}
         <Card className="lg:col-span-2 shadow-sm">
@@ -249,6 +249,7 @@ export const AdminOverview = () => {
                       <th className="p-3">Customer</th>
                       <th className="p-3 hidden sm:table-cell">Date</th>
                       <th className="p-3">Amount</th>
+                      <th className="p-3 hidden md:table-cell">Payment</th>
                       <th className="p-3 text-right">Status</th>
                     </tr>
                   </thead>
@@ -264,6 +265,14 @@ export const AdminOverview = () => {
                         </td>
                         <td className="p-3 text-muted-foreground hidden sm:table-cell">{formatDate(order.createdAt || order.date || order.created_at)}</td>
                         <td className="p-3 font-semibold">{formatCurrency(order.totalPrice)}</td>
+                        <td className="p-3 hidden md:table-cell">
+                          <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wide ${order.paymentMethod === 'cod'
+                              ? 'bg-orange-100 text-orange-700'
+                              : 'bg-blue-100 text-blue-700'
+                            }`}>
+                            {order.paymentMethod === 'cod' ? 'COD' : (order.paymentMethod?.toUpperCase() || 'UPI')}
+                          </span>
+                        </td>
                         <td className="p-3 text-right">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
                                         ${order.orderStatus === 'delivered' ? 'bg-emerald-100 text-emerald-800' :
@@ -367,101 +376,101 @@ export const AdminOverview = () => {
       </div>
 
 
-<Card>
-  <CardHeader>
-    <CardTitle className="flex items-center gap-2 text-xl">
-      <TrendingUp className="h-5 w-5 text-orange-500" />
-      Popular Products
-    </CardTitle>
-  </CardHeader>
-  <CardContent>
-    {stats.popularProducts?.length ? (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        {stats.popularProducts.slice(0, 5).map((product) => (
-          <div key={product.id} className="group relative border rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 bg-card">
-            {/* Robust Image Handling */}
-            <div className="aspect-video w-full bg-white overflow-hidden relative">
-              {(() => {
-                const getImage = (p) => {
-                  // Try multiple ways to get the image URL
-                  if (p.images) {
-                    if (Array.isArray(p.images) && p.images.length > 0) {
-                      return typeof p.images[0] === 'string' ? p.images[0] : p.images[0]?.url;
-                    }
-                    return typeof p.images === 'string' ? p.images : p.images?.url;
-                  }
-                  
-                  if (p.colorsAndImages) {
-                    try {
-                      // Parse colorsAndImages if it's a string
-                      const cni = typeof p.colorsAndImages === 'string'
-                        ? JSON.parse(p.colorsAndImages)
-                        : p.colorsAndImages;
-                      
-                      // Get the first color's first image
-                      if (cni && typeof cni === 'object') {
-                        const firstColor = Object.values(cni)[0];
-                        if (Array.isArray(firstColor) && firstColor.length > 0) {
-                          return firstColor[0]?.url;
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-xl">
+            <TrendingUp className="h-5 w-5 text-orange-500" />
+            Popular Products
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {stats.popularProducts?.length ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {stats.popularProducts.slice(0, 5).map((product) => (
+                <div key={product.id} className="group relative border rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 bg-card">
+                  {/* Robust Image Handling */}
+                  <div className="aspect-video w-full bg-white overflow-hidden relative">
+                    {(() => {
+                      const getImage = (p) => {
+                        // Try multiple ways to get the image URL
+                        if (p.images) {
+                          if (Array.isArray(p.images) && p.images.length > 0) {
+                            return typeof p.images[0] === 'string' ? p.images[0] : p.images[0]?.url;
+                          }
+                          return typeof p.images === 'string' ? p.images : p.images?.url;
                         }
-                      }
-                    } catch (e) { 
-                      console.log("Error parsing colorsAndImages:", e);
-                      return null; 
-                    }
-                  }
-                  
-                  // Check if product has image property directly
-                  if (p.image) {
-                    return typeof p.image === 'string' ? p.image : p.image?.url;
-                  }
-                  
-                  return null;
-                };
-                
-                const imgUrl = getImage(product);
-                const fullImageUrl = imgUrl ? getImageUrl(imgUrl) : null;
 
-                return fullImageUrl ? (
-                  <img
-                    src={fullImageUrl}
-                    alt={product.name}
-                    className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = "https://placehold.co/600x400?text=No+Image";
-                    }}
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-muted/50">
-                    <Package className="h-8 w-8 opacity-50" />
-                    <span className="text-xs ml-2">No Image</span>
+                        if (p.colorsAndImages) {
+                          try {
+                            // Parse colorsAndImages if it's a string
+                            const cni = typeof p.colorsAndImages === 'string'
+                              ? JSON.parse(p.colorsAndImages)
+                              : p.colorsAndImages;
+
+                            // Get the first color's first image
+                            if (cni && typeof cni === 'object') {
+                              const firstColor = Object.values(cni)[0];
+                              if (Array.isArray(firstColor) && firstColor.length > 0) {
+                                return firstColor[0]?.url;
+                              }
+                            }
+                          } catch (e) {
+                            console.log("Error parsing colorsAndImages:", e);
+                            return null;
+                          }
+                        }
+
+                        // Check if product has image property directly
+                        if (p.image) {
+                          return typeof p.image === 'string' ? p.image : p.image?.url;
+                        }
+
+                        return null;
+                      };
+
+                      const imgUrl = getImage(product);
+                      const fullImageUrl = imgUrl ? getImageUrl(imgUrl) : null;
+
+                      return fullImageUrl ? (
+                        <img
+                          src={fullImageUrl}
+                          alt={product.name}
+                          className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = "https://placehold.co/600x400?text=No+Image";
+                          }}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-muted/50">
+                          <Package className="h-8 w-8 opacity-50" />
+                          <span className="text-xs ml-2">No Image</span>
+                        </div>
+                      );
+                    })()}
+                    <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm">
+                      {product.totalReviews || 0} Reviews
+                    </div>
                   </div>
-                );
-              })()}
-              <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm">
-                {product.totalReviews || 0} Reviews
-              </div>
-            </div>
-            <div className="p-4">
-              <h4 className="font-semibold text-sm line-clamp-1 mb-1 group-hover:text-primary transition-colors">{product.name}</h4>
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-lg">{formatCurrency(product.price)}</span>
-                <div className="flex items-center text-xs text-amber-500 font-medium">
-                  <span className="mr-1">★</span> {(Number(product.rating) || 0).toFixed(1)}
+                  <div className="p-4">
+                    <h4 className="font-semibold text-sm line-clamp-1 mb-1 group-hover:text-primary transition-colors">{product.name}</h4>
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-lg">{formatCurrency(product.price)}</span>
+                      <div className="flex items-center text-xs text-amber-500 font-medium">
+                        <span className="mr-1">★</span> {(Number(product.rating) || 0).toFixed(1)}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
-          </div>
-        ))}
-      </div>
-    ) : (
-      <div className="text-center py-10 text-muted-foreground">
-        No popular products data available
-      </div>
-    )}
-  </CardContent>
-</Card>
+          ) : (
+            <div className="text-center py-10 text-muted-foreground">
+              No popular products data available
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

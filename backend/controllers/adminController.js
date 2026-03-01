@@ -160,17 +160,55 @@ export const getDashboardStats = async (req, res) => {
       console.error("Dashboard Popular Products Error:", err.message);
     }
 
+    // Calculate revenue figures
+    let totalRevenue = 0;
+    let monthlyRevenue = 0;
+    let newUsersThisMonth = 0;
+    let newOrdersThisMonth = 0;
+
+    try {
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+      // Sum finalAmount across ALL orders
+      const totalRevenueRaw = await Order.sum('finalAmount');
+      totalRevenue = parseFloat(totalRevenueRaw) || 0;
+
+      // Sum finalAmount for orders created this month
+      const monthlyRevenueRaw = await Order.sum('finalAmount', {
+        where: { createdAt: { [Op.gte]: startOfMonth } }
+      });
+      monthlyRevenue = parseFloat(monthlyRevenueRaw) || 0;
+
+      // New users this month
+      newUsersThisMonth = await User.count({
+        where: {
+          role: 'customer',
+          createdAt: { [Op.gte]: startOfMonth }
+        }
+      });
+
+      // New orders this month
+      newOrdersThisMonth = await Order.count({
+        where: { createdAt: { [Op.gte]: startOfMonth } }
+      });
+
+      console.log('Revenue totals:', { totalRevenue, monthlyRevenue });
+    } catch (revenueError) {
+      console.error('Error calculating revenue:', revenueError.message);
+    }
+
     // Prepare response data
     const responseData = {
       counts: {
         totalUsers: totalUsers,
         totalProducts: totalProducts,
         totalOrders: totalOrders,
-        totalRevenue: 0,
-        monthlyRevenue: 0,
+        totalRevenue: totalRevenue,
+        monthlyRevenue: monthlyRevenue,
         yearlyRevenue: 0,
-        newUsersThisMonth: 0,
-        newOrdersThisMonth: 0
+        newUsersThisMonth: newUsersThisMonth,
+        newOrdersThisMonth: newOrdersThisMonth
       },
       recentOrders: recentOrders,
       popularProducts: popularProducts
