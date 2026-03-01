@@ -610,7 +610,7 @@ export default function OrderDetail() {
           {/* RIGHT COL: Payment Details */}
           <div className="w-full">
             <SectionCard title="Payment Details" icon={CreditCard} delay={0.22}>
-              <div className="flex items-center gap-3 mb-4 p-3 rounded-xl bg-muted/40 border border-border/40">
+              <div className="flex justify-between items-center gap-3 mb-4 p-3 rounded-xl bg-muted/40 border border-border/40">
                 <div className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 ${paymentCfg.bg} ${paymentCfg.color}`}>
                   {paymentStatus === "paid"     && <BadgeCheck  className="w-3.5 h-3.5" />}
                   {paymentStatus === "pending"  && <Clock       className="w-3.5 h-3.5" />}

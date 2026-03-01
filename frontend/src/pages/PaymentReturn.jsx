@@ -295,7 +295,7 @@ function SuccessState({ orderData, navigate }) {
           className="flex flex-col sm:flex-row gap-3 w-full max-w-sm"
         >
           <button
-            onClick={() => navigate("/account/orders")}
+            onClick={() => navigate(`/account/orders/${orderData?.orderNumber}`)}
             className="flex-1 py-2.5 flex items-center justify-center gap-2 h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl transition-colors text-sm"
           >
             <ShoppingBag className="w-4 h-4" />
@@ -537,8 +537,8 @@ function PendingState({ navigate, onRetry }) {
           Check Again
         </button>
         <button
-          onClick={() => navigate("/account/orders")}
-          className="flex- py-2.5 flex items-center justify-center gap-2 h-11 border border-border hover:bg-muted font-medium rounded-xl transition-colors text-sm"
+          onClick={() => navigate(`/account/orders/${order.orderNumber}`)}
+          className="flex-1 py-2.5 flex items-center justify-center gap-2 h-11 border border-border hover:bg-muted font-medium rounded-xl transition-colors text-sm"
         >
           View Orders
         </button>

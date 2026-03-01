@@ -270,7 +270,7 @@ export const AdminOverview = () => {
                               order.orderStatus === 'shipped' ? 'bg-blue-100 text-blue-800' :
                                 order.orderStatus === 'processing' ? 'bg-amber-100 text-amber-800' :
                                   'bg-gray-100 text-gray-800'}`}>
-                            {order.orderStatus}
+                            {order.paymentStatus}
                           </span>
                         </td>
                       </tr>

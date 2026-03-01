@@ -18,6 +18,9 @@ import { Separator } from "@/components/ui/separator";
 
 import api from "@/lib/api";
 
+// Page size options
+const PAGE_SIZE_OPTIONS = [15, 30, 45, 100];
+
 export const OrderManagement = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,9 +31,10 @@ export const OrderManagement = () => {
   const [updateStatus, setUpdateStatus] = useState("");
   const [trackingId, setTrackingId] = useState("");
   const [notes, setNotes] = useState("");
+  const [pageSize, setPageSize] = useState(15); // Default page size
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 20,
+    limit: 15,
     total: 0,
     totalPages: 1,
   });
@@ -47,13 +51,13 @@ export const OrderManagement = () => {
   const { toast } = useToast();
 
   // Fetch orders from API
-  const fetchOrders = async (page = 1) => {
+  const fetchOrders = async (page = 1, limit = pageSize) => {
     try {
       setLoading(true);
       // Build query params
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: pagination.limit.toString(),
+        limit: limit.toString(),
         sortBy: "created_at",
         sortOrder: "desc",
       });
@@ -74,8 +78,8 @@ export const OrderManagement = () => {
         }
         setOrders(ordersData);
         setPagination(response.data.data.pagination || {
-          page: 1,
-          limit: 20,
+          page: page,
+          limit: limit,
           total: 0,
           totalPages: 1,
         });
@@ -98,6 +102,14 @@ export const OrderManagement = () => {
       setLoading(false);
     }
   };
+
+  // Handle page size change
+  const handlePageSizeChange = (newSize) => {
+    setPageSize(newSize);
+    // Reset to page 1 when changing page size
+    fetchOrders(1, newSize);
+  };
+
   // Update order status
   const updateOrderStatus = async (orderId, statusData) => {
     try {
@@ -146,8 +158,9 @@ export const OrderManagement = () => {
   };
   // Initial fetch
   useEffect(() => {
-    fetchOrders();
-  }, [filterStatus, searchTerm]);
+    fetchOrders(1, pageSize);
+  }, [filterStatus, searchTerm]); // Remove pageSize from here to avoid double fetch
+
   // Handle status update
   const handleUpdateStatus = async () => {
     if (!selectedOrder || !updateStatus)
@@ -215,6 +228,35 @@ export const OrderManagement = () => {
       });
     }
   };
+
+  // Helper function to get customer name from order
+  const getCustomerName = (order) => {
+    // Try multiple possible locations for customer name
+    return order.customerName || 
+           order.user?.name || 
+           order.shippingAddress?.name || 
+           (order.shippingAddress && typeof order.shippingAddress === 'object' ? order.shippingAddress.name : null) ||
+           (order.billingAddress?.name) ||
+           "Unknown Customer";
+  };
+
+  // Helper function to get customer phone
+  const getCustomerPhone = (order) => {
+    return order.customerPhone || 
+           order.user?.phone || 
+           order.shippingAddress?.phone || 
+           (order.shippingAddress && typeof order.shippingAddress === 'object' ? order.shippingAddress.phone : null) ||
+           "N/A";
+  };
+
+  // Helper function to get customer email
+  const getCustomerEmail = (order) => {
+    return order.customerEmail || 
+           order.user?.email || 
+           order.shippingAddress?.email || 
+           "N/A";
+  };
+
   const handleExportOrders = () => {
     try {
       if (orders.length === 0) {
@@ -226,22 +268,52 @@ export const OrderManagement = () => {
         return;
       }
 
-      // Define CSV headers and map data
-      const csvHeaders = ["Order Number,Customer Name,Date,Status,Total Amount,Payment Method"];
+      // Define CSV headers
+      const csvHeaders = [
+        "Order Number",
+        "Customer Name",
+        "Customer Phone",
+        "Customer Email",
+        "Date",
+        "Status",
+        "Total Amount",
+        "Payment Method",
+        "Payment Status",
+        "Items Count",
+        "Tracking ID"
+      ].join(",");
+
+      // Map order data to CSV rows
       const csvRows = orders.map(order => {
         const date = new Date(order.createdAt || order.created_at).toLocaleDateString();
-        const customerName = order.user?.name || "Unknown";
-        // Escape commas in strings
-        const safeName = `"${customerName.replace(/"/g, '""')}"`;
+        const customerName = getCustomerName(order);
+        const customerPhone = getCustomerPhone(order);
+        const customerEmail = getCustomerEmail(order);
         const total = order.finalAmount || order.totalPrice || 0;
+        const itemsCount = calculateTotalItems(order.orderItems);
+        
+        // Escape commas and quotes in text fields
+        const escapeCsvField = (field) => {
+          if (field === null || field === undefined) return '';
+          const str = String(field);
+          if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+            return `"${str.replace(/"/g, '""')}"`;
+          }
+          return str;
+        };
 
         return [
-          order.orderNumber,
-          safeName,
-          date,
-          order.orderStatus,
-          total,
-          order.paymentMethod
+          escapeCsvField(order.orderNumber),
+          escapeCsvField(customerName),
+          escapeCsvField(customerPhone),
+          escapeCsvField(customerEmail),
+          escapeCsvField(date),
+          escapeCsvField(order.orderStatus),
+          escapeCsvField(total),
+          escapeCsvField(order.paymentMethod || 'COD'),
+          escapeCsvField(order.paymentStatus || 'pending'),
+          escapeCsvField(itemsCount),
+          escapeCsvField(order.trackingId || '')
         ].join(",");
       });
 
@@ -372,15 +444,11 @@ export const OrderManagement = () => {
   };
   // Format date for display
   const formatOrderDate = (dateString) => {
-    // DEBUG: Log the date string to check what we are receiving
-    // console.log("Formatting date:", dateString, typeof dateString); 
-
     if (!dateString) return "N/A";
     try {
       const date = new Date(dateString);
-      // Check if date is valid
       if (isNaN(date.getTime())) {
-        return "N/A"; // Handle invalid date string
+        return "N/A";
       }
       return date.toLocaleDateString("en-IN", {
         day: "2-digit",
@@ -444,7 +512,7 @@ export const OrderManagement = () => {
           <Download className="h-4 w-4 mr-2" />
           Export
         </Button>
-        <Button variant="outline" onClick={() => fetchOrders(pagination.page)} disabled={loading}>
+        <Button variant="outline" onClick={() => fetchOrders(pagination.page, pageSize)} disabled={loading}>
           <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
           Refresh
         </Button>
@@ -548,7 +616,7 @@ export const OrderManagement = () => {
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search orders, customers, tracking IDs..." className="pl-9" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === "Enter" && fetchOrders()} />
+                <Input placeholder="Search orders, customers, tracking IDs..." className="pl-9" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === "Enter" && fetchOrders(1, pageSize)} />
               </div>
             </div>
 
@@ -568,7 +636,7 @@ export const OrderManagement = () => {
                 </SelectContent>
               </Select>
 
-              <Button onClick={() => fetchOrders()} disabled={loading} className="min-w-[100px]">
+              <Button onClick={() => fetchOrders(1, pageSize)} disabled={loading} className="min-w-[100px]">
                 {loading ? (<>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Loading...
@@ -583,15 +651,38 @@ export const OrderManagement = () => {
       </CardContent>
     </Card>
 
-    {/* Orders Table */}
+    {/* Orders Table - With Horizontal Scroll and Proper Column Widths */}
     <Card>
-      <CardHeader>
-        <CardTitle>Orders</CardTitle>
-        <CardDescription>
-          Showing {orders.length} of {pagination.total} orders
-        </CardDescription>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle>Orders</CardTitle>
+          <CardDescription>
+            Showing {orders.length} of {pagination.total} orders
+          </CardDescription>
+        </div>
+        
+        {/* Page Size Dropdown */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground whitespace-nowrap">Show:</span>
+          <Select
+            value={pageSize.toString()}
+            onValueChange={(value) => handlePageSizeChange(parseInt(value))}
+            disabled={loading}
+          >
+            <SelectTrigger className="w-[100px]">
+              <SelectValue placeholder="15" />
+            </SelectTrigger>
+            <SelectContent>
+              {PAGE_SIZE_OPTIONS.map((size) => (
+                <SelectItem key={size} value={size.toString()}>
+                  {size}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-0">
         {loading ? (
           <TableSkeleton rowCount={10} columnCount={8} />
         ) : orders.length === 0 ? (<div className="text-center py-12">
@@ -605,142 +696,163 @@ export const OrderManagement = () => {
           {searchTerm || filterStatus !== "all" ? (<Button variant="outline" className="mt-4" onClick={() => {
             setSearchTerm("");
             setFilterStatus("all");
+            fetchOrders(1, pageSize);
           }}>
             Clear filters
           </Button>) : null}
         </div>) : (<>
-          <div className="overflow-x-auto">
-            <Table>
+          {/* Table Container with Horizontal Scroll */}
+          <div className="overflow-x-auto w-full">
+            <Table className="min-w-[1400px]">
               <TableHeader>
                 <TableRow>
-                  <TableHead>Order Details</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Items</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Payment</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="w-[180px]">Order Details</TableHead>
+                  <TableHead className="w-[200px]">Customer</TableHead>
+                  <TableHead className="w-[100px]">Items</TableHead>
+                  <TableHead className="w-[120px]">Amount</TableHead>
+                  <TableHead className="w-[200px]">Date</TableHead>
+                  <TableHead className="w-[120px]">Delivery Status</TableHead>
+                  <TableHead className="w-[150px]">Payment</TableHead>
+                  <TableHead className="w-[100px] text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {orders.map((order) => (<TableRow key={order.id} className={order.orderStatus === "cancelled" ? "bg-red-50/50" : ""}>
-                  <TableCell>
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <Hash className="h-3 w-3 text-muted-foreground" />
-                        <span className="font-mono font-medium text-sm">
-                          {order.orderNumber}
-                        </span>
-                      </div>
-                      {order.trackingId && (<div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Truck className="h-3 w-3" />
-                        {order.trackingId}
-                      </div>)}
-                    </div>
-                  </TableCell>
-
-                  <TableCell>
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <User className="h-3 w-3 text-muted-foreground" />
-                        <span className="font-medium">{order.customerName}</span>
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {order.customerPhone}
-                      </div>
-                      {order.customerEmail && (<div className="text-xs text-muted-foreground truncate max-w-[150px]">
-                        {order.customerEmail}
-                      </div>)}
-                    </div>
-                  </TableCell>
-
-                  <TableCell>
-                    <div className="text-sm">
-                      {calculateTotalItems(order.orderItems)} item(s)
-                      {order.orderItems.length > 0 && (<div className="text-xs text-muted-foreground mt-1">
-                        {order.orderItems[0]?.productName || order.orderItems[0]?.name}
-                        {order.orderItems.length > 1 &&
-                          ` +${order.orderItems.length - 1} more`}
-                      </div>)}
-                    </div>
-                  </TableCell>
-
-                  <TableCell>
-                    <div className="font-medium">
-                      {formatCurrency(getFinalAmount(order))}
-                    </div>
-                  </TableCell>
-
-                  <TableCell>
-                    <div className="text-sm text-muted-foreground">
-                      {formatOrderDate(order.createdAt)}
-                    </div>
-                  </TableCell>
-
-                  <TableCell>{getStatusBadge(order.orderStatus)}</TableCell>
-
-                  <TableCell>
-                    <div className="flex flex-col gap-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium capitalize">
-                          {order.paymentMethod}
-                        </span>
-                        {getPaymentStatusBadge(order.paymentStatus)}
-                      </div>
-                      {(order.phonePeTransactionId || order.merchantOrderId) && (
-                        <div className="text-[10px] text-muted-foreground font-mono truncate max-w-[100px]">
-                          {order.phonePeTransactionId || order.merchantOrderId}
+                {orders.map((order) => {
+                  const customerName = getCustomerName(order);
+                  const customerPhone = getCustomerPhone(order);
+                  const customerEmail = getCustomerEmail(order);
+                  
+                  return (
+                    <TableRow key={order.id} className={order.orderStatus === "cancelled" ? "bg-red-50/50" : ""}>
+                      <TableCell className="align-top">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Hash className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                            <span className="font-mono font-medium text-sm break-all">
+                              {order.orderNumber}
+                            </span>
+                          </div>
+                          {order.trackingId && (<div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Truck className="h-3 w-3 flex-shrink-0" />
+                            <span className="truncate max-w-[120px]" title={order.trackingId}>
+                              {order.trackingId}
+                            </span>
+                          </div>)}
                         </div>
-                      )}
-                    </div>
-                  </TableCell>
+                      </TableCell>
 
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => setSelectedOrder(order)}>
-                            <Eye className="h-4 w-4 mr-2" />
-                            View Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => {
-                            setSelectedOrder(order);
-                            setUpdateStatus(order.orderStatus);
-                            setTrackingId(order.trackingId || "");
-                            setIsUpdateDialogOpen(true);
-                          }}>
-                            <RefreshCw className="h-4 w-4 mr-2" />
-                            Update Status
-                          </DropdownMenuItem>
-                          {order.orderStatus !== "cancelled" &&
-                            order.orderStatus !== "delivered" && (<DropdownMenuItem onClick={() => handleCancelOrder(order.id)} className="text-destructive focus:text-destructive">
-                              <XCircle className="h-4 w-4 mr-2" />
-                              Cancel Order
-                            </DropdownMenuItem>)}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </TableCell>
-                </TableRow>))}
+                      <TableCell className="align-top">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <User className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                            <span className="font-medium truncate max-w-[120px]" title={customerName}>
+                              {customerName}
+                            </span>
+                          </div>
+                          <div className="text-xs text-muted-foreground flex items-center gap-2">
+                            <Phone className="h-3 w-3 flex-shrink-0" />
+                            <span className="truncate max-w-[100px]" title={customerPhone}>
+                              {customerPhone}
+                            </span>
+                          </div>
+                          {customerEmail !== "N/A" && (<div className="text-xs text-muted-foreground flex items-center gap-2">
+                            <Mail className="h-3 w-3 flex-shrink-0" />
+                            <span className="truncate max-w-[100px]" title={customerEmail}>
+                              {customerEmail}
+                            </span>
+                          </div>)}
+                        </div>
+                      </TableCell>
+
+                      <TableCell className="align-top">
+                        <div className="text-sm">
+                          <span className="font-medium">{calculateTotalItems(order.orderItems)}</span>
+                          <span className="text-muted-foreground"> item(s)</span>
+                          {order.orderItems.length > 0 && (<div className="text-xs text-muted-foreground mt-1 max-w-[120px] truncate" title={order.orderItems[0]?.productName || order.orderItems[0]?.name}>
+                            {order.orderItems[0]?.productName || order.orderItems[0]?.name}
+                            {order.orderItems.length > 1 &&
+                              ` +${order.orderItems.length - 1} more`}
+                          </div>)}
+                        </div>
+                      </TableCell>
+
+                      <TableCell className="align-top">
+                        <div className="font-medium">
+                          {formatCurrency(getFinalAmount(order))}
+                        </div>
+                      </TableCell>
+
+                      <TableCell className="align-top">
+                        <div className="text-sm text-muted-foreground whitespace-nowrap">
+                          {formatOrderDate(order.createdAt)}
+                        </div>
+                      </TableCell>
+
+                      <TableCell className="align-top">{getStatusBadge(order.orderStatus)}</TableCell>
+
+                      <TableCell className="align-top">
+                        <div className="flex flex-col gap-1 min-w-[120px]">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-xs font-medium capitalize">
+                              {order.paymentMethod}
+                            </span>
+                            {getPaymentStatusBadge(order.paymentStatus)}
+                          </div>
+                          {(order.phonePeTransactionId || order.merchantOrderId) && (
+                            <div className="text-[10px] text-muted-foreground font-mono truncate max-w-[120px]" title={order.phonePeTransactionId || order.merchantOrderId}>
+                              {order.phonePeTransactionId || order.merchantOrderId}
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+
+                      <TableCell className="text-right align-top">
+                        <div className="flex items-center justify-end gap-2">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => setSelectedOrder(order)}>
+                                <Eye className="h-4 w-4 mr-2" />
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => {
+                                setSelectedOrder(order);
+                                setUpdateStatus(order.orderStatus);
+                                setTrackingId(order.trackingId || "");
+                                setIsUpdateDialogOpen(true);
+                              }}>
+                                <RefreshCw className="h-4 w-4 mr-2" />
+                                Update Status
+                              </DropdownMenuItem>
+                              {order.orderStatus !== "cancelled" &&
+                                order.orderStatus !== "delivered" && (<DropdownMenuItem onClick={() => handleCancelOrder(order.id)} className="text-destructive focus:text-destructive">
+                                  <XCircle className="h-4 w-4 mr-2" />
+                                  Cancel Order
+                                </DropdownMenuItem>)}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
 
           {/* Pagination */}
-          {pagination.totalPages > 1 && (<div className="flex items-center justify-between mt-6">
+          {pagination.totalPages > 1 && (<div className="flex items-center justify-between mt-6 px-6 pb-6">
             <div className="text-sm text-muted-foreground">
               Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
               {Math.min(pagination.page * pagination.limit, pagination.total)} of{" "}
               {pagination.total} orders
             </div>
             <div className="flex items-center space-x-2">
-              <Button variant="outline" size="sm" onClick={() => fetchOrders(pagination.page - 1)} disabled={pagination.page === 1 || loading}>
+              <Button variant="outline" size="sm" onClick={() => fetchOrders(pagination.page - 1, pageSize)} disabled={pagination.page === 1 || loading}>
                 <ChevronLeft className="h-4 w-4 mr-1" />
                 Previous
               </Button>
@@ -759,12 +871,12 @@ export const OrderManagement = () => {
                   else {
                     pageNum = pagination.page - 2 + i;
                   }
-                  return (<Button key={pageNum} variant={pagination.page === pageNum ? "default" : "outline"} size="sm" className="h-8 w-8" onClick={() => fetchOrders(pageNum)} disabled={loading}>
+                  return (<Button key={pageNum} variant={pagination.page === pageNum ? "default" : "outline"} size="sm" className="h-8 w-8" onClick={() => fetchOrders(pageNum, pageSize)} disabled={loading}>
                     {pageNum}
                   </Button>);
                 })}
               </div>
-              <Button variant="outline" size="sm" onClick={() => fetchOrders(pagination.page + 1)} disabled={pagination.page === pagination.totalPages || loading}>
+              <Button variant="outline" size="sm" onClick={() => fetchOrders(pagination.page + 1, pageSize)} disabled={pagination.page === pagination.totalPages || loading}>
                 Next
                 <ChevronRight className="h-4 w-4 ml-1" />
               </Button>
@@ -842,8 +954,8 @@ export const OrderManagement = () => {
                       <div className="flex items-start gap-2">
                         <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                         <div className="text-sm">
-                          <p className="font-medium">{selectedOrder.customerName}</p>
-                          <p className="text-muted-foreground">{selectedOrder.customerPhone}</p>
+                          <p className="font-medium">{selectedOrder.customerName || selectedOrder.shippingAddress?.name || "Unknown"}</p>
+                          <p className="text-muted-foreground">{selectedOrder.customerPhone || selectedOrder.shippingAddress?.phone || "N/A"}</p>
                           <div className="mt-2 text-sm">{parseAddress(selectedOrder.shippingAddress)}</div>
                         </div>
                       </div>
@@ -861,12 +973,12 @@ export const OrderManagement = () => {
                 <CardContent className="space-y-4">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold text-lg">
-                      {selectedOrder.customerName?.charAt(0).toUpperCase() || "C"}
+                      {getCustomerName(selectedOrder).charAt(0).toUpperCase() || "C"}
                     </div>
                     <div>
-                      <h3 className="font-semibold">{selectedOrder.customerName}</h3>
+                      <h3 className="font-semibold">{getCustomerName(selectedOrder)}</h3>
                       <p className="text-sm text-muted-foreground">
-                        Customer ID: {selectedOrder.userId}
+                        Customer ID: {selectedOrder.userId || selectedOrder.user?.id || "N/A"}
                       </p>
                     </div>
                   </div>
@@ -875,12 +987,12 @@ export const OrderManagement = () => {
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
                         <Phone className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">{selectedOrder.customerPhone}</span>
+                        <span className="text-sm">{getCustomerPhone(selectedOrder)}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Mail className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm">
-                          {selectedOrder.customerEmail || "No email provided"}
+                          {getCustomerEmail(selectedOrder)}
                         </span>
                       </div>
                     </div>
