@@ -140,6 +140,8 @@ export const initiatePayment = async ({
   }
 
   // Build the pay request
+  // Note: different pg-sdk-node versions expose different builder methods.
+  // We probe each optional method before calling it to stay version-agnostic.
   let request;
   try {
     const builder = sdk.StandardCheckoutPayRequest.builder()
@@ -147,18 +149,33 @@ export const initiatePayment = async ({
       .amount(amount)
       .redirectUrl(redirectUrl);
 
-    // callbackUrl MUST be a public HTTPS URL; skip on localhost to avoid SDK errors
+    // callbackUrl — only present in some SDK versions AND only useful on public URLs
     if (callbackUrl && isPublicUrl(callbackUrl)) {
-      builder.callbackUrl(callbackUrl);
+      if (typeof builder.callbackUrl === 'function') {
+        builder.callbackUrl(callbackUrl);
+        console.log('✅ callbackUrl set on request:', callbackUrl);
+      } else {
+        // Older SDK versions don't have this method — that's fine,
+        // PhonePe can be configured to use a fixed callback URL in the dashboard.
+        console.warn(
+          '⚠️  builder.callbackUrl() not available in this SDK version — skipping.',
+          '\n   Configure your callback URL in the PhonePe merchant dashboard instead.',
+          '\n   Payment status will also be verified via frontend polling.',
+        );
+      }
     } else if (callbackUrl) {
       console.warn(
-        '⚠️  callbackUrl is not a public URL — omitting from SDK request.',
-        '\n   PhonePe cannot reach localhost. Status will be verified via polling.',
-        '\n   callbackUrl:', callbackUrl,
+        '⚠️  callbackUrl is not a public URL — omitting.',
+        '\n   Payment status will be verified via frontend polling.',
+        '\n   callbackUrl was:', callbackUrl,
       );
     }
 
-    if (metaInfo) builder.metaInfo(metaInfo);
+    // metaInfo — also optional / version-dependent
+    if (metaInfo && typeof builder.metaInfo === 'function') {
+      builder.metaInfo(metaInfo);
+    }
+
     request = builder.build();
   } catch (builderErr) {
     throw new Error(`Failed to build PhonePe pay request: ${builderErr.message}`);
