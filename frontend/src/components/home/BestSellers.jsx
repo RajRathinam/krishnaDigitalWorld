@@ -62,8 +62,8 @@ const fetchBestSellers = async () => {
 // ─── Rank badge colors ─────────────────────────────────────────────────────────
 const rankMeta = [
   { bg: "from-yellow-400 to-amber-500", label: "#1" },
-  { bg: "from-gray-300 to-gray-400",    label: "#2" },
-  { bg: "from-amber-600 to-amber-700",  label: "#3" },
+  { bg: "from-gray-300 to-gray-400", label: "#2" },
+  { bg: "from-amber-600 to-amber-700", label: "#3" },
 ];
 
 // ─── Single product card ───────────────────────────────────────────────────────

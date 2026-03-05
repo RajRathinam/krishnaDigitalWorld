@@ -33,19 +33,19 @@ const calculateTimeUntilMidnight = () => {
     const now = new Date();
     const endOfDay = new Date();
     endOfDay.setHours(23, 59, 59, 999); // Set to 23:59:59.999
-    
+
     const diffMs = endOfDay.getTime() - now.getTime();
-    
+
     // If somehow we're past midnight (shouldn't happen), default to 24 hours
     if (diffMs <= 0) {
         return { hours: 23, minutes: 59, seconds: 59 };
     }
-    
+
     const diffSeconds = Math.floor(diffMs / 1000);
     const hours = Math.floor(diffSeconds / 3600);
     const minutes = Math.floor((diffSeconds % 3600) / 60);
     const seconds = diffSeconds % 60;
-    
+
     return { hours, minutes, seconds };
 };
 
@@ -73,7 +73,7 @@ export function DealOfTheDay() {
         const currentHour = now.getHours();
         const currentMinute = now.getMinutes();
         const currentSecond = now.getSeconds();
-        
+
         // Check if it's exactly midnight (or a few seconds after to handle delays)
         if (currentHour === 0 && currentMinute === 0 && currentSecond <= 2) {
             // Reset to 24 hours
@@ -89,16 +89,16 @@ export function DealOfTheDay() {
      */
     useEffect(() => {
         let cancelled = false;
-        
+
         const fetchDealProducts = async () => {
             try {
                 const response = await productApi.getDealOfTheDay(4);
                 const fetched = response.data || response.products || response.data?.data || response;
-                
+
                 if (!cancelled) {
                     setDealProducts(
-                        Array.isArray(fetched) 
-                            ? fetched.slice(0, 4) 
+                        Array.isArray(fetched)
+                            ? fetched.slice(0, 4)
                             : (fetched.data || fetched.products || []).slice(0, 4)
                     );
                 }
@@ -117,7 +117,7 @@ export function DealOfTheDay() {
                 }
             }
         };
-        
+
         fetchDealProducts();
         return () => {
             cancelled = true;
@@ -130,12 +130,12 @@ export function DealOfTheDay() {
     useEffect(() => {
         // Initial calculation
         updateTimer();
-        
+
         // Set up interval for countdown
         const timer = setInterval(() => {
             setTimeRemaining(prev => {
                 let { hours, minutes, seconds } = prev;
-                
+
                 // Decrement seconds
                 if (seconds > 0) {
                     seconds--;
@@ -156,7 +156,7 @@ export function DealOfTheDay() {
                         const newTimer = setInterval(() => {
                             setTimeRemaining(prev => {
                                 let { hours, minutes, seconds } = prev;
-                                
+
                                 if (seconds > 0) {
                                     seconds--;
                                 } else if (minutes > 0) {
@@ -167,19 +167,19 @@ export function DealOfTheDay() {
                                     minutes = 59;
                                     seconds = 59;
                                 }
-                                
+
                                 return { hours, minutes, seconds };
                             });
                         }, 1000);
-                        
+
                         // Store timer reference if needed
                         // This approach uses closure, so we don't need to store it
                     }, 100);
-                    
+
                     // Return 0 for now, will be updated by the setTimeout
                     return { hours: 0, minutes: 0, seconds: 0 };
                 }
-                
+
                 return { hours, minutes, seconds };
             });
         }, 1000);
@@ -204,7 +204,7 @@ export function DealOfTheDay() {
     useEffect(() => {
         // Check current date to handle page refresh scenarios
         updateTimer();
-        
+
         // Set up a check for midnight
         const now = new Date();
         const msUntilMidnight = new Date(
@@ -213,12 +213,12 @@ export function DealOfTheDay() {
             now.getDate() + 1, // Next day
             0, 0, 0, 0 // Midnight
         ).getTime() - now.getTime();
-        
+
         // Set timeout for midnight reset
         const midnightTimeout = setTimeout(() => {
             updateTimer();
         }, msUntilMidnight);
-        
+
         return () => clearTimeout(midnightTimeout);
     }, [updateTimer]);
 
@@ -235,17 +235,17 @@ export function DealOfTheDay() {
                         <div className="w-14 h-14 md:w-16 md:h-16 bg-gradient-to-br from-accent to-orange-600 rounded-2xl flex items-center justify-center shadow-lg shadow-accent/30 animate-pulse-slow">
                             <Zap className="w-7 h-7 md:w-8 md:h-8 text-white" />
                         </div>
-                        
+
                         {/* Title and Countdown */}
                         <div>
                             <div className="flex items-center gap-2">
-                                <SplitHeading 
-                                    text="Deal of the Day" 
-                                    className="text-3xl md:text-4xl font-bold tracking-tight" 
+                                <SplitHeading
+                                    text="Deal of the Day"
+                                    className="text-3xl md:text-4xl font-bold tracking-tight"
                                 />
                                 <Sparkles className="w-5 h-5 text-accent animate-bounce" />
                             </div>
-                            
+
                             {/* Countdown Timer */}
                             <div className="flex items-center gap-2 mt-2 bg-red-100 dark:bg-red-900/30 px-3 py-1 rounded-full w-max">
                                 <Clock className="w-4 h-4 text-red-600 dark:text-red-400" />
@@ -257,11 +257,11 @@ export function DealOfTheDay() {
                     </div>
 
                     {/* View All Link - Desktop */}
-                    <Link 
-                        to="/deals" 
+                    <Link
+                        to="/deals"
                         className="hidden md:flex items-center gap-2 text-sm font-semibold text-accent hover:text-accent/80 transition-colors group bg-accent/10 px-4 py-2 rounded-full hover:bg-accent/20"
                     >
-                        View All Deals 
+                        View All Deals
                         <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     </Link>
                 </div>
@@ -285,8 +285,8 @@ export function DealOfTheDay() {
                     ) : (
                         // Product Cards
                         dealProducts.map((product) => (
-                            <div 
-                                key={product.id} 
+                            <div
+                                key={product.id}
                                 className="transform hover:-translate-y-2 transition-transform duration-300 h-full"
                             >
                                 <ProductCard product={product} />
@@ -297,11 +297,11 @@ export function DealOfTheDay() {
 
                 {/* View All Link - Mobile */}
                 <div className="mt-4 md:mt-8 text-center md:hidden">
-                    <Link 
-                        to="/deals" 
+                    <Link
+                        to="/deals"
                         className="inline-flex items-center gap-2 text-sm font-semibold text-accent hover:text-accent/80 transition-colors"
                     >
-                        View All Deals 
+                        View All Deals
                         <ArrowRight className="w-4 h-4" />
                     </Link>
                 </div>
