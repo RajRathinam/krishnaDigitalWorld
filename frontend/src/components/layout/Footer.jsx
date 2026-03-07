@@ -278,11 +278,44 @@ export function Footer() {
                 </ul>
               </div>
             ))}
+                      {/* Social Media Links Column */}
+          {hasSocialMedia && (
+            <div className="hidden md:block">
+              <h3 className="text-primary-foreground font-display font-medium text-lg mb-4">Connect With Us</h3>
+              <div className="flex flex-wrap gap-3">
+                {Object.entries(socialMediaLinks).map(([platform, url]) => {
+                  if (!url || typeof url !== 'string' || !url.trim()) return null;
+                  
+                  const formattedUrl = formatSocialMediaUrl(platform, url);
+                  
+                  return (
+                    <a
+                      key={platform}
+                      href={formattedUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground transition-colors"
+                      aria-label={`Follow us on ${platform}`}
+                      title={`Follow us on ${platform}: ${url}`}
+                    >
+                      {getSocialMediaIcon(platform)}
+                    </a>
+                  );
+                })}
+              </div>
+              
+              {/* Follow us text */}
+              <p className="mt-4 text-sm text-primary-foreground/60">
+                Follow us for updates, offers, and more!
+              </p>
+            </div>
+          )}
+
           </div>
 
           {/* Social Media Links Column */}
           {hasSocialMedia && (
-            <div className="mt-8">
+            <div className="mt-8 md:hidden block">
               <h3 className="text-primary-foreground font-display font-medium text-lg mb-4">Connect With Us</h3>
               <div className="flex flex-wrap gap-3">
                 {Object.entries(socialMediaLinks).map(([platform, url]) => {

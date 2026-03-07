@@ -50,8 +50,8 @@ const SubcategorySkeleton = () => (
   </section>
 );
 
-/* ─── Alternating heights for visual rhythm ────────────────────────────────── */
-const HEIGHTS = ["100%", "78%", "90%", "72%", "95%"];
+/* ─── Uniform heights for consistent card size ────────────────────────────── */
+const HEIGHTS = ["100%", "100%", "100%", "100%", "100%"];
 
 /* ─── Ink accent colors per card (warm, editorial palette) ────────────────── */
 const INK = ["#C1440E", "#1B6CA8", "#2D7D46", "#8B1A6B", "#B87A00"];
@@ -311,7 +311,7 @@ export function SubcategorySlider() {
             <div className="sc3-header">
               <div>
                 <p className="sc3-label">Explore our range</p>
-                <h2 className="sc3-title">Shop by <em>category</em></h2>
+                <h2 className="sc3-title">Shop by <em>Products</em></h2>
               </div>
               <Link to="/products" className="sc3-cta">Browse all →</Link>
             </div>
