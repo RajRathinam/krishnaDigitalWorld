@@ -4,11 +4,12 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
-import { User, Package, Heart, LogOut, MapPin, ChevronRight } from "lucide-react";
+import { User, Package, Heart, LogOut, MapPin, ChevronRight, Ticket } from "lucide-react";
 
 const menuItems = [
   { id: "profile", label: "Profile", icon: User, path: "/account/profile" },
   { id: "orders", label: "My Orders", icon: Package, path: "/account/orders" },
+  { id: "coupons", label: "Coupons", icon: Ticket, path: "/account/coupons" },
   { id: "wishlist", label: "Wishlist", icon: Heart, path: "/account/wishlist" },
   { id: "addresses", label: "Addresses", icon: MapPin, path: "/account/addresses" },
 ];
@@ -24,6 +25,7 @@ export function AccountLayout() {
     const path = location.pathname;
     if (path.includes('/profile') || path === '/account') setActiveTab('profile');
     else if (path.includes('/orders')) setActiveTab('orders');
+    else if (path.includes('/coupons')) setActiveTab('coupons');
     else if (path.includes('/wishlist')) setActiveTab('wishlist');
     else if (path.includes('/addresses')) setActiveTab('addresses');
   }, [location.pathname]);

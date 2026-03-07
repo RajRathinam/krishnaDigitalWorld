@@ -4,9 +4,9 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import {
   Check, MapPin, Truck, CreditCard, Smartphone, Banknote,
-  Lock, Tv, WashingMachine, PartyPopper, Plus, Home,
+  Lock, Tv, PartyPopper, Plus, Home,
   Briefcase, MapPin as MapPinIcon, User as UserIcon,
-  ArrowLeft, AlertCircle, Loader2,
+  ArrowLeft, AlertCircle, Loader2, Tag
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -117,6 +117,12 @@ export default function Checkout() {
   const [deliveryOption, setDeliveryOption] = useState("standard");
   const [paymentMethod,  setPaymentMethod]  = useState("cod");
 
+  // Coupon state
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [applyingCoupon, setApplyingCoupon] = useState(false);
+
   // Order state
   const [cart,             setCart]           = useState({ items: [], totalAmount: 0 });
   const [isPlacingOrder,   setIsPlacingOrder] = useState(false);
@@ -135,7 +141,8 @@ export default function Checkout() {
   const selectedAddressData = savedAddressesList.find((a) => a.id === selectedAddress);
   const subtotal   = cart?.totalAmount || 0;
   const deliveryFee = deliveryOption === "express" ? 99 : 0;
-  const total      = subtotal + deliveryFee;
+  const total = Math.max(0, subtotal - couponDiscount + deliveryFee);
+  const totalSavings = couponDiscount;
 
   // ── On mount: fetch cart + check profile ──────────────────────────────────
   useEffect(() => { fetchCart(); }, []);
@@ -154,6 +161,50 @@ export default function Checkout() {
       const status = err?.response?.status;
       if (status && status !== 401) toast.error(err?.response?.data?.message || "Failed to load cart");
     }
+  };
+
+  // ── Coupon functions ─────────────────────────────────────────────────────
+  const applyCoupon = async () => {
+    if (!couponCode.trim()) {
+      toast.error('Please enter a coupon code');
+      return;
+    }
+
+    setApplyingCoupon(true);
+
+    try {
+      const response = await api.post('/coupons/validate', {
+        couponCode: couponCode.trim(),
+        cartTotal: subtotal
+      });
+
+      const result = response.data;
+
+      if (result.success) {
+        setAppliedCoupon(result.data.coupon);
+        setCouponDiscount(Number(result.data.discount) || 0);
+        toast.success(result.message || 'Coupon applied successfully!');
+      } else {
+        toast.error(result.message || 'Invalid coupon code');
+        setAppliedCoupon(null);
+        setCouponDiscount(0);
+      }
+    } catch (err) {
+      console.error('Apply coupon error:', err);
+      const errorMessage = err.response?.data?.message || 'Failed to apply coupon';
+      toast.error(errorMessage);
+      setAppliedCoupon(null);
+      setCouponDiscount(0);
+    } finally {
+      setApplyingCoupon(false);
+    }
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponDiscount(0);
+    setCouponCode("");
+    toast.success('Coupon removed');
   };
 
   // ── Profile gate + address loader (single API call) ───────────────────────
@@ -303,9 +354,11 @@ export default function Checkout() {
         shippingAddress,
         orderItems,
         paymentMethod: "cod",
-        notes: `Delivery: ${deliveryOption === "express" ? "Express (₹99)" : "Standard (Free)"}`,
+        notes: `Delivery: ${deliveryOption === "express" ? "Express (₹99)" : "Standard (Free)"}${appliedCoupon ? ` • Coupon: ${appliedCoupon.code} (${formatPrice(couponDiscount)} off)` : ''}`,
         billingAddress: shippingAddress,
         deliveryType: deliveryOption,
+        couponCode: appliedCoupon?.code,
+        couponDiscount: couponDiscount
       });
 
       if (res.data.success) {
@@ -345,7 +398,9 @@ export default function Checkout() {
         shippingAddress,
         billingAddress: shippingAddress,
         deliveryType: deliveryOption,
-        notes: `Delivery: ${deliveryOption === "express" ? "Express (₹99)" : "Standard (Free)"}`,
+        notes: `Delivery: ${deliveryOption === "express" ? "Express (₹99)" : "Standard (Free)"}${appliedCoupon ? ` • Coupon: ${appliedCoupon.code} (${formatPrice(couponDiscount)} off)` : ''}`,
+        couponCode: appliedCoupon?.code,
+        couponDiscount: couponDiscount
       });
 
       toast.dismiss("phonepe-init");
@@ -755,8 +810,7 @@ export default function Checkout() {
               <span className="font-medium text-foreground">UPI / Cards / Net Banking</span>
               <p className="text-xs text-muted-foreground">Pay via PhonePe — UPI, Debit/Credit Card, Net Banking</p>
             </div>
-            <span className="text-xs bg-krishna-green/10 text-krishna-green px-2 py-1 rounded font-medium">Secure</span>
-          </div>
+         </div>
         </label>
       </div>
 
@@ -933,14 +987,52 @@ export default function Checkout() {
           <div className="lg:col-span-4">
             <div className="bg-card rounded-lg border border-border p-4 sticky top-24">
               <h2 className="font-bold text-foreground mb-4">Order Summary</h2>
+
+              {/* Coupon Section */}
+              <div className="mb-4 pb-4 border-b border-border">
+                <div className="flex gap-2">
+                  <input 
+                    type="text" 
+                    value={couponCode} 
+                    onChange={(e) => setCouponCode(e.target.value)} 
+                    placeholder="Enter coupon code" 
+                    className="flex-1 px-3 py-2 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-accent bg-background" 
+                    disabled={!!appliedCoupon || applyingCoupon} 
+                  />
+                  {appliedCoupon ? (
+                    <button 
+                      onClick={removeCoupon} 
+                      className="px-4 py-2 text-sm font-medium text-destructive hover:underline whitespace-nowrap"
+                    >
+                      Remove
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={applyCoupon} 
+                      disabled={!couponCode.trim() || applyingCoupon} 
+                      className="px-4 py-2 text-sm font-medium text-accent hover:underline disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 whitespace-nowrap"
+                    >
+                      {applyingCoupon && <Loader2 className="w-3 h-3 animate-spin" />}
+                      Apply
+                    </button>
+                  )}
+                </div>
+                {appliedCoupon && (
+                  <div className="flex items-center gap-2 mt-2 text-sm text-accent">
+                    <Tag className="w-4 h-4" />
+                    <span>Coupon "{appliedCoupon.code}" applied! {appliedCoupon.discountType === 'percentage' ? `${appliedCoupon.discountValue}% off` : `${formatPrice(appliedCoupon.discountValue)} off`}</span>
+                  </div>
+                )}
+              </div>
+
               <div className="space-y-3 mb-4 pb-4 border-b border-border">
                 {cart.items.map((item) => {
                   const imageUrl = getItemImageUrl(item);
                   return (
                     <div key={`${item.productId}-${item.colorName || ""}`} className="flex gap-3">
-                      <div className="w-12 h-12 bg-muted rounded overflow-hidden flex items-center justify-center shrink-0">
+                      <div className="w-12 h-12 bg-white border border-border p-1 rounded overflow-hidden flex items-center justify-center shrink-0">
                         {imageUrl
-                          ? <img src={imageUrl} alt={item.productName || "Product"} className="w-full h-full object-cover"
+                          ? <img src={imageUrl} alt={item.productName || "Product"} className="w-full h-full object-contain"
                               onError={(e) => { e.currentTarget.src = "/placeholder.svg"; }} />
                           : <Tv className="w-6 h-6 text-muted-foreground" />}
                       </div>
@@ -962,6 +1054,12 @@ export default function Checkout() {
                   <span className="text-muted-foreground">Subtotal</span>
                   <span>{formatPrice(orderPlaced && placedOrderData ? placedOrderData.totalPrice : subtotal)}</span>
                 </div>
+                {couponDiscount > 0 && (
+                  <div className="flex justify-between text-accent">
+                    <span>Coupon Discount</span>
+                    <span>-{formatPrice(couponDiscount)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Delivery</span>
                   <span className={deliveryFee === 0 ? "text-krishna-green" : ""}>
@@ -974,6 +1072,11 @@ export default function Checkout() {
                   <span>Total</span>
                   <span>{formatPrice(orderPlaced && placedOrderData ? placedOrderData.finalAmount : total)}</span>
                 </div>
+                {totalSavings > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    You're saving {formatPrice(totalSavings)} on this order!
+                  </p>
+                )}
               </div>
               <Link to="/cart" className="block text-center text-sm text-krishna-blue-link mt-4 hover:underline">
                 ← Back to Cart

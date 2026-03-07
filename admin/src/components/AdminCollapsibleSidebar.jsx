@@ -21,7 +21,8 @@ import {
   ChevronRight, 
   Image as ImageIcon,
   Video, // Add Video icon for advertisements
-  PlayCircle // Alternative icon
+  PlayCircle, // Alternative icon
+  Ticket // Add Ticket icon for coupons
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -71,6 +72,7 @@ export function AdminCollapsibleSidebar({ activeSection, showFooter = true, isCo
     { id: "categories", title: "Categories", icon: Blocks, path: "/categories" },
     { id: "hero-slider", title: "Hero Slider", icon: ImageIcon, path: "/hero-slider" },
     { id: "advertisements", title: "Advertisements", icon: Video, path: "/advertisements" }, // New Advertisement item
+    { id: "user-coupons", title: "User Coupons", icon: Ticket, path: "/user-coupons" }, // New User Coupons item
     { id: "settings", title: "Settings", icon: Settings, path: "/settings" },
   ];
 

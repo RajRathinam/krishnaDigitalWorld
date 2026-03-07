@@ -29,6 +29,7 @@ import { ShopInfoProvider } from '@/contexts/ShopInfoContext';
 import { AccountLayout } from "@/components/account/AccountLayout";
 import AccountProfile from "@/components/account/AccountProfile";
 import AccountOrders from "@/components/account/AccountOrders";
+import { AccountCoupons } from "@/components/account/AccountCoupons";
 import AccountWishlist from "@/components/account/AccountWishlist";
 import AccountAddresses from "@/components/account/AccountAddresses";
 import OrderDetail from "./components/account/OrderDetail";
@@ -144,6 +145,7 @@ const App = () => {
                       <Route path="profile" element={<AccountProfile />} />
                       <Route path="orders" element={<AccountOrders />} />
                       <Route path="/account/orders/:id" element={<OrderDetail />} />
+                      <Route path="coupons" element={<AccountCoupons />} />
                       <Route path="wishlist" element={<AccountWishlist />} />
                       <Route path="addresses" element={<AccountAddresses />} />
                     </Route>

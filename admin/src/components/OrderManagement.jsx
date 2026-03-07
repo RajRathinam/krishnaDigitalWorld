@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Search, Filter, Eye, MapPin, Phone, Mail, Package, Truck, XCircle, CheckCircle, MoreVertical, Download, Clock, RefreshCw, ChevronLeft, ChevronRight, Loader2, User, CreditCard, Hash, Tag, } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Search, Filter, Eye, MapPin, Phone, Mail, Package, Truck, XCircle, CheckCircle, MoreVertical, Download, Clock, RefreshCw, ChevronLeft, ChevronRight, Loader2, User, CreditCard, Hash, Tag, Ticket } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,6 +23,7 @@ import api from "@/lib/api";
 const PAGE_SIZE_OPTIONS = [15, 30, 45, 100];
 
 export const OrderManagement = () => {
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -826,6 +828,10 @@ export const OrderManagement = () => {
                                   <XCircle className="h-4 w-4 mr-2" />
                                   Cancel Order
                                 </DropdownMenuItem>)}
+                              <DropdownMenuItem onClick={() => navigate(`/user-coupons?userId=${order.userId}`)}>
+                                <Ticket className="h-4 w-4 mr-2" />
+                                Provide Coupon
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>

@@ -42,6 +42,8 @@ const Admin = () => {
             return "Order Management";
         if (path.includes('/birthdays'))
             return "Birthday Center";
+        if (path.includes('/user-coupons'))
+            return "User Coupon Management";
         if (path.includes('/settings'))
             return "Settings";
         if (path.includes('/hero-slider'))
@@ -64,6 +66,8 @@ const Admin = () => {
             return 'orders';
         if (path.includes('/birthdays'))
             return 'birthdays';
+        if (path.includes('/user-coupons'))
+            return 'user-coupons';
         if (path.includes('/settings'))
             return 'settings';
         if (path.includes('/hero-slider'))

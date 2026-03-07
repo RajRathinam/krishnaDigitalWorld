@@ -18,6 +18,7 @@ import { OrderDetails } from "@/components/OrderDetails";
 import { BirthdayManagement } from "@/components/BirthdayManagement";
 import { AdminSettings } from "@/components/AdminSettings";
 import { HeroSliderManagement } from "@/components/HeroSliderManagement";
+import { UserCouponManagement } from "@/components/UserCouponManagement";
 import AddBrand from "@/components/AddBrand";
 import AddCategory from "@/components/AddCategory";
 import AddAdvertisement from "@/components/AddAdvertisement"; // Import Advertisement component
@@ -45,6 +46,7 @@ function App() {
                   <Route path="orders" element={<OrderManagement />} />
                   <Route path="orders/:id" element={<OrderDetails />} />
                   <Route path="birthdays" element={<BirthdayManagement />} />
+                  <Route path="user-coupons" element={<UserCouponManagement />} />
                   <Route path="settings" element={<AdminSettings />} />
                   <Route path="hero-slider" element={<HeroSliderManagement />} />
                   <Route path="brands" element={<AddBrand />} />

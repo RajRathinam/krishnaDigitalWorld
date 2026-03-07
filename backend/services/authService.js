@@ -16,13 +16,41 @@ const isTestUser = (phone) => {
 };
 
 /**
+ * Generate a unique coupon code with 6 characters (mix of uppercase and lowercase)
+ */
+const generateUniqueCouponCode = () => {
+  const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+  const allChars = uppercase + lowercase;
+  
+  let code = '';
+  // Ensure at least one uppercase and one lowercase letter
+  code += uppercase[Math.floor(Math.random() * uppercase.length)];
+  code += lowercase[Math.floor(Math.random() * lowercase.length)];
+  
+  // Generate remaining 4 characters
+  for (let i = 0; i < 4; i++) {
+    code += allChars[Math.floor(Math.random() * allChars.length)];
+  }
+  
+  // Shuffle the code to randomize uppercase/lowercase positions
+  const codeArray = code.split('');
+  for (let i = codeArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [codeArray[i], codeArray[j]] = [codeArray[j], codeArray[i]];
+  }
+  
+  return codeArray.join('');
+};
+
+/**
  * Create welcome gift coupon for new user
  */
 const createWelcomeGiftCoupon = async (userId) => {
   try {
     const coupon = await Coupon.create({
-      code: `WELCOME${Date.now().toString().slice(-6)}`,
-      description: 'Welcome to our store! Enjoy this special discount on your first purchase.',
+      code: generateUniqueCouponCode(),
+      description: 'Welcome to our store! Enjoy this special 10% discount on your first purchase.',
       discountType: 'percentage',
       discountValue: 10, // 10% discount
       minOrderAmount: 0,

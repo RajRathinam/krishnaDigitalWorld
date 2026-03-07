@@ -1,12 +1,12 @@
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { toast } from "sonner";
-import { Minus, Plus, Trash2, ShieldCheck, Truck, Tag, ShoppingCart } from "lucide-react";
+import { Minus, Plus, Trash2, ShieldCheck, Truck, ShoppingCart } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
-import { getImageUrl } from "@/lib/utils"; // Import the image utility
+import { getImageUrl } from "@/lib/utils";
 
 const emptyCart = { id: 0, items: [], totalAmount: 0 };
 
@@ -14,8 +14,6 @@ export default function Cart() {
   const [cart, setCart] = useState(emptyCart);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [couponCode, setCouponCode] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -111,12 +109,7 @@ export default function Cart() {
 
   // Helper function to get the correct image URL
   const getItemImageUrl = (item) => {
-    // First check if we have imageUrl directly from cart
-    if (item.imageUrl) {
-      return getImageUrl(item.imageUrl);
-    }
-    
-    // Then check product images
+    if (item.imageUrl) return getImageUrl(item.imageUrl);
     if (item.product?.images && item.product.images.length > 0) {
       const firstImage = item.product.images[0];
       if (typeof firstImage === 'string') {
@@ -125,17 +118,8 @@ export default function Cart() {
         return getImageUrl(firstImage.url);
       }
     }
-    
-    // Check product thumbnail
-    if (item.product?.thumbnail) {
-      return getImageUrl(item.product.thumbnail);
-    }
-    
-    // Check main image
-    if (item.product?.image) {
-      return getImageUrl(item.product.image);
-    }
-    
+    if (item.product?.thumbnail) return getImageUrl(item.product.thumbnail);
+    if (item.product?.image) return getImageUrl(item.product.image);
     return '/placeholder.svg';
   };
 
@@ -149,13 +133,6 @@ export default function Cart() {
     }
 
     try {
-      console.log('Updating quantity for item:', {
-        productId: item.productId,
-        colorName: item.colorName,
-        currentQty: item.quantity,
-        newQty: newQty
-      });
-
       const payload = {
         quantity: newQty,
         colorName: item.colorName || null
@@ -192,11 +169,6 @@ export default function Cart() {
     }
 
     try {
-      console.log('Removing item:', {
-        productId: item.productId,
-        colorName: item.colorName
-      });
-
       const params = {};
       if (item.colorName) {
         params.colorName = item.colorName;
@@ -264,20 +236,17 @@ export default function Cart() {
   }, 0) || 0;
   const discount = Math.max(0, originalTotal - subtotal);
   const deliveryFee = subtotal > 500 ? 0 : 49;
-  const couponDiscount = appliedCoupon ? Math.round(subtotal * 0.1) : 0;
-  const total = Math.max(0, subtotal - couponDiscount + deliveryFee);
+  const total = subtotal + deliveryFee;
 
-  const applyCoupon = () => {
-    if (!couponCode.trim()) {
-      toast.error('Please enter a coupon code');
-      return;
-    }
-    if (couponCode.toLowerCase() === "save10") {
-      setAppliedCoupon(couponCode);
-      toast.success('Coupon applied! 10% discount added');
-    } else {
-      toast.error('Invalid coupon code');
-    }
+  // Store cart data in sessionStorage for checkout
+  const handleProceedToCheckout = () => {
+    sessionStorage.setItem('checkoutCart', JSON.stringify({
+      subtotal,
+      discount,
+      total,
+      items: cart.items
+    }));
+    navigate('/checkout');
   };
 
   if (loading) {
@@ -491,34 +460,6 @@ export default function Cart() {
             <div className="bg-card rounded-lg border border-border p-4 sticky top-24">
               <h2 className="font-bold text-foreground mb-4">Order Summary</h2>
 
-              {/* Coupon */}
-              <div className="mb-4 pb-4 border-b border-border">
-                <div className="flex gap-2">
-                  <input 
-                    type="text" 
-                    value={couponCode} 
-                    onChange={(e) => setCouponCode(e.target.value)} 
-                    placeholder="Enter coupon code" 
-                    className="flex-1 px-3 py-2 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-accent bg-background" 
-                    disabled={!!appliedCoupon} 
-                  />
-                  <button 
-                    onClick={applyCoupon} 
-                    disabled={!!appliedCoupon} 
-                    className="px-4 py-2 text-sm font-medium text-accent hover:underline disabled:opacity-50"
-                  >
-                    Apply
-                  </button>
-                </div>
-                {appliedCoupon && (
-                  <div className="flex items-center gap-2 mt-2 text-sm text-accent">
-                    <Tag className="w-4 h-4" />
-                    <span>Coupon "{appliedCoupon}" applied!</span>
-                  </div>
-                )}
-                <p className="text-xs text-muted-foreground mt-2">Try: SAVE10 for 10% off</p>
-              </div>
-
               {/* Price Breakdown */}
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
@@ -529,14 +470,8 @@ export default function Cart() {
                 </div>
                 {discount > 0 && (
                   <div className="flex justify-between text-accent">
-                    <span>Discount</span>
+                    <span>Product Discount</span>
                     <span>-{formatPrice(discount)}</span>
-                  </div>
-                )}
-                {couponDiscount > 0 && (
-                  <div className="flex justify-between text-accent">
-                    <span>Coupon Discount</span>
-                    <span>-{formatPrice(couponDiscount)}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
@@ -552,14 +487,19 @@ export default function Cart() {
                   <span>Total</span>
                   <span className="text-foreground">{formatPrice(total)}</span>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  You're saving {formatPrice(discount + couponDiscount)} on this order!
-                </p>
+                {discount > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    You're saving {formatPrice(discount)} on this order!
+                  </p>
+                )}
               </div>
 
-              <Link to="/checkout" className="block w-full mt-4 py-3 bg-accent text-accent-foreground text-center font-medium rounded-lg hover:opacity-90 transition-colors">
+              <button 
+                onClick={handleProceedToCheckout}
+                className="block w-full mt-4 py-3 bg-accent text-accent-foreground text-center font-medium rounded-lg hover:opacity-90 transition-colors"
+              >
                 Proceed to Checkout
-              </Link>
+              </button>
 
               <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
                 <ShieldCheck className="w-4 h-4 text-accent" />

@@ -22,7 +22,7 @@ import {
   Truck,
   TrendingUp,
   ExternalLink,
-  LogOut
+  LogOut,Ticket
 } from "lucide-react";
 import { SearchModal } from "@/components/ui/search-modal";
 import { Link } from "react-router-dom";
@@ -365,21 +365,21 @@ export function Header() {
                           className="block px-4 py-2 text-sm hover:bg-accent/10 transition-colors"
                           onClick={() => setOpenDropdown(null)}
                         >
-                          My Account
+                          Account
                         </Link>
                         <Link 
                           to="/account/orders" 
                           className="block px-4 py-2 text-sm hover:bg-accent/10 transition-colors"
                           onClick={() => setOpenDropdown(null)}
                         >
-                          My Orders
+                          Orders
                         </Link>
                         <Link 
-                          to="/account/wishlist" 
+                          to="/account/coupons" 
                           className="block px-4 py-2 text-sm hover:bg-accent/10 transition-colors"
                           onClick={() => setOpenDropdown(null)}
                         >
-                          Wishlist
+                        Coupons
                         </Link>
                         <Link 
                           to="/account/addresses" 
@@ -793,6 +793,14 @@ export function Header() {
                       My Orders
                     </Link>
                     <Link 
+                  to="/account/coupons" 
+                  className="flex items-center gap-3 px-3 py-3 rounded-md text-foreground hover:bg-secondary transition-colors text-sm"
+                  onClick={handleCloseMenu}
+                >
+                  <Ticket className="w-4 h-4 text-muted-foreground" />
+                 My Coupons
+                </Link>
+                    <Link 
                       to="/account/addresses" 
                       className="flex items-center gap-3 px-3 py-3 rounded-md text-foreground hover:bg-secondary transition-colors text-sm"
                       onClick={handleCloseMenu}
@@ -802,6 +810,7 @@ export function Header() {
                     </Link>
                   </>
                 )}
+                
                 <Link 
                   to="/account/wishlist" 
                   className="flex items-center gap-3 px-3 py-3 rounded-md text-foreground hover:bg-secondary transition-colors text-sm"
