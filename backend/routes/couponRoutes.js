@@ -12,7 +12,9 @@ import {
   deleteUserCoupon,
   getAllUserCoupons,
   validateCouponForCart,
-  getMyCoupons
+  getMyCoupons,
+  getUnnotifiedCoupons,
+  markCouponAsNotified
 } from '../controllers/couponController.js';
 import { authenticate, requireAdmin, requireCustomer } from '../middleware/auth.js';
 import { validateCouponData } from '../middleware/validation.js';
@@ -42,5 +44,7 @@ router.delete('/admin/:id', authenticate, requireAdmin, deleteCoupon);
 // ========== CUSTOMER ROUTES ==========
 router.post('/validate', authenticate, requireCustomer, validateCouponForCart);
 router.get('/my-coupons', authenticate, requireCustomer, getMyCoupons);
+router.get('/unnotified', authenticate, requireCustomer, getUnnotifiedCoupons);
+router.put('/:userCouponId/notify', authenticate, requireCustomer, markCouponAsNotified);
 
 export default router;

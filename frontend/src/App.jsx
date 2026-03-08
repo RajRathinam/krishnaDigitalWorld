@@ -49,6 +49,9 @@ import InstallationSupport from "@/components/contentPages/InstallationSupport";
 // Import SplashScreen
 import SplashScreen from "@/components/SplashScreen";
 
+// Import Coupon Notification
+import CouponNotificationPopup from "@/components/coupon/CouponNotificationPopup";
+
 const queryClient = new QueryClient();
 
 const App = () => {
@@ -172,6 +175,9 @@ const App = () => {
                   <Route path="*" element={<NotFound />} />
                 </Routes>
                 <MobileBottomNav />
+                
+                {/* Coupon Notification Popup */}
+                <CouponNotificationPopup />
 
                 {/* Only show signup dialog if user is not authenticated */}
                 <SignupDialog open={showSignup} onOpenChange={handleSignupOpenChange} />

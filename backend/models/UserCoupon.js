@@ -38,6 +38,10 @@ const UserCoupon = sequelize.define('UserCoupon', {
       model: 'orders',
       key: 'id'
     }
+  },
+  isNotified: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   }
 }, {
   tableName: 'user_coupons',

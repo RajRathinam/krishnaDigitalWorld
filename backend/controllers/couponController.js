@@ -810,3 +810,84 @@ export const getAllUserCoupons = async (req, res) => {
     });
   }
 };
+
+/**
+ * @desc    Get unnotified coupons for current user
+ * @route   GET /api/coupons/unnotified
+ * @access  Private (Customer)
+ */
+export const getUnnotifiedCoupons = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const unnotifiedCoupons = await UserCoupon.findAll({
+      where: {
+        userId,
+        isNotified: false,
+        isUsed: false
+      },
+      include: [
+        {
+          model: Coupon,
+          as: 'coupon',
+          where: {
+            isActive: true,
+            validUntil: { [Sequelize.Op.gte]: new Date() }
+          },
+          attributes: ['id', 'code', 'description', 'discountType', 'discountValue', 'minOrderAmount', 'maxDiscount', 'validFrom', 'validUntil']
+        }
+      ],
+      order: [['created_at', 'DESC']]
+    });
+
+    res.status(200).json({
+      success: true,
+      data: unnotifiedCoupons
+    });
+  } catch (error) {
+    console.error('Get unnotified coupons error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching unnotified coupons'
+    });
+  }
+};
+
+/**
+ * @desc    Mark coupon as notified for current user
+ * @route   PUT /api/coupons/:userCouponId/notify
+ * @access  Private (Customer)
+ */
+export const markCouponAsNotified = async (req, res) => {
+  try {
+    const { userCouponId } = req.params;
+    const userId = req.user.id;
+
+    const userCoupon = await UserCoupon.findOne({
+      where: {
+        id: userCouponId,
+        userId
+      }
+    });
+
+    if (!userCoupon) {
+      return res.status(404).json({
+        success: false,
+        message: 'Coupon not found'
+      });
+    }
+
+    await userCoupon.update({ isNotified: true });
+
+    res.status(200).json({
+      success: true,
+      message: 'Coupon marked as notified'
+    });
+  } catch (error) {
+    console.error('Mark coupon as notified error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while marking coupon as notified'
+    });
+  }
+};
