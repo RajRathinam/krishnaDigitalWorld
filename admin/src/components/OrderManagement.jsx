@@ -428,6 +428,16 @@ export const OrderManagement = () => {
         text: "text-red-700",
         border: "border-red-200",
       },
+      provided: {
+        bg: "bg-green-50",
+        text: "text-green-700",
+        border: "border-green-200",
+      },
+       notprovided: {
+        bg: "bg-red-50",
+        text: "text-red-700",
+        border: "border-red-200",
+      }
     };
     const style = styles[status] || {
       bg: "bg-gray-50",
@@ -743,6 +753,7 @@ export const OrderManagement = () => {
                   <TableHead className="w-[160px] text-xs font-semibold">Date</TableHead>
                   <TableHead className="w-[110px] text-xs font-semibold">Delivery</TableHead>
                   <TableHead className="w-[140px] text-xs font-semibold">Payment</TableHead>
+                  <TableHead className="w-[110px] text-xs font-semibold">Coupon</TableHead>
                   <TableHead className="w-[80px] text-xs font-semibold text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -817,7 +828,10 @@ export const OrderManagement = () => {
                           )}
                         </div>
                       </TableCell>
-
+   {/* coupon Status */}
+    <TableCell className="align-middle py-3">
+  {getStatusBadge(order.isCouponProvided ? "provided" : "notprovided")}
+</TableCell>
                       <TableCell className="text-right align-top">
                         <div className="flex items-center justify-end gap-2">
                           <DropdownMenu>
@@ -861,10 +875,12 @@ export const OrderManagement = () => {
                                   <XCircle className="h-4 w-4 mr-2" />
                                   Cancel Order
                                 </DropdownMenuItem>)}
-                              <DropdownMenuItem onClick={() => navigate(`/user-coupons?userId=${order.userId}`)}>
-                                <Ticket className="h-4 w-4 mr-2" />
-                                Provide Coupon
-                              </DropdownMenuItem>
+                              {!order.isCouponProvided && (
+                                <DropdownMenuItem onClick={() => navigate(`/user-coupons?userId=${order.userId}&orderId=${order.id}`)}>
+                                  <Ticket className="h-4 w-4 mr-2" />
+                                  Provide Coupon
+                                </DropdownMenuItem>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>

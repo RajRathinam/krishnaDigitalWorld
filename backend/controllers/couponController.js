@@ -527,7 +527,8 @@ export const assignCouponToUser = async (req, res) => {
       maxDiscount = null,
       validDays = 30,
       description = '',
-      isSingleUse = true
+      isSingleUse = true,
+      orderId = null
     } = req.body;
 
     // Validate input
@@ -545,6 +546,33 @@ export const assignCouponToUser = async (req, res) => {
         success: false,
         message: 'User not found'
       });
+    }
+
+    // If orderId is provided, validate and check if coupon already provided
+    if (orderId) {
+      const order = await Order.findByPk(orderId);
+      if (!order) {
+        return res.status(404).json({
+          success: false,
+          message: 'Order not found'
+        });
+      }
+
+      // Check if user owns this order
+      if (order.userId !== parseInt(userId)) {
+        return res.status(403).json({
+          success: false,
+          message: 'This order does not belong to the user'
+        });
+      }
+
+      // Check if coupon has already been provided for this order
+      if (order.isCouponProvided) {
+        return res.status(400).json({
+          success: false,
+          message: 'A coupon has already been provided for this order. Only one coupon per order is allowed.'
+        });
+      }
     }
 
     // Generate unique coupon code
@@ -592,6 +620,14 @@ export const assignCouponToUser = async (req, res) => {
       couponId: coupon.id,
       isUsed: false
     });
+
+    // If orderId is provided, mark the order with isCouponProvided = true
+    if (orderId) {
+      await Order.update(
+        { isCouponProvided: true },
+        { where: { id: orderId } }
+      );
+    }
 
     res.status(201).json({
       success: true,

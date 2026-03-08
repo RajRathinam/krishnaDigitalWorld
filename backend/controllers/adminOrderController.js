@@ -140,6 +140,7 @@ export const getAllOrders = async (req, res) => {
             finalAmount: order.finalAmount,
             trackingId: order.trackingId,
             taxAmount: order.taxAmount,
+            isCouponProvided: order.isCouponProvided,
             isCancelled: order.orderStatus === 'cancelled',
             isShipped: order.orderStatus === 'shipped' || order.orderStatus === 'delivered',
             createdAt: order.createdAt || order.dataValues?.created_at || order.created_at,

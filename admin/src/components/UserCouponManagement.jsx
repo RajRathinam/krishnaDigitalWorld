@@ -22,8 +22,9 @@ import {
 export const UserCouponManagement = () => {
   const [searchParams] = useSearchParams();
   const userIdFromParams = searchParams.get("userId");
+  const orderIdFromParams = searchParams.get("orderId");
   
-  console.log("UserCouponManagement mounted, userIdFromParams:", userIdFromParams);
+  console.log("UserCouponManagement mounted, userIdFromParams:", userIdFromParams, "orderId:", orderIdFromParams);
   
   const [userCoupons, setUserCoupons] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -173,6 +174,7 @@ export const UserCouponManagement = () => {
         {
           discountValue: parseFloat(discountValue),
           discountType,
+          orderId: orderIdFromParams ? parseInt(orderIdFromParams) : null
         }
       );
       

@@ -42,6 +42,12 @@ const Order = sequelize.define('Order', {
     type: DataTypes.ENUM('pending', 'paid', 'failed', 'refunded'),
     defaultValue: 'pending'
   },
+  isCouponProvided: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    field: 'is_coupon_provided',
+    comment: 'Track if admin has provided a coupon for this order (only one coupon per order)'
+  },
   orderStatus: {
     type: DataTypes.ENUM('pending', 'processing', 'shipped', 'delivered', 'cancelled'),
     defaultValue: 'pending'
