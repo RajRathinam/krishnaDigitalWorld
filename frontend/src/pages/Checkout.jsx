@@ -6,12 +6,11 @@ import {
   Check, MapPin, Truck, CreditCard, Smartphone, Banknote,
   Lock, Tv, PartyPopper, Plus, Home,
   Briefcase, MapPin as MapPinIcon, User as UserIcon,
-  ArrowLeft, AlertCircle, Loader2, Tag
+  ArrowLeft, AlertCircle, Loader2, Tag, ShoppingBag, ArrowRight, Package
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ScratchToReveal } from "@/components/ui/scratch-to-reveal";
 import { Confetti } from "@/components/ui/confetti";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -54,8 +53,6 @@ const STEPS = [
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Profile completeness helpers
-// Required: name, phone, primary address (street + city + pincode)
-// Email is intentionally optional
 // ─────────────────────────────────────────────────────────────────────────────
 const parseAddress = (addr) => {
   if (!addr) return null;
@@ -73,7 +70,6 @@ const isProfileComplete = (userData) => {
   return true;
 };
 
-// Returns human-readable list of exactly what's missing
 const getMissingFields = (userData) => {
   const missing = [];
   if (!userData) return ["Profile data unavailable — please sign in again"];
@@ -89,6 +85,165 @@ const getMissingFields = (userData) => {
   }
   return missing;
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Order Success Animation — matches SignupDialog's WelcomeSuccessStep
+// ─────────────────────────────────────────────────────────────────────────────
+
+function rand(min, max) {
+  return Math.random() * (max - min) + min;
+}
+
+function BurstParticle({ angle, distance, delay, size, isSquare, colorClass }) {
+  const rad = (angle * Math.PI) / 180;
+  const tx = Math.cos(rad) * distance;
+  const ty = Math.sin(rad) * distance;
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 0, y: 0, scale: 0, rotate: 0 }}
+      animate={{ opacity: [0, 1, 1, 0], x: tx, y: ty, scale: [0, 1.3, 1, 0], rotate: rand(-200, 200) }}
+      transition={{ duration: rand(0.9, 1.6), delay, ease: "easeOut" }}
+      className={colorClass}
+      style={{
+        position: "absolute", width: size, height: size,
+        borderRadius: isSquare ? 3 : "50%", pointerEvents: "none",
+        top: "50%", left: "50%", marginTop: -size / 2, marginLeft: -size / 2,
+      }}
+    />
+  );
+}
+
+function Streamer({ delay, x }) {
+  const colorClasses = ["bg-primary","bg-primary/60","bg-primary/40","bg-accent","bg-accent/70","bg-primary/20"];
+  const color = colorClasses[Math.floor(rand(0, colorClasses.length))];
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: "-8%", rotate: rand(-25, 25) }}
+      animate={{ opacity: [0, 1, 1, 0], y: "108%", rotate: rand(-200, 200), x: [0, rand(-18, 18), rand(-18, 18)] }}
+      transition={{ duration: rand(1.8, 3.0), delay, ease: "easeIn" }}
+      className={color}
+      style={{
+        position: "absolute", left: `${x}%`, top: 0,
+        width: rand(3, 7), height: rand(10, 24), borderRadius: 2, pointerEvents: "none",
+      }}
+    />
+  );
+}
+
+function OrbitRing({ radius, speed, delay, dotClass }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.2 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay, duration: 0.65, ease: "backOut" }}
+      style={{
+        position: "absolute", width: radius * 2, height: radius * 2, borderRadius: "50%",
+        border: "1px dashed hsl(var(--primary) / 0.2)",
+        top: "50%", left: "50%", transform: "translate(-50%, -50%)", pointerEvents: "none",
+      }}
+    >
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ repeat: Infinity, duration: speed, ease: "linear" }}
+        style={{ width: "100%", height: "100%", position: "relative" }}
+      >
+        <div
+          className={dotClass}
+          style={{
+            position: "absolute", top: 0, left: "50%",
+            transform: "translate(-50%, -50%)", width: 8, height: 8,
+            borderRadius: "50%", boxShadow: "0 0 3px currentColor",
+          }}
+        />
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function OrderSuccessCelebration({ orderData, onContinue, onViewOrders }) {
+  const particleColorClasses = ["bg-primary","bg-primary/70","bg-primary/40","bg-accent","bg-accent/60"];
+  const burstParticles = Array.from({ length: 34 }, (_, i) => ({
+    id: i, angle: (360 / 34) * i + rand(-6, 6), distance: rand(52, 120),
+    delay: rand(0, 0.38), size: rand(5, 13), isSquare: Math.random() > 0.6,
+    colorClass: particleColorClasses[i % particleColorClasses.length],
+  }));
+  const streamers = Array.from({ length: 20 }, (_, i) => ({ id: i, delay: rand(0, 1.1), x: rand(4, 96) }));
+
+  return (
+    <div className="relative flex flex-col items-center justify-center py-8 overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none" style={{
+        background: "radial-gradient(ellipse at 50% 25%, hsl(var(--primary) / 0.07) 0%, hsl(var(--primary) / 0.02) 50%, transparent 72%)",
+      }} />
+      {streamers.map((s) => <Streamer key={s.id} delay={s.delay} x={s.x} />)}
+      <OrbitRing radius={72}  speed={8}  delay={0.25} dotClass="bg-primary" />
+      <OrbitRing radius={100} speed={14} delay={0.45} dotClass="bg-primary/60" />
+      <OrbitRing radius={128} speed={20} delay={0.65} dotClass="bg-accent" />
+      <div style={{ position: "relative", marginBottom: 24, zIndex: 2 }}>
+        {burstParticles.map((p) => <BurstParticle key={p.id} {...p} />)}
+        <motion.div initial={{ scale: 0, rotate: -35 }} animate={{ scale: 1, rotate: 0 }}
+          transition={{ delay: 0.15, duration: 0.7, ease: "backOut" }}
+          className="bg-primary/10"
+          style={{ width: 84, height: 84, borderRadius: "50%", display: "flex", alignItems: "center",
+            justifyContent: "center", position: "relative", zIndex: 10,
+            boxShadow: "0 0 0 8px hsl(var(--primary) / 0.05), 0 0 0 16px hsl(var(--primary) / 0.02)" }}>
+          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
+            transition={{ delay: 0.35, type: "spring", stiffness: 220 }}>
+            <motion.div animate={{ rotate: [0, -18, 18, -10, 10, 0], scale: [1, 1.15, 1] }}
+              transition={{ delay: 0.75, duration: 0.9 }}>
+              <PartyPopper className="w-10 h-10 text-primary" />
+            </motion.div>
+          </motion.div>
+        </motion.div>
+      </div>
+      <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.46, duration: 0.4 }}
+        className="text-primary text-xs font-bold uppercase tracking-widest mb-2 relative z-10 flex items-center gap-2">
+        <Check className="w-3 h-3" /> Order Confirmed <Check className="w-3 h-3" />
+      </motion.p>
+      <motion.h2 initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.56, duration: 0.45 }}
+        className="text-2xl font-bold text-center relative z-10 mb-1" style={{ letterSpacing: -0.5 }}>
+        Order Placed{" "}
+        <motion.span initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.7, type: "spring" }} className="text-primary">
+          Successfully!
+        </motion.span>
+      </motion.h2>
+      <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+        transition={{ delay: 0.84, duration: 0.5 }}
+        className="text-muted-foreground text-center text-sm relative z-10 max-w-[260px] leading-relaxed mb-5">
+        Thank you! You'll receive a confirmation SMS or Phone Call shortly.
+      </motion.p>
+      {orderData?.id && (
+        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 1.0, duration: 0.4, ease: "backOut" }}
+          className="relative z-10 mb-5 flex items-center gap-2 bg-primary/8 border border-primary/20 rounded-full px-4 py-2">
+          <Package className="w-3.5 h-3.5 text-primary" />
+          <span className="text-xs text-muted-foreground">Order ID:</span>
+          <span className="text-xs font-bold text-primary font-mono">{orderData.orderNumber}</span>
+        </motion.div>
+      )}
+      <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.1, duration: 0.5, ease: "backOut" }}
+        className="relative z-10 flex gap-3 w-full max-w-xs">
+        <button onClick={onContinue}
+          className="flex-1 h-11 text-sm border border-border font-medium rounded-full hover:bg-muted transition-colors">
+          Continue Shopping
+        </button>
+        <Link
+          to={`/account/orders/${orderData.orderNumber}`}
+          className="flex-1 h-11 text-sm font-semibold bg-primary hover:bg-primary/90 text-primary-foreground rounded-full transition-colors flex items-center justify-center gap-2"
+        >
+          View Details
+          <motion.span animate={{ x: [0, 4, 0] }}
+            transition={{ repeat: Infinity, duration: 1.2, ease: "easeInOut" }} className="flex">
+            <ArrowRight className="w-4 h-4" />
+          </motion.span>
+        </Link>
+      </motion.div>
+    </div>
+  );
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Main component
@@ -128,10 +283,9 @@ export default function Checkout() {
   const [isPlacingOrder,   setIsPlacingOrder] = useState(false);
   const [orderPlaced,      setOrderPlaced]    = useState(false);
   const [placedOrderData,  setPlacedOrderData]= useState(null);
-  const [showScratch,      setShowScratch]    = useState(false);
   const [showConfetti,     setShowConfetti]   = useState(false);
 
-  // Profile modal — shown at order-click time when profile is incomplete
+  // Profile modal
   const [showProfileModal,     setShowProfileModal]     = useState(false);
   const [missingProfileFields, setMissingProfileFields] = useState([]);
 
@@ -207,7 +361,7 @@ export default function Checkout() {
     toast.success('Coupon removed');
   };
 
-  // ── Profile gate + address loader (single API call) ───────────────────────
+  // ── Profile gate + address loader ─────────────────────────────────────────
   const checkProfileAndLoadAddresses = async () => {
     setProfileChecking(true);
     try {
@@ -216,7 +370,6 @@ export default function Checkout() {
 
       const userData = res.data.data;
 
-      // Profile gate — redirect if incomplete
       if (!isProfileComplete(userData)) {
         setProfileIncomplete(true);
         setProfileChecking(false);
@@ -247,7 +400,6 @@ export default function Checkout() {
   const parseAndSetAddresses = (userData) => {
     const addresses = [];
 
-    // Primary address
     if (userData?.address) {
       let parsed = {};
       try {
@@ -269,7 +421,6 @@ export default function Checkout() {
       });
     }
 
-    // Additional addresses
     let additional = userData?.additionalAddresses || [];
     if (typeof additional === "string") {
       try { additional = JSON.parse(additional); } catch { additional = []; }
@@ -292,7 +443,6 @@ export default function Checkout() {
 
     setSavedAddressesList(addresses);
 
-    // Auto-select
     const def = addresses.find((a) => a.isDefault);
     setSelectedAddress((prev) => {
       if (prev && addresses.find((a) => a.id === prev)) return prev;
@@ -319,20 +469,17 @@ export default function Checkout() {
     }
   };
 
-  // ── Profile check at order-click time ────────────────────────────────────
-  // Re-fetches from API so stale state never causes a silent failure.
+  // ── Profile check at order-click time ─────────────────────────────────────
   const verifyProfileBeforeOrder = async () => {
     try {
       const res = await api.get("/auth/me");
       if (!res.data.success) return false;
       const userData = res.data.data;
       if (isProfileComplete(userData)) return true;
-      // Profile incomplete — compute missing fields and show modal
       setMissingProfileFields(getMissingFields(userData));
       setShowProfileModal(true);
       return false;
     } catch {
-      // Network / auth error — let the order attempt fail naturally
       return true;
     }
   };
@@ -342,7 +489,6 @@ export default function Checkout() {
     if (isPlacingOrder || !selectedAddressData) return;
     setIsPlacingOrder(true);
     try {
-      // Re-verify profile freshly before placing order
       const profileOk = await verifyProfileBeforeOrder();
       if (!profileOk) { setIsPlacingOrder(false); return; }
 
@@ -368,8 +514,7 @@ export default function Checkout() {
         window.dispatchEvent(new Event("refreshCart"));
         await fetchCart();
         setTimeout(() => setShowConfetti(true), 300);
-        setTimeout(() => toast.success("Order placed!", { description: "Scratch to reveal your reward!" }), 600);
-        setTimeout(() => setShowScratch(true), 1500);
+        setTimeout(() => toast.success("Order placed!", { description: "Thank you for your order!" }), 600);
       }
     } catch (err) {
       const status  = err?.response?.status;
@@ -387,7 +532,6 @@ export default function Checkout() {
     if (isPlacingOrder || !selectedAddressData) return;
     setIsPlacingOrder(true);
     try {
-      // Re-verify profile freshly before initiating payment
       const profileOk = await verifyProfileBeforeOrder();
       if (!profileOk) { setIsPlacingOrder(false); return; }
 
@@ -442,10 +586,6 @@ export default function Checkout() {
     }));
 
   const goToStep = (step) => setCurrentStep(step);
-
-  const handleScratchComplete = () => {
-    toast.success("🎉 You won 10% off on your next order!", { description: "Coupon code: LUCKY10" });
-  };
 
   // ── Step indicator ─────────────────────────────────────────────────────────
   const StepIndicator = () => (
@@ -569,7 +709,6 @@ export default function Checkout() {
         </div>
       ) : (
         <>
-          {/* Address list */}
           <div className="space-y-3">
             {savedAddressesList.map((addr) => (
               <label
@@ -605,7 +744,6 @@ export default function Checkout() {
             ))}
           </div>
 
-          {/* Add address button — hidden when 3 additional already saved */}
           {!isAddressLimitHit ? (
             <button
               onClick={() => {
@@ -638,7 +776,6 @@ export default function Checkout() {
         </>
       )}
 
-      {/* Add address modal */}
       {showAddressForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-card rounded-lg border border-border p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
@@ -708,13 +845,11 @@ export default function Checkout() {
   // ── Delivery Step ──────────────────────────────────────────────────────────
   const DeliveryStep = () => (
     <div className="space-y-4">
-      {/* Back button */}
       <button onClick={() => goToStep("address")}
         className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors -mb-1">
         <ArrowLeft className="w-4 h-4" /> Change Address
       </button>
 
-      {/* Selected address summary */}
       {selectedAddressData && (
         <div className="p-3 rounded-lg bg-muted/40 border border-border text-sm">
           <p className="font-medium text-foreground">{selectedAddressData.name}</p>
@@ -766,13 +901,11 @@ export default function Checkout() {
   // ── Payment Step ───────────────────────────────────────────────────────────
   const PaymentStep = () => (
     <div className="space-y-4">
-      {/* Back button */}
       <button onClick={() => goToStep("delivery")}
         className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors -mb-1">
         <ArrowLeft className="w-4 h-4" /> Change Delivery Option
       </button>
 
-      {/* Delivery summary */}
       <div className="p-3 rounded-lg bg-muted/40 border border-border text-sm flex items-center justify-between">
         <span className="text-muted-foreground">
           {deliveryOption === "express" ? "Express Delivery" : "Standard Delivery"}
@@ -785,7 +918,6 @@ export default function Checkout() {
       <h2 className="text-lg font-bold text-foreground">Payment Method</h2>
 
       <div className="space-y-2">
-        {/* COD */}
         <label className={`block p-4 rounded-lg border-2 cursor-pointer transition-colors ${
           paymentMethod === "cod" ? "border-accent bg-accent/5" : "border-border hover:border-accent/50"}`}>
           <div className="flex items-center gap-3">
@@ -799,7 +931,6 @@ export default function Checkout() {
           </div>
         </label>
 
-        {/* PhonePe / UPI */}
         <label className={`block p-4 rounded-lg border-2 cursor-pointer transition-colors ${
           paymentMethod === "upi" ? "border-accent bg-accent/5" : "border-border hover:border-accent/50"}`}>
           <div className="flex items-center gap-3">
@@ -807,10 +938,10 @@ export default function Checkout() {
               onChange={() => setPaymentMethod("upi")} className="w-4 h-4 text-accent focus:ring-accent" />
             <Smartphone className="w-5 h-5 text-muted-foreground" />
             <div className="flex-1">
-              <span className="font-medium text-foreground">UPI / Cards / Net Banking</span>
-              <p className="text-xs text-muted-foreground">Pay via PhonePe — UPI, Debit/Credit Card, Net Banking</p>
+              <span className="font-medium text-foreground">Pay Online</span>
+              <p className="text-xs text-muted-foreground">UPI, Cards & Net Banking via PhonePe</p>
             </div>
-         </div>
+          </div>
         </label>
       </div>
 
@@ -841,42 +972,18 @@ export default function Checkout() {
             )}
           </motion.button>
         ) : (
-          <motion.div key="order-success" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}
-            className="text-center space-y-4">
-            <div className="bg-krishna-green/10 p-6 rounded-lg">
-              <div className="flex items-center justify-center gap-3 mb-4">
-                <Check className="w-12 h-12 text-krishna-green" />
-                <PartyPopper className="w-12 h-12 text-krishna-yellow" />
-              </div>
-              <h3 className="text-xl font-bold text-foreground mb-2">Order Placed Successfully!</h3>
-              <p className="text-muted-foreground mb-4">Thank you! You'll receive a confirmation SMS shortly.</p>
-              {showScratch && (
-                <div className="mb-4 relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-yellow-300 via-yellow-500 to-yellow-300 opacity-20 blur-xl animate-pulse" />
-                  <div className="relative bg-card border-2 border-dashed border-accent/50 rounded-xl p-4 shadow-lg">
-                    <ScratchToReveal width={250} height={150} minScratchPercentage={40} onComplete={handleScratchComplete}
-                      className="mx-auto rounded-lg overflow-hidden" gradientColors={["#FFD700", "#FFA500", "#FFD700"]}>
-                      <div className="flex flex-col items-center justify-center w-full h-full bg-gradient-to-br from-indigo-900 to-purple-900 text-white p-4 text-center">
-                        <h4 className="text-2xl font-black text-yellow-400 mb-1">10% OFF</h4>
-                        <p className="text-sm font-medium opacity-90">Coupon Code:</p>
-                        <div className="bg-white/20 px-3 py-1 rounded mt-1 font-mono font-bold tracking-widest border border-white/30">LUCKY10</div>
-                      </div>
-                    </ScratchToReveal>
-                  </div>
-                  <p className="text-xs font-medium text-accent mt-3 animate-bounce">✨ Scratch to reveal your reward! ✨</p>
-                </div>
-              )}
-            </div>
-            <div className="flex gap-3">
-              <button onClick={() => navigate("/")}
-                className="flex-1 py-2 bg-accent text-sm text-primary font-medium rounded-lg hover:bg-krishna-orange-hover transition-colors">
-                Continue Shopping
-              </button>
-              <button onClick={() => navigate("/account/orders")}
-                className="flex-1 py-2 text-sm border border-border font-medium rounded-lg hover:bg-muted transition-colors">
-                View Orders
-              </button>
-            </div>
+          // ── Order success — animated, theme-matched ──────────────────────
+          <motion.div
+            key="order-success"
+            initial={{ opacity: 0, scale: 0.94 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.35, ease: "easeOut" }}
+          >
+            <OrderSuccessCelebration
+              orderData={placedOrderData}
+              onContinue={() => navigate("/")}
+              onViewOrders={() => navigate("/account/orders")}
+            />
           </motion.div>
         )}
       </AnimatePresence>
@@ -906,7 +1013,6 @@ export default function Checkout() {
               className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Header */}
               <div className="bg-amber-500/8 border-b border-amber-500/20 px-6 pt-6 pb-5 text-center">
                 <div className="w-14 h-14 rounded-full bg-amber-500/10 border border-amber-500/25 flex items-center justify-center mx-auto mb-3">
                   <AlertCircle className="w-7 h-7 text-amber-500" />
@@ -917,7 +1023,6 @@ export default function Checkout() {
                 </p>
               </div>
 
-              {/* Missing fields list */}
               <div className="px-6 py-4">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
                   Missing information
@@ -939,7 +1044,6 @@ export default function Checkout() {
                 </p>
               </div>
 
-              {/* Actions */}
               <div className="px-6 pb-6 flex flex-col gap-2">
                 <button
                   onClick={() => navigate("/account/profile")}
@@ -958,6 +1062,7 @@ export default function Checkout() {
           </motion.div>
         )}
       </AnimatePresence>
+
       <div className="container py-4 md:py-6 px-3 md:px-4 pb-20">
         <h1 className="text-xl md:text-2xl font-bold text-foreground mb-4 text-center">Checkout</h1>
 
@@ -991,25 +1096,25 @@ export default function Checkout() {
               {/* Coupon Section */}
               <div className="mb-4 pb-4 border-b border-border">
                 <div className="flex gap-2">
-                  <input 
-                    type="text" 
-                    value={couponCode} 
-                    onChange={(e) => setCouponCode(e.target.value)} 
-                    placeholder="Enter coupon code" 
-                    className="flex-1 px-3 py-2 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-accent bg-background" 
-                    disabled={!!appliedCoupon || applyingCoupon} 
+                  <input
+                    type="text"
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value)}
+                    placeholder="Enter coupon code"
+                    className="flex-1 px-3 py-2 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-accent bg-background"
+                    disabled={!!appliedCoupon || applyingCoupon}
                   />
                   {appliedCoupon ? (
-                    <button 
-                      onClick={removeCoupon} 
+                    <button
+                      onClick={removeCoupon}
                       className="px-4 py-2 text-sm font-medium text-destructive hover:underline whitespace-nowrap"
                     >
                       Remove
                     </button>
                   ) : (
-                    <button 
-                      onClick={applyCoupon} 
-                      disabled={!couponCode.trim() || applyingCoupon} 
+                    <button
+                      onClick={applyCoupon}
+                      disabled={!couponCode.trim() || applyingCoupon}
                       className="px-4 py-2 text-sm font-medium text-accent hover:underline disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 whitespace-nowrap"
                     >
                       {applyingCoupon && <Loader2 className="w-3 h-3 animate-spin" />}
@@ -1049,6 +1154,7 @@ export default function Checkout() {
                   );
                 })}
               </div>
+
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Subtotal</span>
@@ -1067,6 +1173,7 @@ export default function Checkout() {
                   </span>
                 </div>
               </div>
+
               <div className="border-t border-border mt-4 pt-4">
                 <div className="flex justify-between text-lg font-bold">
                   <span>Total</span>
@@ -1078,6 +1185,7 @@ export default function Checkout() {
                   </p>
                 )}
               </div>
+
               <Link to="/cart" className="block text-center text-sm text-krishna-blue-link mt-4 hover:underline">
                 ← Back to Cart
               </Link>

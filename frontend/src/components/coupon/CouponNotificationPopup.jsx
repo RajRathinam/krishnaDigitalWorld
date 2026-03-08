@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Gift, Sparkles, Tag, ArrowRight, X, Check, Ticket } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { useAuth } from "../../contexts/AuthContext";
 import api from "../../services/api";
 
@@ -501,6 +502,11 @@ const CouponNotificationPopup = () => {
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
+        {/* Accessible title for screen readers */}
+        <VisuallyHidden>
+          <DialogTitle>New Coupons Available</DialogTitle>
+        </VisuallyHidden>
+
         {/* Close button */}
         <button
           onClick={handleClose}
