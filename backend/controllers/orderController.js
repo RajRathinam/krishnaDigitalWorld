@@ -234,14 +234,23 @@ export const createOrder = async (req, res) => {
         discountAmount = discount;
         couponId = coupon.id;
 
-        // Mark coupon as used
-        await UserCoupon.create({
-          userId: req.user.id,
-          couponId: coupon.id,
-          isUsed: true,
-          usedAt: new Date(),
-          orderId: null // Will be updated after order creation
-        }, { transaction });
+        // Mark coupon as used — update existing assigned userCoupon if present, otherwise create
+        const existingUserCoupon = await UserCoupon.findOne({
+          where: { userId: req.user.id, couponId: coupon.id },
+          transaction
+        });
+
+        if (existingUserCoupon) {
+          await existingUserCoupon.update({ isUsed: true, usedAt: new Date(), orderId: null }, { transaction });
+        } else {
+          await UserCoupon.create({
+            userId: req.user.id,
+            couponId: coupon.id,
+            isUsed: true,
+            usedAt: new Date(),
+            orderId: null // Will be updated after order creation
+          }, { transaction });
+        }
 
         // Increment coupon usage count
         await coupon.increment('usedCount', { transaction });
@@ -319,7 +328,7 @@ export const createOrder = async (req, res) => {
     // Update coupon with order ID if used
     if (couponId) {
       await UserCoupon.update(
-        { orderId: order.id },
+        { orderId: order.id, isUsed: true, usedAt: new Date() },
         {
           where: {
             userId: req.user.id,

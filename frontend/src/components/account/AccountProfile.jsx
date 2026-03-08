@@ -91,6 +91,9 @@ export default function AccountProfile() {
     }
   }, [user]);
 
+  // DOB editable only if user has not set it yet
+  const dobEditable = !(user && user.dateOfBirth);
+
   const handleSaveProfile = async () => {
     if (!user) return;
     
@@ -101,7 +104,7 @@ export default function AccountProfile() {
         email: email || null
       };
       
-      if (dateOfBirth) updateData.dateOfBirth = dateOfBirth;
+      if (dateOfBirth && dobEditable) updateData.dateOfBirth = dateOfBirth;
       
       // Update primary address
       if (street.trim() || city.trim() || pincode.trim()) {
@@ -193,9 +196,15 @@ export default function AccountProfile() {
               type="date"
               value={dateOfBirth}
               onChange={(e) => setDateOfBirth(e.target.value)}
-              className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
+              className={`w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent ${!dobEditable ? 'bg-muted/50' : ''}`}
+              readOnly={!dobEditable}
+              disabled={!dobEditable}
             />
-            <p className="text-xs text-muted-foreground mt-1">Get special birthday offers!</p>
+            {dobEditable ? (
+              <p className="text-xs text-muted-foreground mt-1">Get special birthday offers!</p>
+            ) : (
+              <p className="text-xs text-muted-foreground mt-1">Date of birth is set and cannot be changed.</p>
+            )}
           </div>
         </div>
 

@@ -84,26 +84,26 @@ function CouponCard({ coupon, index, onCopy }) {
         isExpired
           ? "from-muted/30 to-muted/10 border-border/40 opacity-60"
           : isUsed
-          ? "from-blue-500/5 to-blue-500/5 border-blue-200/30"
-          : "from-orange-500/5 to-orange-500/5 border-orange/30"
+          ? "from-orange-500/5 to-orange-500/5 border-orange/30"
+          : "from-blue-500/5 to-blue-500/5 border-blue-200/30"
       }`}
       style={{
         boxShadow: isExpired
           ? "none"
           : isUsed
-          ? "0 2px 12px hsl(209 100% 50% / 0.08)"
-          : "0 2px 12px hsl(24 100% 57% / 0.08)",
+          ? "0 2px 12px hsl(24 100% 57% / 0.08)"
+          : "0 2px 12px hsl(209 100% 50% / 0.08)",
       }}
     >
       {/* Status badge */}
       {isUsed && (
-        <div className="absolute top-3 right-3 bg-blue-500/90 text-white px-2.5 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
+        <div className="absolute top-3 md:mt-0 mt-10 right-3 bg-orange-500/90 text-white px-2.5 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
           <Check className="w-3 h-3" />
           Used
         </div>
       )}
       {isExpired && (
-        <div className="absolute top-3 right-3 bg-muted-foreground/90 text-background px-2.5 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
+        <div className="absolute top-3 md:mt-0 mt-10 right-3 bg-muted-foreground/90 text-background px-2.5 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
           <AlertCircle className="w-3 h-3" />
           Expired
         </div>
@@ -113,9 +113,9 @@ function CouponCard({ coupon, index, onCopy }) {
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3 flex-1">
-            <div className="w-12 h-12 bg-orange-500/10 rounded-xl flex items-center justify-center border border-orange/20">
-              <Ticket className="w-6 h-6 text-orange-600" />
-            </div>
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center border ${isUsed ? 'bg-orange-500/10 border-orange/20' : 'bg-blue-500/10 border-blue-200/20'}`}>
+                <Ticket className={`w-6 h-6 ${isUsed ? 'text-orange-600' : 'text-blue-600'}`} />
+              </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-foreground">
                 {couponData.description || "Discount Coupon"}
@@ -173,7 +173,7 @@ function CouponCard({ coupon, index, onCopy }) {
 
         {/* Status message */}
         {isUsed && (
-          <p className="text-xs text-center text-blue-600 bg-blue-500/10 rounded-lg py-1.5 px-2">
+          <p className="text-xs text-center text-orange-600 bg-orange-500/10 rounded-lg py-1.5 px-2">
             This coupon has been used on {formatDate(userCoupon.usedAt)}
           </p>
         )}
@@ -183,7 +183,7 @@ function CouponCard({ coupon, index, onCopy }) {
           </p>
         )}
         {!isExpired && !isUsed && (
-          <p className="text-xs text-center text-green-600 bg-green-500/10 rounded-lg py-1.5 px-2">
+          <p className="text-xs text-center text-blue-600 bg-blue-500/10 rounded-lg py-1.5 px-2">
             Ready to use
           </p>
         )}
@@ -263,7 +263,7 @@ export function AccountCoupons() {
   return (
     <div className="w-full">
       {/* Tabs */}
-      <div className="flex gap-2 mb-6 border-b border-border">
+      <div className="flex gap-2 mb-6">
         <button
           onClick={() => setActiveTab("available")}
           className={`px-4 py-3 font-medium text-sm transition-colors border-b-2 -mb-px ${

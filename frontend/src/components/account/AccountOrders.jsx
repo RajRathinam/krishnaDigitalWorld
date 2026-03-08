@@ -166,7 +166,7 @@ function OrderCard({ order, index }) {
               </p>
             </div>
             <p className="text-sm font-semibold text-foreground flex-shrink-0">
-              {formatPrice(item.price || 0)}
+              {formatPrice(order.finalAmount || order.totalPrice || 0)}
             </p>
           </div>
         ))}
