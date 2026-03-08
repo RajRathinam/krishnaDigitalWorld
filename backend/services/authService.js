@@ -16,6 +16,105 @@ const isTestUser = (phone) => {
 };
 
 /**
+ * Check if user can send OTP (max 3 times per day)
+ * Returns { canSend: boolean, remainingAttempts: number, message: string }
+ */
+export const checkOTPLimit = async (phone) => {
+  try {
+    const user = await User.findOne({
+      where: { phone },
+      attributes: ['id', 'otpSendCount', 'otpLastResetDate']
+    });
+
+    if (!user) {
+      // For new registrations, allow OTP sending
+      return { canSend: true, remainingAttempts: 3, message: 'OK' };
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Handle otpLastResetDate - it could be null, a string, or a Date object
+    let lastResetDate = null;
+    if (user.otpLastResetDate) {
+      if (typeof user.otpLastResetDate === 'string') {
+        lastResetDate = user.otpLastResetDate;
+      } else if (user.otpLastResetDate instanceof Date) {
+        lastResetDate = user.otpLastResetDate.toISOString().split('T')[0];
+      }
+    }
+
+    // If it's a new day or never set, reset the count
+    if (lastResetDate !== today) {
+      await user.update({
+        otpSendCount: 0,
+        otpLastResetDate: today
+      });
+      return { canSend: true, remainingAttempts: 3, message: 'OK' };
+    }
+
+    // Check if user has reached the limit (3 times per day)
+    const MAX_OTP_ATTEMPTS = 3;
+    if (user.otpSendCount >= MAX_OTP_ATTEMPTS) {
+      return {
+        canSend: false,
+        remainingAttempts: 0,
+        message: `OTP limit reached. You can send OTP again tomorrow.`
+      };
+    }
+
+    return {
+      canSend: true,
+      remainingAttempts: MAX_OTP_ATTEMPTS - user.otpSendCount,
+      message: 'OK'
+    };
+  } catch (error) {
+    console.error('Error checking OTP limit:', error);
+    throw error;
+  }
+};
+
+/**
+ * Increment OTP send count for user
+ */
+export const incrementOTPSendCount = async (phone) => {
+  try {
+    const user = await User.findOne({
+      where: { phone }
+    });
+
+    if (!user) return;
+
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Handle otpLastResetDate - it could be null, a string, or a Date object
+    let lastResetDate = null;
+    if (user.otpLastResetDate) {
+      if (typeof user.otpLastResetDate === 'string') {
+        lastResetDate = user.otpLastResetDate;
+      } else if (user.otpLastResetDate instanceof Date) {
+        lastResetDate = user.otpLastResetDate.toISOString().split('T')[0];
+      }
+    }
+
+    if (lastResetDate !== today) {
+      // New day, reset count to 1
+      await user.update({
+        otpSendCount: 1,
+        otpLastResetDate: today
+      });
+    } else {
+      // Same day, increment count
+      await user.update({
+        otpSendCount: user.otpSendCount + 1
+      });
+    }
+  } catch (error) {
+    console.error('Error incrementing OTP send count:', error);
+    throw error;
+  }
+};
+
+/**
  * Generate a unique coupon code with 6 characters (mix of uppercase and lowercase)
  */
 const generateUniqueCouponCode = () => {
@@ -150,15 +249,28 @@ export const registerUser = async (userData) => {
       };
     }
 
+    // Check OTP limit (max 3 times per day)
+    const otpLimitCheck = await checkOTPLimit(userData.phone);
+    if (!otpLimitCheck.canSend) {
+      return {
+        success: false,
+        message: otpLimitCheck.message
+      };
+    }
+
     // Generate OTP for verification (for real users)
     const otpResult = await createOTP(userData.phone, 'register');
+
+    // Increment OTP send count
+    await incrementOTPSendCount(userData.phone);
 
     return {
       success: true,
       message: 'Registration successful. OTP sent for verification.',
       userId: user.id,
       phone: user.phone,
-      slug: user.slug
+      slug: user.slug,
+      remainingAttempts: otpLimitCheck.remainingAttempts - 1
     };
   } catch (error) {
     console.error('Error registering user:', error);
@@ -300,13 +412,26 @@ export const loginUser = async (loginData) => {
       };
     }
 
+    // Check OTP limit (max 3 times per day)
+    const otpLimitCheck = await checkOTPLimit(loginData.phone);
+    if (!otpLimitCheck.canSend) {
+      return {
+        success: false,
+        message: otpLimitCheck.message
+      };
+    }
+
     // Generate OTP for login verification (for real users)
     const otpResult = await createOTP(loginData.phone, 'login');
+
+    // Increment OTP send count
+    await incrementOTPSendCount(loginData.phone);
 
     return {
       success: true,
       message: 'OTP sent for login verification',
-      phone: user.phone
+      phone: user.phone,
+      remainingAttempts: otpLimitCheck.remainingAttempts - 1
     };
   } catch (error) {
     console.error('Error in login:', error);

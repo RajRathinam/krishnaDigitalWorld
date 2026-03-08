@@ -10,7 +10,9 @@ import {
   addAdditionalAddress,
   updateAdditionalAddress,
   deleteAdditionalAddress,
-  setDefaultAddress
+  setDefaultAddress,
+  checkOTPLimit,
+  incrementOTPSendCount
 } from '../services/authService.js';
 import { resendOTP } from '../services/otpService.js';
 import { setTokenCookie, clearTokenCookie } from '../utils/jwt.js';
@@ -157,11 +159,24 @@ export const resendOTPController = async (req, res) => {
   try {
     const { phone, purpose } = req.body;
 
+    // Check OTP limit (max 3 times per day)
+    const otpLimitCheck = await checkOTPLimit(phone);
+    if (!otpLimitCheck.canSend) {
+      return res.status(429).json({
+        success: false,
+        message: otpLimitCheck.message,
+        remainingAttempts: otpLimitCheck.remainingAttempts
+      });
+    }
+
     const result = await resendOTP(phone, purpose);
 
     if (!result.success) {
       return res.status(400).json(result);
     }
+
+    // Increment OTP send count
+    await incrementOTPSendCount(phone);
 
     res.status(200).json({
       success: true,
@@ -169,7 +184,8 @@ export const resendOTPController = async (req, res) => {
       data: {
         phone,
         purpose
-      }
+      },
+      remainingAttempts: otpLimitCheck.remainingAttempts - 1
     });
   } catch (error) {
     console.error('Resend OTP error:', error);
