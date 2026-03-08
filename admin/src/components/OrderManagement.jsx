@@ -50,6 +50,8 @@ export const OrderManagement = () => {
     delivered: 0,
     cancelled: 0,
     revenue: 0,
+    monthlyRevenue: 0,
+    weeklyRevenue: 0,
   });
   const { toast } = useToast();
 
@@ -87,6 +89,25 @@ export const OrderManagement = () => {
         // Use server-computed revenue & status counts (covers the full filter, not just this page)
         const serverStatusCounts = response.data.data.statusCounts || {};
         const serverRevenue = response.data.data.totalRevenue ?? 0;
+        
+        // Calculate monthly and weekly revenue from orders (paid only)
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - now.getDay());
+        startOfWeek.setHours(0, 0, 0, 0);
+        
+        let monthlyRev = 0;
+        let weeklyRev = 0;
+        ordersData.forEach(order => {
+          if (order.paymentStatus === 'paid') {
+            const amount = typeof order.finalAmount === 'string' ? parseFloat(order.finalAmount) : (order.finalAmount || 0);
+            const orderDate = new Date(order.createdAt || order.created_at);
+            if (orderDate >= startOfMonth) monthlyRev += amount;
+            if (orderDate >= startOfWeek) weeklyRev += amount;
+          }
+        });
+        
         setStats({
           total: paginationData.total,
           pending: serverStatusCounts.pending || 0,
@@ -95,6 +116,8 @@ export const OrderManagement = () => {
           delivered: serverStatusCounts.delivered || 0,
           cancelled: serverStatusCounts.cancelled || 0,
           revenue: serverRevenue,
+          monthlyRevenue: monthlyRev,
+          weeklyRevenue: weeklyRev,
         });
       }
       else {
@@ -175,6 +198,8 @@ export const OrderManagement = () => {
         );
         setOrders(updatedOrders);
         toast({ title: "Success", description: `Payment marked as ${newPaymentStatus}` });
+        // Refetch stats to update revenue calculations
+        await fetchOrders(pagination.page, pageSize);
       } else {
         throw new Error(response.data.message || "Failed to update payment status");
       }
@@ -553,10 +578,10 @@ export const OrderManagement = () => {
       </div>
     </div>
 
-    {/* Stats Cards */}
-    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+    {/* Stats Cards - 2 rows x 4 columns */}
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
       {loading ? (
-        Array.from({ length: 6 }).map((_, i) => (
+        Array.from({ length: 8 }).map((_, i) => (
           <Card key={i}>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
@@ -571,12 +596,16 @@ export const OrderManagement = () => {
         ))
       ) : (
         [
+          // Row 1: Revenue metrics
+          { label: "Total Revenue", value: formatCurrency(stats.revenue), icon: CreditCard, color: "text-green-600", bg: "bg-green-100" },
+          { label: "Monthly Revenue", value: formatCurrency(stats.monthlyRevenue), icon: CreditCard, color: "text-blue-600", bg: "bg-blue-100" },
+          { label: "Weekly Revenue", value: formatCurrency(stats.weeklyRevenue), icon: CreditCard, color: "text-purple-600", bg: "bg-purple-100" },
           { label: "Total Orders", value: pagination.total, icon: Package, color: "text-primary", bg: "bg-primary/10" },
+          // Row 2: Order status metrics
           { label: "Pending", value: stats.pending, icon: Clock, color: "text-yellow-600", bg: "bg-yellow-100" },
-          { label: "Processing", value: stats.processing, icon: RefreshCw, color: "text-blue-600", bg: "bg-blue-100" },
-          { label: "Shipped", value: stats.shipped, icon: Truck, color: "text-purple-600", bg: "bg-purple-100" },
-          { label: "Delivered", value: stats.delivered, icon: CheckCircle, color: "text-green-600", bg: "bg-green-100" },
-          { label: "Revenue", value: formatCurrency(stats.revenue), icon: CreditCard, color: "text-emerald-600", bg: "bg-emerald-100" },
+          { label: "Processing", value: stats.processing, icon: RefreshCw, color: "text-indigo-600", bg: "bg-indigo-100" },
+          { label: "Shipped", value: stats.shipped, icon: Truck, color: "text-orange-600", bg: "bg-orange-100" },
+          { label: "Delivered", value: stats.delivered, icon: CheckCircle, color: "text-emerald-600", bg: "bg-emerald-100" },
         ].map((stat, index) => (
           <Card key={index}>
             <CardContent className="p-4">
@@ -586,7 +615,7 @@ export const OrderManagement = () => {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">{stat.label}</p>
-                  <p className="text-xl font-bold">{stat.value}</p>
+                  <p className="text-sm font-bold">{stat.value}</p>
                 </div>
               </div>
             </CardContent>
@@ -602,8 +631,8 @@ export const OrderManagement = () => {
         <div className="flex flex-wrap items-center gap-2">
           {[
             { key: "all", label: "All Orders" },
-            { key: "cod", label: "💵 COD" },
-            { key: "online", label: "📱 Online (UPI / Card)" },
+            { key: "cod", label: "COD" },
+            { key: "online", label: "Online" },
           ].map((tab) => (
             <button
               key={tab.key}
@@ -811,17 +840,21 @@ export const OrderManagement = () => {
                                 <RefreshCw className="h-4 w-4 mr-2" />
                                 Update Delivery Status
                               </DropdownMenuItem>
-                              {/* Payment toggle – available for all orders */}
-                              {order.paymentStatus !== "paid" ? (
-                                <DropdownMenuItem onClick={() => updateCodPaymentStatus(order.id, "paid")} className="text-green-600 focus:text-green-700">
-                                  <CheckCircle className="h-4 w-4 mr-2" />
-                                  Mark Payment as Paid
-                                </DropdownMenuItem>
-                              ) : (
-                                <DropdownMenuItem onClick={() => updateCodPaymentStatus(order.id, "pending")} className="text-yellow-600 focus:text-yellow-700">
-                                  <Clock className="h-4 w-4 mr-2" />
-                                  Mark Payment as Unpaid
-                                </DropdownMenuItem>
+                              {/* Payment toggle – only for COD orders */}
+                              {order.paymentMethod === 'cod' && (
+                                <>
+                                  {order.paymentStatus !== "paid" ? (
+                                    <DropdownMenuItem onClick={() => updateCodPaymentStatus(order.id, "paid")} className="text-green-600 focus:text-green-700">
+                                      <CheckCircle className="h-4 w-4 mr-2" />
+                                      Mark Payment as Paid
+                                    </DropdownMenuItem>
+                                  ) : (
+                                    <DropdownMenuItem onClick={() => updateCodPaymentStatus(order.id, "pending")} className="text-yellow-600 focus:text-yellow-700">
+                                      <Clock className="h-4 w-4 mr-2" />
+                                      Mark Payment as Unpaid
+                                    </DropdownMenuItem>
+                                  )}
+                                </>
                               )}
                               {order.orderStatus !== "cancelled" &&
                                 order.orderStatus !== "delivered" && (<DropdownMenuItem onClick={() => handleCancelOrder(order.id)} className="text-destructive focus:text-destructive">
@@ -933,13 +966,13 @@ export const OrderManagement = () => {
                       {selectedOrder.merchantOrderId && (
                         <div>
                           <p className="text-xs text-muted-foreground">Merchant Order ID</p>
-                          <code className="text-[10px] bg-muted px-1 rounded truncate block">{selectedOrder.merchantOrderId}</code>
+                          <code className="text-[10px] bg-muted px-1 rounded truncate py-1">{selectedOrder.merchantOrderId}</code>
                         </div>
                       )}
                       {selectedOrder.phonePeTransactionId && (
                         <div>
                           <p className="text-xs text-muted-foreground">PhonePe Txn ID</p>
-                          <code className="text-[10px] bg-muted px-1 rounded truncate block">{selectedOrder.phonePeTransactionId}</code>
+                          <code className="text-[10px] bg-muted px-1 rounded truncate py-1">{selectedOrder.phonePeTransactionId}</code>
                         </div>
                       )}
                     </div>

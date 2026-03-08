@@ -92,8 +92,9 @@ export const getAllOrders = async (req, res) => {
       ]
     });
 
-    // Compute total revenue for the FULL filtered result (not just the current page)
-    const totalRevenue = await Order.sum('finalAmount', { where }) || 0;
+    // Compute total revenue for the FULL filtered result (only PAID orders)
+    const revenueWhere = { ...where, paymentStatus: 'paid' };
+    const totalRevenue = await Order.sum('finalAmount', { where: revenueWhere }) || 0;
 
     // Compute per-status counts for the full filtered set
     const statusCountRows = await Order.findAll({
@@ -422,6 +423,14 @@ export const updatePaymentStatus = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'Order not found'
+      });
+    }
+
+    // Only allow payment status updates for COD orders
+    if (order.paymentMethod !== 'cod') {
+      return res.status(403).json({
+        success: false,
+        message: 'Payment status can only be manually updated for COD orders. Online payments are auto-managed by the payment gateway.'
       });
     }
 

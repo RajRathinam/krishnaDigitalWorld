@@ -362,11 +362,11 @@ export default function Cart() {
                 <div key={`${item.productId}-${item.colorName || 'null'}-${index}`} className="bg-card rounded-lg border border-border p-3 md:p-4">
                   <div className="flex gap-3 md:gap-4">
                     {/* Image */}
-                    <div className="w-20 h-20 md:w-28 md:h-28 bg-muted rounded-lg flex items-center justify-center shrink-0 overflow-hidden">
+                    <div className="w-20 h-20 md:w-28 md:h-28 bg-white p-1 border border-border rounded-lg flex items-center justify-center shrink-0 overflow-hidden">
                       <img 
                         src={imageUrl} 
                         alt={itemName} 
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain"
                         onError={(e) => {
                           e.currentTarget.src = '/placeholder.svg';
                           e.currentTarget.className = 'w-10 h-10 object-contain';

@@ -1,5 +1,5 @@
 "use client";
-import { Users, Package, ShoppingCart, Gift, TrendingUp, TrendingDown, DollarSign, Eye, ArrowRight, Calendar, Cake } from "lucide-react";
+import { Users, Package, ShoppingCart, Gift, TrendingUp, TrendingDown,IndianRupee , Eye, ArrowRight, Calendar, Cake } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -173,10 +173,18 @@ export const AdminOverview = () => {
     {
       title: "Total Revenue",
       value: formatCurrency(stats.counts.totalRevenue || 0),
-      change: `+${calculateMonthlyGrowth()}%`,
+      change: `Monthly: ${formatCurrency(stats.counts.monthlyRevenue || 0)}`,
       trend: "up",
-      icon: DollarSign,
+      icon: IndianRupee,
       color: "text-green-600",
+    },
+    {
+      title: "Total Products",
+      value: stats.counts.totalProducts.toLocaleString(),
+      change: "Active products",
+      trend: "up",
+      icon: Package,
+      color: "text-blue-600",
     },
     {
       title: "Total Orders",
@@ -184,7 +192,7 @@ export const AdminOverview = () => {
       change: `+${stats.counts.newOrdersThisMonth || 0} this month`,
       trend: "up",
       icon: ShoppingCart,
-      color: "text-blue-600",
+      color: "text-purple-600",
     },
     {
       title: "Total Customers",
@@ -192,14 +200,6 @@ export const AdminOverview = () => {
       change: `+${stats.counts.newUsersThisMonth || 0} this month`,
       trend: "up",
       icon: Users,
-      color: "text-purple-600",
-    },
-    {
-      title: "Active Products",
-      value: stats.counts.totalProducts.toLocaleString(),
-      change: "Active",
-      trend: "up",
-      icon: Package,
       color: "text-orange-600",
     },
   ];

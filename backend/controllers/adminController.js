@@ -160,25 +160,43 @@ export const getDashboardStats = async (req, res) => {
       console.error("Dashboard Popular Products Error:", err.message);
     }
 
-    // Calculate revenue figures
+    // Calculate revenue figures (only from PAID orders)
     let totalRevenue = 0;
     let monthlyRevenue = 0;
+    let weeklyRevenue = 0;
     let newUsersThisMonth = 0;
     let newOrdersThisMonth = 0;
 
     try {
       const now = new Date();
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - now.getDay()); // Start of current week (Sunday)
+      startOfWeek.setHours(0, 0, 0, 0);
 
-      // Sum finalAmount across ALL orders
-      const totalRevenueRaw = await Order.sum('finalAmount');
+      // Sum finalAmount across ALL PAID orders only
+      const totalRevenueRaw = await Order.sum('finalAmount', {
+        where: { paymentStatus: 'paid' }
+      });
       totalRevenue = parseFloat(totalRevenueRaw) || 0;
 
-      // Sum finalAmount for orders created this month
+      // Sum finalAmount for PAID orders created this month
       const monthlyRevenueRaw = await Order.sum('finalAmount', {
-        where: { createdAt: { [Op.gte]: startOfMonth } }
+        where: { 
+          paymentStatus: 'paid',
+          createdAt: { [Op.gte]: startOfMonth } 
+        }
       });
       monthlyRevenue = parseFloat(monthlyRevenueRaw) || 0;
+
+      // Sum finalAmount for PAID orders created this week
+      const weeklyRevenueRaw = await Order.sum('finalAmount', {
+        where: { 
+          paymentStatus: 'paid',
+          createdAt: { [Op.gte]: startOfWeek } 
+        }
+      });
+      weeklyRevenue = parseFloat(weeklyRevenueRaw) || 0;
 
       // New users this month
       newUsersThisMonth = await User.count({
@@ -188,12 +206,12 @@ export const getDashboardStats = async (req, res) => {
         }
       });
 
-      // New orders this month
+      // New orders this month (all statuses)
       newOrdersThisMonth = await Order.count({
         where: { createdAt: { [Op.gte]: startOfMonth } }
       });
 
-      console.log('Revenue totals:', { totalRevenue, monthlyRevenue });
+      console.log('Revenue totals (paid orders only):', { totalRevenue, monthlyRevenue, weeklyRevenue });
     } catch (revenueError) {
       console.error('Error calculating revenue:', revenueError.message);
     }
@@ -206,7 +224,7 @@ export const getDashboardStats = async (req, res) => {
         totalOrders: totalOrders,
         totalRevenue: totalRevenue,
         monthlyRevenue: monthlyRevenue,
-        yearlyRevenue: 0,
+        weeklyRevenue: weeklyRevenue,
         newUsersThisMonth: newUsersThisMonth,
         newOrdersThisMonth: newOrdersThisMonth
       },

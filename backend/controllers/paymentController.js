@@ -13,7 +13,7 @@ import {
   verifyCallbackSignature,
   checkPhonePeConfig,
 } from '../services/phonePeService.js';
-import { Order, Cart, Product, User, sequelize } from '../models/index.js';
+import { Order, Cart, Product, User, Coupon, UserCoupon, sequelize, Sequelize } from '../models/index.js';
 import { generateOrderNumber } from '../utils/helpers.js';
 
 const { FRONTEND_URL, APP_URL, NODE_ENV } = process.env;
@@ -167,7 +167,7 @@ export const initiatePaymentHandler = async (req, res) => {
   let committed = false;
 
   try {
-    const { shippingAddress, billingAddress, notes, deliveryType } = req.body;
+    const { shippingAddress, billingAddress, notes, deliveryType, couponCode } = req.body;
 
     // ── Validate shipping address ────────────────────────────────────────────
     if (!shippingAddress || typeof shippingAddress !== 'object') {
@@ -254,7 +254,72 @@ export const initiatePaymentHandler = async (req, res) => {
       totalPrice += itemTotal;
     }
 
-    const finalAmount   = Math.max(0, totalPrice + shippingCost);
+    // ── Apply coupon (server-side authoritative) ───────────────────────────
+    let discountAmount = 0;
+    let couponId = null;
+
+    if (couponCode) {
+      const coupon = await Coupon.findOne({
+        where: {
+          code: couponCode,
+          isActive: true,
+          validFrom: { [Sequelize.Op.lte]: new Date() },
+          validUntil: { [Sequelize.Op.gte]: new Date() }
+        },
+        transaction,
+      });
+
+      if (coupon) {
+        // Check usage limit
+        if (coupon.usageLimit && coupon.usedCount >= coupon.usageLimit) {
+          await transaction.rollback();
+          return res.status(400).json({ success: false, message: 'Coupon usage limit reached' });
+        }
+
+        // Check minimum order amount
+        if (coupon.minOrderAmount && totalPrice < coupon.minOrderAmount) {
+          await transaction.rollback();
+          return res.status(400).json({ success: false, message: `Minimum order amount of ${coupon.minOrderAmount} required for this coupon` });
+        }
+
+        // Check if user has already used this coupon (for single-use)
+        if (coupon.isSingleUse) {
+          const existingUsed = await UserCoupon.findOne({
+            where: { userId: req.user.id, couponId: coupon.id, isUsed: true },
+            transaction,
+          });
+          if (existingUsed) {
+            await transaction.rollback();
+            return res.status(400).json({ success: false, message: 'Coupon already used' });
+          }
+        }
+
+        // Calculate discount
+        let discount = 0;
+        if (coupon.discountType === 'percentage') {
+          discount = (totalPrice * coupon.discountValue) / 100;
+          if (coupon.maxDiscount && discount > coupon.maxDiscount) discount = coupon.maxDiscount;
+        } else {
+          discount = coupon.discountValue;
+        }
+
+        discountAmount = discount;
+        couponId = coupon.id;
+
+        // Mark or create a UserCoupon record (isUsed true, orderId null for now)
+        const existingUserCoupon = await UserCoupon.findOne({ where: { userId: req.user.id, couponId: coupon.id }, transaction });
+        if (existingUserCoupon) {
+          await existingUserCoupon.update({ isUsed: true, usedAt: new Date(), orderId: null }, { transaction });
+        } else {
+          await UserCoupon.create({ userId: req.user.id, couponId: coupon.id, isUsed: true, usedAt: new Date(), orderId: null }, { transaction });
+        }
+
+        // Increment coupon usage
+        await coupon.increment('usedCount', { transaction });
+      }
+    }
+
+    const finalAmount   = Math.max(0, totalPrice + shippingCost - discountAmount);
     const amountInPaise = Math.round(finalAmount * 100);
 
     // ── 3. Generate IDs & create order (status=pending) ──────────────────────
@@ -275,12 +340,28 @@ export const initiatePaymentHandler = async (req, res) => {
         totalPrice,
         shippingCost,
         taxAmount:       0,
-        discountAmount:  0,
+        discountAmount,
         finalAmount,
+        couponId,
         notes:           notes || '',
       },
       { transaction },
     );
+
+    // Update UserCoupon with orderId if coupon was applied
+    if (couponId) {
+      await UserCoupon.update(
+        { orderId: order.id, isUsed: true, usedAt: new Date() },
+        {
+          where: {
+            userId: req.user.id,
+            couponId,
+            orderId: null
+          },
+          transaction
+        }
+      );
+    }
 
     await transaction.commit();
     committed = true;

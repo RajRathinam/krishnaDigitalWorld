@@ -64,6 +64,7 @@ export function AdminCollapsibleSidebar({ activeSection, showFooter = true, isCo
     { id: "analytics", title: "Customer Analytics", icon: BarChart3, badge: null, path: "/analytics" },
     { id: "products", title: "Products", icon: Package, badge: null, path: "/products" },
     { id: "orders", title: "Orders", icon: ShoppingCart, badge: null, path: "/orders" },
+    { id: "user-coupons", title: "User Coupons", icon: Ticket, path: "/user-coupons" }, // New User Coupons item
     { id: "birthdays", title: "Birthdays", icon: Cake, badge: null, path: "/birthdays" },
   ];
 
@@ -72,7 +73,6 @@ export function AdminCollapsibleSidebar({ activeSection, showFooter = true, isCo
     { id: "categories", title: "Categories", icon: Blocks, path: "/categories" },
     { id: "hero-slider", title: "Hero Slider", icon: ImageIcon, path: "/hero-slider" },
     { id: "advertisements", title: "Advertisements", icon: Video, path: "/advertisements" }, // New Advertisement item
-    { id: "user-coupons", title: "User Coupons", icon: Ticket, path: "/user-coupons" }, // New User Coupons item
     { id: "settings", title: "Settings", icon: Settings, path: "/settings" },
   ];
 
