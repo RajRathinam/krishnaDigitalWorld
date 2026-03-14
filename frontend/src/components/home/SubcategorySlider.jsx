@@ -30,7 +30,7 @@ const ensureObject = (value) => {
 const SubcategorySkeleton = () => (
   <section className="container mx-auto px-3 py-2">
     <div className="md:hidden">
-      <div className="flex gap-2 overflow-x-auto py-2 px-2">
+      <div className="flex gap-7 overflow-x-auto py-2 px-2 scrollbar-hide">
         {[...Array(8)].map((_, i) => (
           <div key={i} className="flex flex-col items-center shrink-0">
             <div className="w-14 h-14 rounded-full bg-gray-200 animate-pulse" />
@@ -49,7 +49,6 @@ const SubcategorySkeleton = () => (
     </div>
   </section>
 );
-
 /* ─── Uniform heights for consistent card size ────────────────────────────── */
 const HEIGHTS = ["100%", "100%", "100%", "100%", "100%"];
 
