@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useSearchParams, useParams } from "react-router-dom";
+import { useSearchParams, useParams, useNavigate } from "react-router-dom";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import { Header } from "@/components/layout/Header";
@@ -52,12 +52,17 @@ const SORT_MAP = {
 };
 
 export default function ProductListing() {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { category: routeCategory } = useParams();
+  
+  // Get all URL parameters
   const queryCategory = searchParams.get("category");
-  const category = routeCategory || queryCategory;
+  const queryBrand = searchParams.get("brand");
   const subcategoryParam = searchParams.get("subcategory");
-
+  
+  const category = routeCategory || queryCategory;
+  
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [selectedBrands, setSelectedBrands] = useState([]);
   const [minPriceFilter, setMinPriceFilter] = useState(null);
@@ -82,6 +87,7 @@ export default function ProductListing() {
   const [computedMinPrice, setComputedMinPrice] = useState(null);
   const [computedMaxPrice, setComputedMaxPrice] = useState(null);
   const [categoriesList, setCategoriesList] = useState([]);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
   const [brandSearch, setBrandSearch] = useState("");
   const [showBrandDropdown, setShowBrandDropdown] = useState(false);
@@ -91,7 +97,49 @@ export default function ProductListing() {
   // Abort controller for canceling requests
   const abortControllerRef = useRef(null);
 
+  // Debug: Log URL parameters
+  useEffect(() => {
+    console.log("URL Parameters:", {
+      queryBrand,
+      queryCategory,
+      subcategoryParam,
+      category
+    });
+  }, [queryBrand, queryCategory, subcategoryParam, category]);
+
+  // Initialize selectedBrands from URL query parameter
+  useEffect(() => {
+    if (queryBrand && availableBrands.length > 0) {
+      console.log("Looking for brand with slug:", queryBrand);
+      console.log("Available brands:", availableBrands);
+      
+      // Find brand by slug (case insensitive)
+      const brand = availableBrands.find(b => 
+        b.slug?.toLowerCase() === queryBrand.toLowerCase() || 
+        b.name?.toLowerCase() === queryBrand.toLowerCase()
+      );
+      
+      if (brand) {
+        console.log("Found brand:", brand);
+        setSelectedBrands([String(brand.id)]);
+      } else {
+        console.log("Brand not found for slug:", queryBrand);
+        setSelectedBrands([]);
+      }
+      
+      setInitialLoadComplete(true);
+    } else if (availableBrands.length > 0) {
+      setInitialLoadComplete(true);
+    }
+  }, [queryBrand, availableBrands]);
+
   const fetchProducts = async (isSortOperation = false) => {
+    // Don't fetch until initial load is complete
+    if (!initialLoadComplete && queryBrand) {
+      console.log("Waiting for initial load to complete...");
+      return;
+    }
+
     // Cancel previous request if it exists
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -112,16 +160,37 @@ export default function ProductListing() {
       
       if (category) params.categorySlug = category;
       if (subcategoryParam) params.subcategory = subcategoryParam;
-      if (selectedBrands.length) params.brandId = selectedBrands.join(',');
+      
+      // Handle brand filter from URL or state
+      if (selectedBrands.length > 0) {
+        // Use selected brand IDs
+        params.brandId = selectedBrands.join(',');
+        console.log("Filtering by brand IDs:", params.brandId);
+      } else if (queryBrand) {
+        // If no selected brands but queryBrand exists, try to find the brand
+        const brand = availableBrands.find(b => 
+          b.slug?.toLowerCase() === queryBrand.toLowerCase() || 
+          b.name?.toLowerCase() === queryBrand.toLowerCase()
+        );
+        if (brand) {
+          params.brandId = String(brand.id);
+          console.log("Filtering by brand from URL:", brand.name, "ID:", brand.id);
+        } else {
+          console.log("No brand found for URL parameter:", queryBrand);
+        }
+      }
+      
       if (minPriceFilter !== null) params.minPrice = minPriceFilter;
       if (maxPriceFilter !== null) params.maxPrice = maxPriceFilter;
 
       // Add sort parameters based on selected sort option
       const sortConfig = SORT_MAP[sortBy];
-      if (sortConfig.sortBy) {
+      if (sortConfig?.sortBy) {
         params.sortBy = sortConfig.sortBy;
         params.sortOrder = sortConfig.sortOrder;
       }
+
+      console.log("Fetching products with params:", params);
 
       const response = await api.get('/products', { 
         params,
@@ -129,6 +198,8 @@ export default function ProductListing() {
       });
       
       const data = response.data?.data || response.data;
+      console.log("API Response:", data);
+      
       setProducts(data.products || []);
       setPagination(data.pagination || null);
       setTotalResults(data.pagination?.totalItems ?? (data.products || []).length ?? null);
@@ -168,8 +239,10 @@ export default function ProductListing() {
   };
 
   useEffect(() => {
-    fetchProducts();
-  }, [category, subcategoryParam, selectedBrands, minPriceFilter, maxPriceFilter]);
+    if (initialLoadComplete || !queryBrand) {
+      fetchProducts();
+    }
+  }, [category, subcategoryParam, selectedBrands, minPriceFilter, maxPriceFilter, sortBy, initialLoadComplete]);
 
   useEffect(() => {
     AOS.init({
@@ -183,9 +256,12 @@ export default function ProductListing() {
     // Load available brands for filters
     const loadBrands = async () => {
       try {
+        console.log("Loading brands...");
         const response = await api.get('/brands');
         const data = response.data?.data || response.data;
-        setAvailableBrands(Array.isArray(data) ? data : []);
+        const brands = Array.isArray(data) ? data : [];
+        console.log("Loaded brands:", brands);
+        setAvailableBrands(brands);
       } catch (err) {
         console.error('Failed to load brands', err);
       }
@@ -236,9 +312,27 @@ export default function ProductListing() {
     : "All Products";
 
   const toggleBrand = (brandId) => {
-    setSelectedBrands(prev => prev.includes(brandId)
-      ? prev.filter(b => b !== brandId)
-      : [...prev, brandId]);
+    setSelectedBrands(prev => {
+      const newSelection = prev.includes(brandId)
+        ? prev.filter(b => b !== brandId)
+        : [...prev, brandId];
+      
+      console.log("Brand selection changed:", newSelection);
+      
+      // Update URL if brand is selected/deselected
+      const url = new URL(window.location);
+      if (newSelection.length > 0) {
+        const brand = availableBrands.find(b => String(b.id) === brandId);
+        if (brand) {
+          url.searchParams.set('brand', brand.slug);
+        }
+      } else {
+        url.searchParams.delete('brand');
+      }
+      window.history.replaceState({}, '', url);
+      
+      return newSelection;
+    });
   };
 
   const applyPriceFilter = () => {
@@ -263,11 +357,27 @@ export default function ProductListing() {
   };
 
   const clearAllFilters = () => {
+    console.log("Clearing all filters");
+    
+    // Clear all filter states
     setSelectedBrands([]);
     setMinPriceFilter(null);
     setMaxPriceFilter(null);
     setTempMinPrice("");
     setTempMaxPrice("");
+    setSortBy("newest");
+    
+    // Update URL to remove all filter parameters
+    const url = new URL(window.location);
+    url.searchParams.delete('brand');
+    url.searchParams.delete('category');
+    url.searchParams.delete('subcategory');
+    window.history.replaceState({}, '', url.pathname);
+    
+    // Force a re-fetch with cleared filters
+    setTimeout(() => {
+      fetchProducts();
+    }, 100);
   };
 
   const FilterSection = ({ title, expanded, onToggle, children }) => (
@@ -514,10 +624,28 @@ export default function ProductListing() {
     </div>
   );
 
-  const hasActiveFilters = selectedBrands.length > 0 || minPriceFilter !== null || maxPriceFilter !== null;
+  const hasActiveFilters = selectedBrands.length > 0 || minPriceFilter !== null || maxPriceFilter !== null || queryBrand;
 
   // Get current sort label
   const currentSortLabel = SORT_OPTIONS.find(opt => opt.value === sortBy)?.label || "Newest";
+
+  // Get brand name for display
+  const getBrandDisplayName = () => {
+    if (selectedBrands.length > 0) {
+      const brand = availableBrands.find(b => String(b.id) === selectedBrands[0]);
+      return brand?.name || queryBrand;
+    }
+    if (queryBrand) {
+      const brand = availableBrands.find(b => 
+        b.slug?.toLowerCase() === queryBrand.toLowerCase() || 
+        b.name?.toLowerCase() === queryBrand.toLowerCase()
+      );
+      return brand?.name || queryBrand;
+    }
+    return null;
+  };
+
+  const brandDisplayName = getBrandDisplayName();
 
   return (
     <div className="min-h-screen bg-background overflow-x-hidden md:pb-0">
@@ -543,6 +671,12 @@ export default function ProductListing() {
                 <span className="text-foreground font-medium">{subcategoryParam}</span>
               </>
             )}
+            {brandDisplayName && (
+              <>
+                <span className="mx-1.5 md:mx-2">›</span>
+                <span className="text-foreground font-medium">{brandDisplayName}</span>
+              </>
+            )}
           </nav>
         </div>
       </div>
@@ -552,11 +686,16 @@ export default function ProductListing() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-lg md:text-2xl font-bold text-foreground">
-                {subcategoryParam ? `${subcategoryParam} ${categoryTitle}` : categoryTitle}
+                {brandDisplayName 
+                  ? `${brandDisplayName} Products`
+                  : subcategoryParam 
+                    ? `${subcategoryParam} ${categoryTitle}`
+                    : categoryTitle}
               </h1>
               <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
                 {(totalResults ?? products.length) + ' results'}
                 {subcategoryParam && ` in ${subcategoryParam}`}
+                {brandDisplayName && ` from ${brandDisplayName}`}
                 {isSorting && (
                   <span className="ml-2 text-accent animate-pulse">• Sorting...</span>
                 )}
@@ -621,7 +760,7 @@ export default function ProductListing() {
               Filters
               {hasActiveFilters && (
                 <span className="bg-accent text-primary text-xs px-1.5 py-0.5 rounded-full">
-                  {selectedBrands.length + ((minPriceFilter !== null || maxPriceFilter !== null) ? 1 : 0)}
+                  {selectedBrands.length + ((minPriceFilter !== null || maxPriceFilter !== null) ? 1 : 0) + (queryBrand && selectedBrands.length === 0 ? 1 : 0)}
                 </span>
               )}
             </button>
@@ -629,18 +768,20 @@ export default function ProductListing() {
         </div>
 
         {hasActiveFilters && (
-          <div className="flex flex-wrap gap-2 mb-4" data-aos="fade-up">
+          <div className="flex hidden flex-wrap gap-2 mb-4" data-aos="fade-up">
             {/* Active Sort Filter */}
-            <span className="inline-flex items-center gap-1 px-2 py-1 bg-accent/10 text-accent text-xs rounded-full">
-              {currentSortLabel}
-              <button 
-                onClick={() => handleSortChange("newest")} 
-                className="hover:text-destructive focus:outline-none focus:ring-2 focus:ring-accent rounded"
-                disabled={isSorting}
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </span>
+            {sortBy !== "newest" && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 bg-accent/10 text-accent text-xs rounded-full">
+                {currentSortLabel}
+                <button 
+                  onClick={() => handleSortChange("newest")} 
+                  className="hover:text-destructive focus:outline-none focus:ring-2 focus:ring-accent rounded"
+                  disabled={isSorting}
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
 
             {selectedBrands.map(bid => {
               const br = availableBrands.find(b => String(b.id) === bid);
@@ -657,6 +798,25 @@ export default function ProductListing() {
                 </span>
               );
             })}
+
+            {/* Show active brand from URL */}
+            {queryBrand && selectedBrands.length === 0 && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 bg-accent/10 text-accent text-xs rounded-full">
+                {brandDisplayName || queryBrand}
+                <button 
+                  onClick={() => {
+                    const url = new URL(window.location);
+                    url.searchParams.delete('brand');
+                    window.history.replaceState({}, '', url);
+                    setSelectedBrands([]);
+                  }} 
+                  className="hover:text-destructive focus:outline-none focus:ring-2 focus:ring-accent rounded"
+                  disabled={loading || isSorting}
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
 
             {(minPriceFilter !== null || maxPriceFilter !== null) && (
               <span className="inline-flex items-center gap-1 px-2 py-1 bg-accent/10 text-accent text-xs rounded-full">

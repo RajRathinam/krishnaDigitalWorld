@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import {
   Plus, Search, Filter, Edit, Trash2, MoreVertical, Upload, Loader2,
   Package, CheckCircle, XCircle, AlertTriangle, Star, Image as ImageIcon,
-  Tag, Layers, DollarSign, BarChart3, Settings, RefreshCw
+  Tag, Layers, DollarSign, BarChart3, Settings, RefreshCw, Trophy, Zap
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
@@ -190,6 +190,8 @@ export const ProductManagement = () => {
     total: products.length,
     active: products.filter(p => p.isActive).length,
     featured: products.filter(p => p.isFeatured).length,
+    bestSellers: products.filter(p => p.isBestSeller).length,
+    dealOfDay: products.filter(p => p.isDealOfTheDay).length,
     outOfStock: products.filter(p => {
       if (!p.stock) return true;
       if (typeof p.stock === 'number') return p.stock === 0;
@@ -393,11 +395,11 @@ export const ProductManagement = () => {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+      {/* Stats Overview - Updated to include new flags */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-4">
         {loading ? (
           // Skeleton Stats Cards
-          Array.from({ length: 4 }).map((_, i) => (
+          Array.from({ length: 6 }).map((_, i) => (
             <Card key={i}>
               <CardContent className="p-6">
                 <div className="flex items-center gap-4">
@@ -414,8 +416,10 @@ export const ProductManagement = () => {
           [
             { label: "Total Products", val: stats.total, icon: Package, color: "text-primary", bg: "bg-primary/10" },
             { label: "Active", val: stats.active, icon: CheckCircle, color: "text-green-600", bg: "bg-green-100" },
-            { label: "Out of Stock", val: stats.outOfStock, icon: AlertTriangle, color: "text-red-600", bg: "bg-red-100" },
             { label: "Featured", val: stats.featured, icon: Star, color: "text-amber-500", bg: "bg-amber-100" },
+            { label: "Best Sellers", val: stats.bestSellers, icon: Trophy, color: "text-purple-600", bg: "bg-purple-100" },
+            { label: "Deal of Day", val: stats.dealOfDay, icon: Zap, color: "text-orange-600", bg: "bg-orange-100" },
+            { label: "Out of Stock", val: stats.outOfStock, icon: AlertTriangle, color: "text-red-600", bg: "bg-red-100" },
           ].map((s, i) => (
             <Card key={i}>
               <CardContent className="p-6">
@@ -433,6 +437,7 @@ export const ProductManagement = () => {
           ))
         )}
       </div>
+      
       {/* Main Content */}
       <Card>
         <CardHeader className="flex flex-col sm:flex-row justify-between gap-4 space-y-0 pb-4">
@@ -488,36 +493,119 @@ export const ProductManagement = () => {
           )}
         </CardHeader>
         <CardContent>
-          {/* Added max-height and overflow-auto for vertical scrolling */}
-          <div className="rounded-md border max-h-[calc(100vh-300px)] overflow-auto">
-            <Table>
-              <TableHeader className="bg-muted/50 sticky top-0 z-10">
-                <TableRow>
-                  <TableHead className="w-[80px]">Image</TableHead>
-                  <TableHead>Product Info</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Colors</TableHead> {/* Added Colors Column Header */}
-                  <TableHead>Price</TableHead>
-                  <TableHead>Stock</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+        {/* Styles for sticky columns and scrollbar hiding */}
+<style jsx>{`
+  .product-table-container {
+    position: relative;
+    max-height: calc(100vh - 300px);
+    overflow: auto;
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    /* Hide scrollbar for Chrome, Safari and Opera */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+  
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .product-table-container::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .product-table {
+    min-width: 1400px;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  
+  .sticky-header {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background-color: hsl(var(--muted));
+    backdrop-filter: blur(4px);
+  }
+  
+  .sticky-header th {
+    background-color: hsl(var(--muted));
+    backdrop-filter: blur(4px);
+    font-weight: 600;
+  }
+  
+  .sticky-col {
+    position: sticky;
+    left: 0;
+    z-index: 25;
+    background-color: hsl(var(--background));
+    border-right: 1px solid hsl(var(--border));
+  }
+  
+  .sticky-col-2 {
+    position: sticky;
+    left: 80px;
+    z-index: 20;
+    background-color: hsl(var(--background));
+    border-right: 1px solid hsl(var(--border));
+  }
+  
+  /* Ensure sticky cells have proper background when row is hovered */
+  .product-table tr:hover .sticky-col,
+  .product-table tr:hover .sticky-col-2 {
+    background-color: white;
+  }
+  
+  /* Ensure header sticky cells have proper background */
+  .sticky-header .sticky-col,
+  .sticky-header .sticky-col-2 {
+    background-color: hsl(var(--muted));
+    backdrop-filter: blur(4px);
+    z-index: 35;
+  }
+  
+  /* Add box shadow to indicate sticky columns */
+  .sticky-col::after,
+  .sticky-col-2::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: -1px;
+    bottom: 0;
+    width: 1px;
+    background: hsl(var(--border));
+  }
+`}</style>
+          
+          <div className="product-table-container">
+            <table className="product-table w-full">
+              <thead className="sticky-header">
+                <tr>
+                  <th className="sticky-col p-3 text-left font-medium w-[80px]">Image</th>
+                  <th className="sticky-col-2 p-3 text-left font-medium">Product Info</th>
+                  <th className="p-3 text-left font-medium">Category</th>
+                  <th className="p-3 text-left font-medium">Colors</th>
+                  <th className="p-3 text-left font-medium">Price</th>
+                  <th className="p-3 text-left font-medium">Stock</th>
+                  <th className="p-3 text-left font-medium">Featured</th>
+                  <th className="p-3 text-left font-medium">Best Seller</th>
+                  <th className="p-3 text-left font-medium">Deal of Day</th>
+                  <th className="p-3 text-left font-medium">Status</th>
+                  <th className="p-3 text-right font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
                 {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="p-0 border-0">
-                      <TableSkeleton rowCount={10} columnCount={8} showHeader={false} />
-                    </TableCell>
-                  </TableRow>
+                  <tr>
+                    <td colSpan={11} className="p-0 border-0">
+                      <TableSkeleton rowCount={10} columnCount={11} showHeader={false} />
+                    </td>
+                  </tr>
                 ) : filteredProducts.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="h-24 text-center text-muted-foreground"> {/* Updated colSpan */}
+                  <tr>
+                    <td colSpan={11} className="h-24 text-center text-muted-foreground p-4">
                       No products found matching your criteria.
-                    </TableCell>
-                  </TableRow>
+                    </td>
+                  </tr>
                 ) : (
-                  filteredProducts.map(product => {
+                  filteredProducts.map((product, index) => {
                     const img = getImageUrl(Object.values(product.colorsAndImages || {})[0]?.[0]?.url);
                     const stock = typeof product.stock === 'object'
                       ? Object.values(product.stock || {}).reduce((a, b) => a + Number(b), 0)
@@ -527,26 +615,32 @@ export const ProductManagement = () => {
                     const availableColors = Object.keys(product.colorsAndImages || {});
 
                     return (
-                      <TableRow key={product.id} className="hover:bg-muted/50"><TableCell>
-                        <div className="h-12 w-12 rounded-md border bg-muted flex items-center justify-center overflow-hidden">
-                          {img ? (
-                            <img src={img} alt="" className="h-full w-full object-cover" />
-                          ) : (
-                            <ImageIcon className="h-6 w-6 text-muted-foreground opacity-50" />
-                          )}
-                        </div>
-                      </TableCell><TableCell>
-                          <div className="flex flex-col">
-                            <span className="font-medium truncate max-w-[200px]" title={product.name}>{product.name}</span>
-                            <span className="text-xs text-muted-foreground font-mono">{product.sku}</span>
+                      <tr key={product.id} className="hover:bg-muted/50 border-b transition-colors">
+                        <td className="sticky-col p-3 align-middle">
+                          <div className="h-12 w-12 rounded-md border bg-white flex items-center justify-center overflow-hidden">
+                            {img ? (
+                              <img src={img} alt="" className="h-full w-full object-contain" />
+                            ) : (
+                              <ImageIcon className="h-6 w-6 text-muted-foreground opacity-50" />
+                            )}
                           </div>
-                        </TableCell><TableCell>
-                          <Badge variant="outline" className="font-normal">{product.category?.name || "Uncategorized"}</Badge>
-                        </TableCell><TableCell>
-                          <div className="flex flex-wrap gap-1">
+                        </td>
+                        <td className="sticky-col-2 p-3 align-middle">
+                          <div className="flex flex-col max-w-[250px]">
+                            <span className="font-medium truncate" title={product.name}>{product.name}</span>
+                            <span className="text-xs text-muted-foreground font-mono truncate">{product.sku}</span>
+                          </div>
+                        </td>
+                        <td className="p-3 align-middle">
+                          <Badge variant="outline" className="font-normal whitespace-nowrap">
+                            {product.category?.name || "Uncategorized"}
+                          </Badge>
+                        </td>
+                        <td className="p-3 align-middle">
+                          <div className="flex flex-wrap gap-1 max-w-[150px]">
                             {availableColors.length > 0 ? (
                               availableColors.map((color, idx) => (
-                                <Badge key={idx} variant="secondary" className="text-[10px] px-1 py-0 h-5">
+                                <Badge key={idx} variant="secondary" className="text-[10px] px-1 py-0 h-5 whitespace-nowrap">
                                   {color}
                                 </Badge>
                               ))
@@ -554,19 +648,25 @@ export const ProductManagement = () => {
                               <span className="text-xs text-muted-foreground">-</span>
                             )}
                           </div>
-                        </TableCell><TableCell>
-                          <div className="flex flex-col">
-                            <span className="font-medium">₹{product.price}</span>
-                            {product.discountPrice && <span className="text-xs text-muted-foreground line-through">₹{product.discountPrice}</span>}
+                        </td>
+                        <td className="p-3 align-middle">
+                          <div className="flex flex-col whitespace-nowrap">
+                            <span className="font-medium">₹{product.discountPrice}</span>
+                            {product.discountPrice && (
+                              <span className="text-xs text-muted-foreground line-through">₹{product.price}</span>
+                            )}
                           </div>
-                        </TableCell><TableCell>
+                        </td>
+                        <td className="p-3 align-middle">
                           {typeof product.stock === 'object' && product.stock !== null ? (
-                            <div className="space-y-0.5">
+                            <div className="space-y-0.5 min-w-[100px]">
                               {Object.entries(product.stock).map(([color, qty]) => (
                                 <div key={color} className="flex items-center gap-1">
                                   <Badge
                                     variant={Number(qty) > 0 ? "secondary" : "destructive"}
-                                    className={`text-[10px] px-1.5 py-0 h-4 ${Number(qty) > 0 ? "bg-green-100 text-green-800" : ""}`}
+                                    className={`text-[10px] px-1.5 py-0 h-4 whitespace-nowrap ${
+                                      Number(qty) > 0 ? "bg-green-100 text-green-800" : ""
+                                    }`}
                                   >
                                     {color}: {qty}
                                   </Badge>
@@ -575,61 +675,92 @@ export const ProductManagement = () => {
                               <span className="text-[10px] text-muted-foreground">Total: {stock}</span>
                             </div>
                           ) : (
-                            <Badge variant={stock > 0 ? "secondary" : "destructive"} className={stock > 0 ? "bg-green-100 text-green-800 hover:bg-green-200" : ""}>
+                            <Badge 
+                              variant={stock > 0 ? "secondary" : "destructive"} 
+                              className={stock > 0 ? "bg-green-100 text-green-800 hover:bg-green-200 whitespace-nowrap" : "whitespace-nowrap"}
+                            >
                               {stock} in stock
                             </Badge>
                           )}
-                        </TableCell><TableCell>
+                        </td>
+                        <td className="p-3 align-middle">
+                          {product.isFeatured ? (
+                            <Badge variant="default" className="bg-amber-500 hover:bg-amber-600 whitespace-nowrap">
+                              <Star className="h-3 w-3 mr-1 fill-current" /> Yes
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-muted-foreground whitespace-nowrap">No</Badge>
+                          )}
+                        </td>
+                        <td className="p-3 align-middle">
+                          {product.isBestSeller ? (
+                            <Badge variant="default" className="bg-purple-600 hover:bg-purple-700 whitespace-nowrap">
+                              <Trophy className="h-3 w-3 mr-1" /> Yes
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-muted-foreground whitespace-nowrap">No</Badge>
+                          )}
+                        </td>
+                        <td className="p-3 align-middle">
+                          {product.isDealOfTheDay ? (
+                            <Badge variant="default" className="bg-orange-600 hover:bg-orange-700 whitespace-nowrap">
+                              <Zap className="h-3 w-3 mr-1" /> Yes
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-muted-foreground whitespace-nowrap">No</Badge>
+                          )}
+                        </td>
+                        <td className="p-3 align-middle">
                           <div className="flex flex-col gap-1">
                             {product.isActive ? (
-                              <Badge variant="default" className="w-fit bg-green-600 hover:bg-green-700 text-[10px]">Active</Badge>
-                            ) : (
-                              <Badge variant="secondary" className="w-fit text-[10px]">Draft</Badge>
-                            )}
-                            {product.isFeatured && (
-                              <Badge variant="default" className="w-fit bg-amber-500 hover:bg-amber-600 text-[10px] flex gap-1">
-                                <Star className="h-2 w-2 fill-current" /> Featured
+                              <Badge variant="default" className="w-fit bg-green-600 hover:bg-green-700 text-[10px] whitespace-nowrap">
+                                Active
                               </Badge>
+                            ) : (
+                              <Badge variant="secondary" className="w-fit text-[10px] whitespace-nowrap">Draft</Badge>
                             )}
                           </div>
-                        </TableCell><TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleOpenEdit(product)}>
-                                <Edit className="mr-2 h-4 w-4" /> Edit Details
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                className="text-destructive focus:text-destructive"
-                                onClick={async () => {
-                                  if (confirm('Delete this product?')) {
-                                    await api.delete(`/products/${product.id}`);
-                                    setProducts(prev => prev.filter(p => p.id !== product.id));
-                                    toast({ title: "Deleted", description: "Product removed" });
-                                  }
-                                }}
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" /> Delete Product
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell></TableRow>
+                        </td>
+                      <td className="p-3 align-middle text-right">
+  <div className="flex items-center justify-end gap-2">
+    <Button
+      variant="ghost"
+      size="icon"
+      className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+      onClick={() => handleOpenEdit(product)}
+      title="Edit product"
+    >
+      <Edit className="h-4 w-4" />
+    </Button>
+    <Button
+      variant="ghost"
+      size="icon"
+      className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+      onClick={async () => {
+        if (confirm('Delete this product?')) {
+          await api.delete(`/products/${product.id}`);
+          setProducts(prev => prev.filter(p => p.id !== product.id));
+          toast({ title: "Deleted", description: "Product removed" });
+        }
+      }}
+      title="Delete product"
+    >
+      <Trash2 className="h-4 w-4" />
+    </Button>
+  </div>
+</td>
+                      </tr>
                     );
                   })
                 )}
-              </TableBody>
-            </Table>
+              </tbody>
+            </table>
           </div>
-        </CardContent >
-      </Card >
+        </CardContent>
+      </Card>
 
       {/* Product Form Dialog */}
-      < Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen} >
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 gap-0">
           <DialogHeader className="px-6 py-4 border-b">
             <DialogTitle>{isEditing ? "Edit Product" : "Add New Product"}</DialogTitle>
@@ -910,7 +1041,7 @@ export const ProductManagement = () => {
             </Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog >
-    </div >
+      </Dialog>
+    </div>
   );
 };

@@ -687,13 +687,13 @@ export function Header() {
                       </button>
                       
                       {openCategory === cat.id && (
-                        <div className="ml-8 mb-2 border-l-2 border-border pl-3">
+                        <div className="ml-8 mb-2 border-l-2 border-border">
                           {firstFourSubcategories.map((sub, index) => (
                             <Link 
                               key={`${cat.id}-mobile-sub-${index}`} 
                               to={`/products?category=${cat.slug}&subcategory=${encodeURIComponent(sub)}`} 
                               className={cn(
-                                "block px-3 py-2 text-sm transition-colors",
+                                "block px-3 pt-2 text-xs transition-colors",
                                 isSubcategoryActive(cat.slug, sub)
                                   ? "text-accent font-semibold"
                                   : "text-muted-foreground hover:text-foreground"
@@ -706,7 +706,7 @@ export function Header() {
                           
                           <Link 
                             to={`/products?category=${cat.slug}`} 
-                            className="block px-3 py-2 text-sm font-medium text-accent hover:underline" 
+                            className="block px-3 pt-2 text-xs font-medium text-accent hover:underline" 
                             onClick={handleCloseMenu}
                           >
                             View All 
@@ -790,7 +790,7 @@ export function Header() {
                       onClick={handleCloseMenu}
                     >
                       <Package className="w-4 h-4 text-muted-foreground" />
-                      My Orders
+                      Orders
                     </Link>
                     <Link 
                   to="/account/coupons" 
@@ -798,7 +798,7 @@ export function Header() {
                   onClick={handleCloseMenu}
                 >
                   <Ticket className="w-4 h-4 text-muted-foreground" />
-                 My Coupons
+                 Coupons
                 </Link>
                     <Link 
                       to="/account/addresses" 

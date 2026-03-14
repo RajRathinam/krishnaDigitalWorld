@@ -5,6 +5,7 @@
  * Shows brand logos with smooth animations.
  * 
  * Features:
+ * - Fetches brands from backend API
  * - Infinite scrolling animation
  * - Two rows scrolling in opposite directions
  * - Brand logo display
@@ -16,141 +17,86 @@
  * @returns {JSX.Element} Brand showcase component
  */
 
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { SplitHeading } from "@/components/ui/split-heading";
-
-// Brand data using local logos from public/logos/
-const brands = [
-    { 
-        id: 1,
-        name: "Samsung", 
-        logo: "/logos/samsung logo.png",
-        slug: "samsung"
-    },
-    { 
-        id: 2,
-        name: "LG", 
-        logo: "/logos/LG-Logo-PNG-Clipart.png",
-        slug: "lg"
-    },
-    { 
-        id: 3,
-        name: "Sony", 
-        logo: "/logos/Sony-Logo.png",
-        slug: "sony"
-    },
-    { 
-        id: 4,
-        name: "Whirlpool", 
-        logo: "/logos/whirlpool.png",
-        slug: "whirlpool"
-    },
-    { 
-        id: 5,
-        name: "Panasonic", 
-        logo: "/logos/panasonic-logo-2.png",
-        slug: "panasonic"
-    },
-    { 
-        id: 6,
-        name: "Daikin", 
-        logo: "/logos/Daikin-Logo-1963.png",
-        slug: "daikin"
-    },
-    { 
-        id: 7,
-        name: "Haier", 
-        logo: "/logos/haier-logo.png",
-        slug: "haier"
-    },
-];
-
-const brands2 = [
-    { 
-        id: 8,
-        name: "Voltas", 
-        logo: "/logos/voltas-logo-scaled.png",
-        slug: "voltas"
-    },
-    { 
-        id: 9,
-        name: "Crompton", 
-        logo: "/logos/Crompton-Logo-Vector.svg-.png",
-        slug: "crompton"
-    },
-    { 
-        id: 10,
-        name: "Havells", 
-        logo: "/logos/Havells-Logo.png",
-        slug: "havells"
-    },
-    { 
-        id: 11,
-        name: "IFB", 
-        logo: "/logos/IFBIND.NS_BIG.png",
-        slug: "ifb"
-    },
-    { 
-        id: 12,
-        name: "Intex", 
-        logo: "/logos/Intex Technologies.png",
-        slug: "intex"
-    },
-    { 
-        id: 13,
-        name: "Godrej", 
-        logo: "/logos/godrej-logo-png-8-removebg-preview.png",
-        slug: "godrej"
-    },
-    { 
-        id: 14,
-        name: "Blue Star", 
-        logo: "/logos/BLUESTARCO.NS_BIG-4cacecc3.png",
-        slug: "blue-star"
-    },
-    { 
-        id: 15,
-        name: "V-Guard", 
-        logo: "/logos/vguard-logo.png",
-        slug: "v-guard"
-    },
-    { 
-        id: 16,
-        name: "TCL", 
-        logo: "/logos/tcl.png",
-        slug: "tcl"
-    },
-    { 
-        id: 17,
-        name: "Cello", 
-        logo: "/logos/cello-logo-png_seeklogo-305045.png",
-        slug: "cello"
-    },
-    { 
-        id: 18,
-        name: "Preethi", 
-        logo: "/logos/preethi.jpg",
-        slug: "preethi"
-    },
-    { 
-        id: 19,
-        name: "Butterfly", 
-        logo: "/logos/butterfly.png",
-        slug: "butterfly"
-    },
-];
-
-/**
- * Repeat array items for infinite scroll effect
- * @param {Array} items - Array of items to repeat
- * @param {number} repeat - Number of times to repeat
- * @returns {Array} Repeated array
- */
-const repeatedBrands = (items, repeat = 4) => {
-    return Array.from({ length: repeat }).flatMap(() => items);
-};
+import api from "@/lib/api";
+import { getImageUrl } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function BrandShowcase() {
+    const [brands, setBrands] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        fetchBrands();
+    }, []);
+
+    const fetchBrands = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const res = await api.get("/brands");
+            
+            // Handle different response structures
+            const data = res.data?.data || res.data || [];
+            const brandsData = Array.isArray(data) ? data : [];
+            
+            // Filter only active brands that have logos
+            const activeBrands = brandsData.filter(brand => 
+                brand.isActive !== false && brand.logo
+            );
+            
+            setBrands(activeBrands);
+        } catch (err) {
+            console.error("Failed to fetch brands:", err);
+            setError("Failed to load brands");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    /**
+     * Split brands into two arrays for the two rows
+     */
+    const splitBrandsIntoRows = (brandsArray) => {
+        const midPoint = Math.ceil(brandsArray.length / 2);
+        return {
+            row1: brandsArray.slice(0, midPoint),
+            row2: brandsArray.slice(midPoint)
+        };
+    };
+
+    /**
+     * Repeat array items for infinite scroll effect
+     * @param {Array} items - Array of items to repeat
+     * @param {number} repeat - Number of times to repeat
+     * @returns {Array} Repeated array
+     */
+    const repeatedBrands = (items, repeat = 4) => {
+        if (!items.length) return [];
+        return Array.from({ length: repeat }).flatMap(() => items);
+    };
+
+    // Loading skeletons
+    const renderSkeletons = (count = 8) => (
+        <div className="flex gap-12 md:gap-16">
+            {Array.from({ length: count }).map((_, i) => (
+                <div key={i} className="flex h-20 w-20 md:h-24 md:w-24 shrink-0 items-center justify-center p-2 bg-white rounded-lg shadow-sm">
+                    <Skeleton className="h-full w-full rounded-md" />
+                </div>
+            ))}
+        </div>
+    );
+
+    // If no brands and not loading, don't render the section
+    if (!loading && brands.length === 0) {
+        return null;
+    }
+
+    const { row1, row2 } = splitBrandsIntoRows(brands);
+
     return (
         <section className="w-full py-6 md:py-16 bg-background overflow-hidden">
             <div className="mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
@@ -168,55 +114,78 @@ export function BrandShowcase() {
                 {/* Carousel Container */}
                 <div className="relative w-full overflow-hidden">
                     {/* Row 1 - Scroll Left */}
-                    <div className="mb-8 flex w-max animate-scroll-left gap-12 md:gap-16">
-                        {repeatedBrands(brands, 4).map((brand, i) => (
-                            <Link
-                                key={`${brand.slug}-${i}`}
-                                to={`/products?brand=${brand.slug}`}
-                                className="flex h-20 w-20 md:h-24 md:w-24 shrink-0 items-center justify-center p-2 transition-all duration-300 hover:scale-110 bg-white rounded-lg shadow-sm hover:shadow-md"
-                                aria-label={`Browse ${brand.name} products`}
-                            >
-                                <img 
-                                    src={brand.logo} 
-                                    alt={brand.name} 
-                                    className="h-full w-full object-contain transition-all duration-300 hover:opacity-100"
-                                    loading="lazy"
-                                    onError={(e) => {
-                                        console.error(`Failed to load logo for ${brand.name}: ${brand.logo}`);
-                                        e.target.style.display = 'none';
-                                    }}
-                                />
-                            </Link>
-                        ))}
+                    <div className="mb-8">
+                        {loading ? (
+                            renderSkeletons(8)
+                        ) : row1.length > 0 ? (
+                            <div className="flex w-max animate-scroll-left gap-12 md:gap-16">
+                                {repeatedBrands(row1, 4).map((brand, i) => (
+                                    <Link
+                                        key={`${brand.slug || brand.id}-${i}`}
+                                        to={`/products?brand=${brand.name}`}
+                                        className="flex h-20 w-20 md:h-24 md:w-24 shrink-0 items-center justify-center p-2 transition-all duration-300 hover:scale-110 bg-white rounded-lg shadow-sm hover:shadow-md"
+                                        aria-label={`Browse ${brand.name} products`}
+                                    >
+                                        <img 
+                                            src={getImageUrl(brand.logo)} 
+                                            alt={brand.name} 
+                                            className="h-full w-full object-contain transition-all duration-300 hover:opacity-100"
+                                            loading="lazy"
+                                            onError={(e) => {
+                                                console.error(`Failed to load logo for ${brand.name}:`, brand.logo);
+                                                e.target.onerror = null;
+                                                e.target.style.display = 'none';
+                                                // Optionally show fallback
+                                                // e.target.parentElement.innerHTML = '<div class="text-xs text-center">Logo</div>';
+                                            }}
+                                        />
+                                    </Link>
+                                ))}
+                            </div>
+                        ) : null}
                     </div>
 
                     {/* Row 2 - Scroll Right */}
-                    <div className="flex w-max animate-scroll-right gap-12 md:gap-16">
-                        {repeatedBrands(brands2, 4).map((brand, i) => (
-                            <Link
-                                key={`${brand.slug}-${i}`}
-                                to={`/products?brand=${brand.slug}`}
-                                className="flex h-20 w-20 md:h-24 md:w-24 shrink-0 items-center justify-center p-2 transition-all duration-300 hover:scale-110 bg-white rounded-lg shadow-sm hover:shadow-md"
-                                aria-label={`Browse ${brand.name} products`}
-                            >
-                                <img 
-                                    src={brand.logo} 
-                                    alt={brand.name} 
-                                    className="h-full w-full object-contain transition-all duration-300 hover:opacity-100"
-                                    loading="lazy"
-                                    onError={(e) => {
-                                        console.error(`Failed to load logo for ${brand.name}: ${brand.logo}`);
-                                        e.target.style.display = 'none';
-                                    }}
-                                />
-                            </Link>
-                        ))}
+                    <div>
+                        {loading ? (
+                            renderSkeletons(8)
+                        ) : row2.length > 0 ? (
+                            <div className="flex w-max animate-scroll-right gap-12 md:gap-16">
+                                {repeatedBrands(row2, 4).map((brand, i) => (
+                                    <Link
+                                        key={`${brand.slug || brand.id}-${i}`}
+                                        to={`/products?brand=${brand.name}`}
+                                        className="flex h-20 w-20 md:h-24 md:w-24 shrink-0 items-center justify-center p-2 transition-all duration-300 hover:scale-110 bg-white rounded-lg shadow-sm hover:shadow-md"
+                                        aria-label={`Browse ${brand.name} products`}
+                                    >
+                                        <img 
+                                            src={getImageUrl(brand.logo)} 
+                                            alt={brand.name} 
+                                            className="h-full w-full object-contain transition-all duration-300 hover:opacity-100"
+                                            loading="lazy"
+                                            onError={(e) => {
+                                                console.error(`Failed to load logo for ${brand.name}:`, brand.logo);
+                                                e.target.onerror = null;
+                                                e.target.style.display = 'none';
+                                            }}
+                                        />
+                                    </Link>
+                                ))}
+                            </div>
+                        ) : null}
                     </div>
 
                     {/* Fade Overlays */}
                     <div className="pointer-events-none absolute left-0 top-0 h-full w-20 bg-gradient-to-r from-background to-transparent md:w-32 z-10" />
                     <div className="pointer-events-none absolute right-0 top-0 h-full w-20 bg-gradient-to-l from-background to-transparent md:w-32 z-10" />
                 </div>
+
+                {/* Error Message (optional) */}
+                {error && !loading && (
+                    <p className="text-center text-sm text-destructive mt-4">
+                        {error}. Please try again later.
+                    </p>
+                )}
             </div>
 
             {/* CSS Animations */}
@@ -234,6 +203,12 @@ export function BrandShowcase() {
                 }
                 .animate-scroll-right {
                     animation: scroll-right 30s linear infinite;
+                }
+                
+                /* Pause animation on hover for better UX */
+                .animate-scroll-left:hover,
+                .animate-scroll-right:hover {
+                    animation-play-state: paused;
                 }
             `}</style>
         </section>

@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import api from "@/lib/api";
+import { getImageUrl } from "@/lib/utils"; // Import the helper function
 
 export const AddBrand = () => {
     const [brands, setBrands] = useState([]);
@@ -130,7 +131,8 @@ export const AddBrand = () => {
         });
         setEditingId(brand.id);
         if (brand.logo) {
-            setPreviewUrl(brand.logo); // Assuming brand.logo contains the image URL
+            // Use getImageUrl when setting preview for edit
+            setPreviewUrl(getImageUrl(brand.logo));
         }
         setIsEditing(true);
         setIsDialogOpen(true);
@@ -217,12 +219,17 @@ export const AddBrand = () => {
                                     brands.map((brand) => (
                                         <TableRow key={brand.id}>
                                             <TableCell>
-                                                <div className="h-12 w-12 rounded-md border overflow-hidden bg-muted">
+                                                <div className="h-12 w-24 p-1 rounded-md border overflow-hidden bg-white">
                                                     {brand.logo ? (
                                                         <img
-                                                            src={brand.logo}
+                                                            src={getImageUrl(brand.logo)} // Use getImageUrl here
                                                             alt={brand.name}
-                                                            className="h-full w-full object-cover"
+                                                            className="h-full w-full object-contain"
+                                                            onError={(e) => {
+                                                                e.target.onerror = null;
+                                                                e.target.src = ""; // Hide broken image
+                                                                e.target.parentElement.innerHTML = '<div class="h-full w-full flex items-center justify-center bg-gray-100"><svg class="h-6 w-6 text-gray-400" ... /></div>';
+                                                            }}
                                                         />
                                                     ) : (
                                                         <div className="h-full w-full flex items-center justify-center bg-gray-100">
