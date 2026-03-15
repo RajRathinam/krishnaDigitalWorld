@@ -300,9 +300,9 @@ export function HeroSlider() {
         <div className="absolute bottom-0 left-0 right-0 z-20 p-4 sm:p-6 lg:p-8">
           <div key={textKey} className="max-w-lg">
             {/* Tag */}
-            <div className="text-tag text-xs font-semibold font-heading tracking-widest uppercase text-yellow-400 mb-2 sm:mb-3 opacity-0">
+           {!slide.cta && <div className="text-tag text-xs font-semibold font-heading tracking-widest uppercase text-yellow-400 mb-2 sm:mb-3 opacity-0">
               {slide.tag || "Collection"}
-            </div>
+            </div>}
 
             {/* Title */}
             <h2 className="text-title text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-white leading-tight mb-2 sm:mb-3 opacity-0"
@@ -322,7 +322,7 @@ export function HeroSlider() {
               <div className="text-cta opacity-0">
                 <Link
                   to={slide.ctaLink || "#"}
-                  className="shimmer-btn inline-flex items-center gap-2 px-5 py-2.5 sm:px-6 sm:py-3 rounded-full font-bold text-black text-sm shadow-xl hover:scale-105 transition-transform duration-200 group"
+                  className="shimmer-btn inline-flex text-xs items-center gap-1 px-3 py-1.5 sm:px-6 sm:py-3 rounded-full font-bold text-black text-sm shadow-xl hover:scale-105 transition-transform duration-200 group"
                 >
                   {slide.cta}
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />

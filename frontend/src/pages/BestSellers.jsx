@@ -14,18 +14,16 @@ import "aos/dist/aos.css";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { ProductCard } from "@/components/product/ProductCard";
-import { Trophy, RefreshCw } from "lucide-react";
+import { Trophy } from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
 import { toast } from '@/hooks/use-toast';
 import { productApi } from '@/services/api';
 import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
 
 export default function BestSellers() {
     const [bestSellerProducts, setBestSellerProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [retryCount, setRetryCount] = useState(0);
 
     useEffect(() => {
         AOS.init({ duration: 600, easing: "ease-out-cubic", once: true, offset: 50 });
@@ -122,39 +120,6 @@ export default function BestSellers() {
     }, []);
 
     /**
-     * Fetch with retry logic
-     */
-    const fetchWithRetry = useCallback(async (retries = 3) => {
-        for (let i = 0; i < retries; i++) {
-            try {
-                // Add cache-busting parameter
-                const res = await productApi.getBestSellers(50, {
-                    params: { 
-                        _t: Date.now(),
-                        cache: 'no-cache'
-                    },
-                    headers: {
-                        'Cache-Control': 'no-cache',
-                        'Pragma': 'no-cache'
-                    }
-                });
-                
-                console.log(`API Response (attempt ${i + 1}):`, res);
-                return res;
-            } catch (err) {
-                console.error(`Attempt ${i + 1} failed:`, err);
-                
-                if (i === retries - 1) throw err;
-                
-                // Exponential backoff
-                await new Promise(resolve => 
-                    setTimeout(resolve, 1000 * Math.pow(2, i))
-                );
-            }
-        }
-    }, []);
-
-    /**
      * Fetch best sellers
      */
     const fetchBestSellers = useCallback(async () => {
@@ -162,7 +127,10 @@ export default function BestSellers() {
             setLoading(true);
             setError(null);
             
-            const res = await fetchWithRetry(3);
+            const res = await productApi.getBestSellers(50);
+            
+            console.log('API Response:', res);
+            
             const products = extractProductsArray(res);
             
             console.log('Extracted products:', products);
@@ -204,27 +172,14 @@ export default function BestSellers() {
         } finally {
             setLoading(false);
         }
-    }, [fetchWithRetry, extractProductsArray]);
+    }, [extractProductsArray]);
 
     /**
-     * Initial fetch and retry on retryCount change
+     * Initial fetch
      */
     useEffect(() => {
-        let cancelled = false;
-        
-        if (!cancelled) {
-            fetchBestSellers();
-        }
-        
-        return () => { cancelled = true; };
-    }, [fetchBestSellers, retryCount]);
-
-    /**
-     * Handle retry button click
-     */
-    const handleRetry = () => {
-        setRetryCount(prev => prev + 1);
-    };
+        fetchBestSellers();
+    }, [fetchBestSellers]);
 
     /**
      * Render loading skeletons
@@ -250,19 +205,11 @@ export default function BestSellers() {
                 <Trophy className="w-12 h-12 text-destructive" />
             </div>
             <p className="text-destructive text-center text-lg font-medium mb-2">
-                Oops! Something went wrong
+                {error || "Failed to load best sellers"}
             </p>
-            <p className="text-muted-foreground text-center text-sm mb-6">
-                {error}
+            <p className="text-muted-foreground text-center text-sm">
+                Please try again later
             </p>
-            <Button 
-                onClick={handleRetry}
-                variant="default"
-                className="flex items-center gap-2"
-            >
-                <RefreshCw className="w-4 h-4" />
-                Try Again
-            </Button>
         </div>
     );
 

@@ -9,7 +9,6 @@
  * - Infinite scrolling animation
  * - Two rows scrolling in opposite directions
  * - Brand logo display
- * - Clickable brand links
  * - Responsive design
  * - Fade overlays on edges
  * 
@@ -18,7 +17,6 @@
  */
 
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
 import { SplitHeading } from "@/components/ui/split-heading";
 import api from "@/lib/api";
 import { getImageUrl } from "@/lib/utils";
@@ -69,21 +67,30 @@ export function BrandShowcase() {
     };
 
     /**
-     * Repeat array items for infinite scroll effect
+     * Repeat array items for infinite scroll effect with unique keys
      * @param {Array} items - Array of items to repeat
      * @param {number} repeat - Number of times to repeat
-     * @returns {Array} Repeated array
+     * @returns {Array} Repeated array with unique keys
      */
     const repeatedBrands = (items, repeat = 4) => {
         if (!items.length) return [];
-        return Array.from({ length: repeat }).flatMap(() => items);
+        const result = [];
+        for (let i = 0; i < repeat; i++) {
+            items.forEach((item, index) => {
+                result.push({
+                    ...item,
+                    uniqueKey: `${item.id}-${i}-${index}` // Create unique key for each repeated instance
+                });
+            });
+        }
+        return result;
     };
 
     // Loading skeletons
     const renderSkeletons = (count = 8) => (
         <div className="flex gap-12 md:gap-16">
             {Array.from({ length: count }).map((_, i) => (
-                <div key={i} className="flex h-20 w-20 md:h-24 md:w-24 shrink-0 items-center justify-center p-2 bg-white rounded-lg shadow-sm">
+                <div key={`skeleton-${i}`} className="flex h-20 w-20 md:h-24 md:w-24 shrink-0 items-center justify-center p-2 bg-white rounded-lg shadow-sm">
                     <Skeleton className="h-full w-full rounded-md" />
                 </div>
             ))}
@@ -119,10 +126,9 @@ export function BrandShowcase() {
                             renderSkeletons(8)
                         ) : row1.length > 0 ? (
                             <div className="flex w-max animate-scroll-left gap-12 md:gap-16">
-                                {repeatedBrands(row1, 4).map((brand, i) => (
-                                    <Link
-                                        key={`${brand.slug || brand.id}-${i}`}
-                                        to={`/products?brand=${brand.name}`}
+                                {repeatedBrands(row1, 4).map((brand) => (
+                                    <div
+                                        key={brand.uniqueKey}
                                         className="flex h-20 w-20 md:h-24 md:w-24 shrink-0 items-center justify-center p-2 transition-all duration-300 hover:scale-110 bg-white rounded-lg shadow-sm hover:shadow-md"
                                         aria-label={`Browse ${brand.name} products`}
                                     >
@@ -139,7 +145,7 @@ export function BrandShowcase() {
                                                 // e.target.parentElement.innerHTML = '<div class="text-xs text-center">Logo</div>';
                                             }}
                                         />
-                                    </Link>
+                                    </div>
                                 ))}
                             </div>
                         ) : null}
@@ -151,10 +157,9 @@ export function BrandShowcase() {
                             renderSkeletons(8)
                         ) : row2.length > 0 ? (
                             <div className="flex w-max animate-scroll-right gap-12 md:gap-16">
-                                {repeatedBrands(row2, 4).map((brand, i) => (
-                                    <Link
-                                        key={`${brand.slug || brand.id}-${i}`}
-                                        to={`/products?brand=${brand.name}`}
+                                {repeatedBrands(row2, 4).map((brand) => (
+                                    <div
+                                        key={brand.uniqueKey}
                                         className="flex h-20 w-20 md:h-24 md:w-24 shrink-0 items-center justify-center p-2 transition-all duration-300 hover:scale-110 bg-white rounded-lg shadow-sm hover:shadow-md"
                                         aria-label={`Browse ${brand.name} products`}
                                     >
@@ -169,7 +174,7 @@ export function BrandShowcase() {
                                                 e.target.style.display = 'none';
                                             }}
                                         />
-                                    </Link>
+                                    </div>
                                 ))}
                             </div>
                         ) : null}

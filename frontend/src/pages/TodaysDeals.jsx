@@ -14,12 +14,11 @@ import "aos/dist/aos.css";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { ProductCard } from "@/components/product/ProductCard";
-import { Clock, Zap, RefreshCw } from "lucide-react";
+import { Clock, Zap } from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
 import { toast } from '@/hooks/use-toast';
 import { productApi } from '@/services/api';
 import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
 
 /**
  * Calculate time remaining until end of day (midnight)
@@ -55,7 +54,6 @@ export default function TodaysDeals() {
     const [dealProducts, setDealProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [retryCount, setRetryCount] = useState(0);
     const [timeRemaining, setTimeRemaining] = useState(() => calculateTimeUntilMidnight());
 
     useEffect(() => {
@@ -68,87 +66,61 @@ export default function TodaysDeals() {
     const extractProductsArray = useCallback((response) => {
         if (!response) return [];
         
-        console.log('Extracting products from:', response);
+        console.log('Full API Response:', JSON.stringify(response, null, 2));
 
-        // Direct array
+        // Case 1: Response is an array
         if (Array.isArray(response)) {
+            console.log('Response is direct array');
             return response;
         }
 
-        // Response has data property
-        if (response.data) {
-            if (Array.isArray(response.data)) return response.data;
-            if (response.data.products && Array.isArray(response.data.products)) {
-                return response.data.products;
-            }
-            if (response.data.data && Array.isArray(response.data.data)) {
-                return response.data.data;
-            }
-            if (response.data.items && Array.isArray(response.data.items)) {
-                return response.data.items;
-            }
-            if (response.data.results && Array.isArray(response.data.results)) {
-                return response.data.results;
-            }
-            if (typeof response.data === 'object' && !Array.isArray(response.data)) {
-                const values = Object.values(response.data);
-                if (values.length > 0 && values.every(v => typeof v === 'object')) {
-                    return values;
-                }
-            }
+        // Case 2: Response has data.data structure (most common)
+        if (response?.data?.data && Array.isArray(response.data.data)) {
+            console.log('Found data.data array');
+            return response.data.data;
         }
 
-        // Response has direct properties
-        if (response.products && Array.isArray(response.products)) {
+        // Case 3: Response has data.products
+        if (response?.data?.products && Array.isArray(response.data.products)) {
+            console.log('Found data.products array');
+            return response.data.products;
+        }
+
+        // Case 4: Response.data is array
+        if (response?.data && Array.isArray(response.data)) {
+            console.log('Response.data is array');
+            return response.data;
+        }
+
+        // Case 5: Response has products array
+        if (response?.products && Array.isArray(response.products)) {
+            console.log('Found products array');
             return response.products;
         }
-        if (response.items && Array.isArray(response.items)) {
+
+        // Case 6: Response has items array
+        if (response?.items && Array.isArray(response.items)) {
+            console.log('Found items array');
             return response.items;
         }
-        if (response.results && Array.isArray(response.results)) {
+
+        // Case 7: Response has results array
+        if (response?.results && Array.isArray(response.results)) {
+            console.log('Found results array');
             return response.results;
         }
 
-        // Response is object with numeric keys
-        if (typeof response === 'object' && !Array.isArray(response)) {
+        // Case 8: Response is an object with numeric keys (like {0: {...}, 1: {...}})
+        if (response && typeof response === 'object') {
             const values = Object.values(response);
-            if (values.length > 0 && values.every(v => typeof v === 'object')) {
+            if (values.length > 0 && values.every(v => v && typeof v === 'object')) {
+                console.log('Extracted values from object with numeric keys');
                 return values;
             }
         }
 
+        console.warn('Could not extract products array from response:', response);
         return [];
-    }, []);
-
-    /**
-     * Fetch with retry logic
-     */
-    const fetchWithRetry = useCallback(async (retries = 3) => {
-        for (let i = 0; i < retries; i++) {
-            try {
-                const res = await productApi.getDealOfTheDay(50, {
-                    params: { 
-                        _t: Date.now(),
-                        cache: 'no-cache'
-                    },
-                    headers: {
-                        'Cache-Control': 'no-cache',
-                        'Pragma': 'no-cache'
-                    }
-                });
-                
-                console.log(`API Response (attempt ${i + 1}):`, res);
-                return res;
-            } catch (err) {
-                console.error(`Attempt ${i + 1} failed:`, err);
-                
-                if (i === retries - 1) throw err;
-                
-                await new Promise(resolve => 
-                    setTimeout(resolve, 1000 * Math.pow(2, i))
-                );
-            }
-        }
     }, []);
 
     /**
@@ -159,19 +131,18 @@ export default function TodaysDeals() {
             setLoading(true);
             setError(null);
             
-            const res = await fetchWithRetry(3);
+            console.log('Fetching deal products...');
+            const res = await productApi.getDealOfTheDay(50);
+            
+            console.log('Raw API Response:', res);
+            
             const products = extractProductsArray(res);
             
+            console.log('Extracted products count:', products.length);
             console.log('Extracted products:', products);
+            
             setDealProducts(products);
             
-            if (products.length === 0) {
-                toast({
-                    title: "No Products Found",
-                    description: "No deals available at the moment.",
-                    variant: "default"
-                });
-            }
         } catch (err) {
             console.error('Failed to load deals:', err);
             
@@ -181,6 +152,7 @@ export default function TodaysDeals() {
                 errorMessage = err.response.data?.message || 
                               err.response.statusText || 
                               errorMessage;
+                console.log('Error response:', err.response.data);
             } else if (err.request) {
                 errorMessage = 'Network error - please check your connection';
             } else {
@@ -197,7 +169,7 @@ export default function TodaysDeals() {
         } finally {
             setLoading(false);
         }
-    }, [fetchWithRetry, extractProductsArray]);
+    }, []);
 
     /**
      * Update the countdown timer
@@ -207,17 +179,11 @@ export default function TodaysDeals() {
     }, []);
 
     /**
-     * Initial fetch and retry on retryCount change
+     * Initial fetch
      */
     useEffect(() => {
-        let cancelled = false;
-        
-        if (!cancelled) {
-            fetchDealProducts();
-        }
-        
-        return () => { cancelled = true; };
-    }, [fetchDealProducts, retryCount]);
+        fetchDealProducts();
+    }, [fetchDealProducts]);
 
     /**
      * Countdown timer effect
@@ -262,13 +228,6 @@ export default function TodaysDeals() {
     }, [updateTimer]);
 
     /**
-     * Handle retry button click
-     */
-    const handleRetry = () => {
-        setRetryCount(prev => prev + 1);
-    };
-
-    /**
      * Render loading skeletons
      */
     const renderSkeletons = () => (
@@ -292,19 +251,11 @@ export default function TodaysDeals() {
                 <Zap className="w-12 h-12 text-destructive" />
             </div>
             <p className="text-destructive text-center text-lg font-medium mb-2">
-                Oops! Something went wrong
+                {error || "Failed to load deals"}
             </p>
-            <p className="text-muted-foreground text-center text-sm mb-6">
-                {error}
+            <p className="text-muted-foreground text-center text-sm">
+                Please try again later
             </p>
-            <Button 
-                onClick={handleRetry}
-                variant="default"
-                className="flex items-center gap-2"
-            >
-                <RefreshCw className="w-4 h-4" />
-                Try Again
-            </Button>
         </div>
     );
 
@@ -324,6 +275,14 @@ export default function TodaysDeals() {
             </p>
         </div>
     );
+
+    // Debug render
+    console.log('Rendering with state:', { 
+        loading, 
+        error, 
+        productCount: dealProducts.length,
+        firstProduct: dealProducts[0] 
+    });
 
     return (
         <div className="min-h-screen bg-background overflow-x-hidden md:pb-0">
@@ -366,17 +325,22 @@ export default function TodaysDeals() {
                     renderEmpty()
                 ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-                        {dealProducts.map((product, index) => (
-                            <Link 
-                                key={product.id || product._id || `product-${index}`} 
-                                to={`/product/${product.slug || product.id || product._id}`} 
-                                className="block" 
-                                data-aos="fade-up" 
-                                data-aos-delay={Math.min(index * 50, 200)}
-                            >
-                                <ProductCard product={product} variant="compact"/>
-                            </Link>
-                        ))}
+                        {dealProducts.map((product, index) => {
+                            const productId = product.id || product._id || `product-${index}`;
+                            const productSlug = product.slug || product.id || product._id;
+                            
+                            return (
+                                <Link 
+                                    key={productId}
+                                    to={`/product/${productSlug}`} 
+                                    className="block" 
+                                    data-aos="fade-up" 
+                                    data-aos-delay={Math.min(index * 50, 200)}
+                                >
+                                    <ProductCard product={product} variant="compact"/>
+                                </Link>
+                            );
+                        })}
                     </div>
                 )}
             </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Loader2, AlertCircle, Trash2, Gift, Search, Plus, ChevronRight } from "lucide-react";
+import { Loader2, AlertCircle, Trash2, Gift, Search,X, Plus, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -121,7 +121,7 @@ export const UserCouponManagement = () => {
     if (selectedUserId && !selectedUserData) {
       const fetchUserData = async () => {
         try {
-          const response = await api.get(`/api/admin/users/${selectedUserId}`);
+          const response = await api.get(`/admin/users/${selectedUserId}`);
           if (response.data && response.data.data) {
             setSelectedUserData(response.data.data);
             console.log("User data fetched:", response.data.data);
@@ -227,7 +227,7 @@ export const UserCouponManagement = () => {
             setAssignDialogOpen(true);
             setUsers([]);
           }}
-          className="gap-2"
+          className="gap-2 hidden"
         >
           <Plus className="w-4 h-4" />
           Assign Coupon
@@ -290,9 +290,9 @@ export const UserCouponManagement = () => {
           </DialogHeader>
           
           <div className="space-y-4 py-4">
-            <div>
+            <div className="flex flex-col">
               <label className="text-sm font-medium mb-2 block">
-                Select User
+                Selected User
               </label>
               <Input
                 placeholder="Search user by name..."
@@ -303,7 +303,7 @@ export const UserCouponManagement = () => {
                     setUsers([]);
                   }
                 }}
-                className="mb-2"
+                className="mb-2 hidden"
               />
               {users.length > 0 && (
                 <div className="border rounded-md max-h-48 overflow-y-auto">
@@ -325,31 +325,53 @@ export const UserCouponManagement = () => {
                   ))}
                 </div>
               )}
-              {selectedUserId && selectedUserData && (
-                <Badge className="mt-2">
-                  {selectedUserData.name} ({selectedUserData.email || selectedUserData.phone})
-                </Badge>
-              )}
-              {selectedUserId && !selectedUserData && (
-                <Badge className="mt-2">
-                  User #{selectedUserId}
-                </Badge>
-              )}
-            </div>
+          {/* Selected User Display */}
+{selectedUserId && selectedUserData && (
+  <div className="flex items-center gap-2 p-3 border rounded-md bg-muted/30">
+    <div className="flex-1 flex items-center gap-3">
+      <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center">
+        <span className="text-sm font-medium text-accent">
+          {selectedUserData.name?.charAt(0).toUpperCase()}
+        </span>
+      </div>
+      <div>
+        <p className="text-sm font-medium">{selectedUserData.name}</p>
+        <p className="text-xs text-muted-foreground">
+          {selectedUserData.email || selectedUserData.phone}
+        </p>
+      </div>
+    </div>
+    <Button
+      variant="ghost"
+      size="icon"
+      className="h-8 w-8"
+      onClick={() => {
+        setSelectedUserId("");
+        setSelectedUserData(null);
+      }}
+    >
+      <X className="h-4 w-4" />
+    </Button>
+  </div>
+)}
 
-            <div>
-              <label className="text-sm font-medium mb-2 block">
-                Discount Value
-              </label>
-              <Input
-                type="number"
-                placeholder="Enter discount value"
-                value={discountValue}
-                onChange={(e) => setDiscountValue(e.target.value)}
-              />
+{selectedUserId && !selectedUserData && (
+  <div className="flex items-center gap-2 p-3 border rounded-md bg-muted/30">
+    <div className="flex-1">
+      <p className="text-sm text-muted-foreground">User #{selectedUserId}</p>
+    </div>
+    <Button
+      variant="ghost"
+      size="icon"
+      className="h-8 w-8"
+      onClick={() => setSelectedUserId("")}
+    >
+      <X className="h-4 w-4" />
+    </Button>
+  </div>
+)}
             </div>
-
-            <div>
+  <div>
               <label className="text-sm font-medium mb-2 block">
                 Discount Type
               </label>
@@ -363,6 +385,19 @@ export const UserCouponManagement = () => {
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">
+                Discount Value
+              </label>
+              <Input
+                type="number"
+                placeholder="Enter discount value"
+                value={discountValue}
+                onChange={(e) => setDiscountValue(e.target.value)}
+              />
+            </div>
+
+          
           </div>
 
           <DialogFooter>
