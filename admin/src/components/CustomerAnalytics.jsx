@@ -492,12 +492,12 @@ export const CustomerAnalytics = () => {
                               <DropdownMenuItem onClick={() => handleViewCustomer(customer.id)}>
                                 <Eye className="h-4 w-4 mr-2" /> View Details
                               </DropdownMenuItem>
-                              <DropdownMenuItem
+                              {/* <DropdownMenuItem
                                 onClick={() => handleSendEmail(customer.email)}
                                 disabled={!customer.email || customer.email === 'No email'}
                               >
                                 <Mail className="h-4 w-4 mr-2" /> Send Email
-                              </DropdownMenuItem>
+                              </DropdownMenuItem> */}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>

@@ -25,14 +25,9 @@ import { useToast } from "@/hooks/use-toast";
 import { getImageUrl } from "@/lib/utils";
 import api from "@/lib/api";
 
-/* ═══════════════════════════════════════════════════════════
-   CONSTANTS
-═══════════════════════════════════════════════════════════ */
 const PAGE_SIZE_OPTIONS = [15, 30, 45, 100];
 
-/* ═══════════════════════════════════════════════════════════
-   PURE HELPERS
-═══════════════════════════════════════════════════════════ */
+/* ── helpers ── */
 const fmt = (amount) =>
   new Intl.NumberFormat("en-IN", {
     style: "currency", currency: "INR",
@@ -63,9 +58,7 @@ const getCustomerName  = (o) => o.customerName  || o.user?.name  || o.shippingAd
 const getCustomerPhone = (o) => o.customerPhone || o.user?.phone || o.shippingAddress?.phone || "N/A";
 const getCustomerEmail = (o) => o.customerEmail || o.user?.email || "N/A";
 
-/* ═══════════════════════════════════════════════════════════
-   BADGE HELPERS
-═══════════════════════════════════════════════════════════ */
+/* ── badges ── */
 const STATUS_STYLES = {
   pending:     { bg: "bg-yellow-50",  text: "text-yellow-700",  border: "border-yellow-200"  },
   processing:  { bg: "bg-blue-50",    text: "text-blue-700",    border: "border-blue-200"    },
@@ -95,9 +88,7 @@ const PaymentBadge = ({ status }) => {
   return <Badge variant="secondary" className={`${s.bg} ${s.text} text-xs font-medium capitalize`}>{status}</Badge>;
 };
 
-/* ═══════════════════════════════════════════════════════════
-   RESOLVE ITEM IMAGE
-═══════════════════════════════════════════════════════════ */
+/* ── image resolver ── */
 const resolveItemImage = (item) => {
   if (item.image) return getImageUrl(item.image);
   if (item.product?.colorsAndImages && item.colorName) {
@@ -116,15 +107,13 @@ const resolveItemImage = (item) => {
   return null;
 };
 
-/* ═══════════════════════════════════════════════════════════
-   CANCEL CONFIRMATION DIALOG
-   — admin must type the exact order number to confirm
-═══════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════
+   CANCEL CONFIRM DIALOG
+══════════════════════════════════════════════════════ */
 function CancelConfirmDialog({ order, onConfirm, onClose, isLoading }) {
   const [inputValue, setInputValue] = useState("");
   const inputRef = useRef(null);
 
-  // Focus input when dialog opens
   useEffect(() => {
     const t = setTimeout(() => inputRef.current?.focus(), 100);
     return () => clearTimeout(t);
@@ -135,15 +124,9 @@ function CancelConfirmDialog({ order, onConfirm, onClose, isLoading }) {
   const finalAmt     = parseFloat(order?.finalAmount || order?.totalPrice || 0);
   const isMatch      = inputValue.trim() === orderNumber;
 
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter" && isMatch && !isLoading) onConfirm();
-  };
-
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
-
-        {/* Header */}
         <DialogHeader>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
@@ -151,16 +134,12 @@ function CancelConfirmDialog({ order, onConfirm, onClose, isLoading }) {
             </div>
             <div>
               <DialogTitle className="text-base">Cancel Order?</DialogTitle>
-              <DialogDescription className="text-xs mt-0.5">
-                This action cannot be undone.
-              </DialogDescription>
+              <DialogDescription className="text-xs mt-0.5">This action cannot be undone.</DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
         <div className="space-y-4">
-
-          {/* Order info card */}
           <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-1.5">
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">Order Number</span>
@@ -180,7 +159,6 @@ function CancelConfirmDialog({ order, onConfirm, onClose, isLoading }) {
             </div>
           </div>
 
-          {/* Warning note */}
           <div className="flex items-start gap-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2.5">
             <XCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
             <p className="text-xs text-red-700 leading-relaxed">
@@ -189,7 +167,6 @@ function CancelConfirmDialog({ order, onConfirm, onClose, isLoading }) {
             </p>
           </div>
 
-          {/* Confirmation input */}
           <div className="space-y-2">
             <Label htmlFor="confirm-order-id" className="text-sm font-medium">
               Type the order number to confirm
@@ -207,7 +184,7 @@ function CancelConfirmDialog({ order, onConfirm, onClose, isLoading }) {
               placeholder={orderNumber}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={handleKeyDown}
+              onKeyDown={(e) => { if (e.key === "Enter" && isMatch && !isLoading) onConfirm(); }}
               className={`font-mono transition-colors ${
                 inputValue.length > 0
                   ? isMatch
@@ -216,34 +193,24 @@ function CancelConfirmDialog({ order, onConfirm, onClose, isLoading }) {
                   : ""
               }`}
             />
-            {/* Live match indicator */}
             {inputValue.length > 0 && (
               <p className={`text-xs flex items-center gap-1 ${isMatch ? "text-green-600" : "text-red-500"}`}>
-                {isMatch ? (
-                  <><CheckCircle className="w-3.5 h-3.5" /> Order number matches — you can proceed</>
-                ) : (
-                  <><XCircle className="w-3.5 h-3.5" /> Order number does not match</>
-                )}
+                {isMatch
+                  ? <><CheckCircle className="w-3.5 h-3.5" /> Order number matches — you can proceed</>
+                  : <><XCircle className="w-3.5 h-3.5" /> Order number does not match</>
+                }
               </p>
             )}
           </div>
         </div>
 
         <DialogFooter className="gap-2 mt-2">
-          <Button variant="outline" onClick={onClose} disabled={isLoading}>
-            Keep Order
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={onConfirm}
-            disabled={!isMatch || isLoading}
-            className="min-w-[130px]"
-          >
-            {isLoading ? (
-              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Cancelling…</>
-            ) : (
-              <><XCircle className="w-4 h-4 mr-2" /> Cancel Order</>
-            )}
+          <Button variant="outline" onClick={onClose} disabled={isLoading}>Keep Order</Button>
+          <Button variant="destructive" onClick={onConfirm} disabled={!isMatch || isLoading} className="min-w-[130px]">
+            {isLoading
+              ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Cancelling…</>
+              : <><XCircle className="w-4 h-4 mr-2" /> Cancel Order</>
+            }
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -251,9 +218,9 @@ function CancelConfirmDialog({ order, onConfirm, onClose, isLoading }) {
   );
 }
 
-/* ═══════════════════════════════════════════════════════════
-   ORDER DETAIL MODAL — tab style, clean theme
-═══════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════
+   ORDER DETAIL MODAL
+══════════════════════════════════════════════════════ */
 function OrderDetailModal({ orderId, onClose, onUpdateStatus, onRequestCancel }) {
   const [order,   setOrder  ] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -299,7 +266,6 @@ function OrderDetailModal({ orderId, onClose, onUpdateStatus, onRequestCancel })
 
   const orderStatus   = order?.orderStatus   || "pending";
   const paymentStatus = order?.paymentStatus || "pending";
-
   const payMethodLabel =
     isCod                             ? "Cash on Delivery"
     : order?.paymentMethod === "upi"  ? "UPI / PhonePe"
@@ -333,8 +299,6 @@ function OrderDetailModal({ orderId, onClose, onUpdateStatus, onRequestCancel })
 
         {loading ? <ModalSkeleton /> : order && (
           <div className="space-y-6">
-
-            {/* Summary strip */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
                 { label: "Order Date",     value: fmtDate(order.createdAt || order.created_at) },
@@ -349,7 +313,6 @@ function OrderDetailModal({ orderId, onClose, onUpdateStatus, onRequestCancel })
               ))}
             </div>
 
-            {/* Tabs */}
             <Tabs defaultValue="overview">
               <TabsList className="grid grid-cols-3 w-full">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -357,7 +320,7 @@ function OrderDetailModal({ orderId, onClose, onUpdateStatus, onRequestCancel })
                 <TabsTrigger value="items">Items ({countItems(items)})</TabsTrigger>
               </TabsList>
 
-              {/* ── Overview ── */}
+              {/* Overview */}
               <TabsContent value="overview" className="space-y-4 mt-4">
                 <Card>
                   <CardHeader className="pb-3">
@@ -378,17 +341,13 @@ function OrderDetailModal({ orderId, onClose, onUpdateStatus, onRequestCancel })
                         {order.merchantOrderId && (
                           <div>
                             <p className="text-xs text-muted-foreground mb-1">Merchant Order ID</p>
-                            <code className="text-xs bg-muted w-fit px-2 py-1 rounded block font-mono break-all">
-                              {order.merchantOrderId}
-                            </code>
+                            <code className="text-xs bg-muted w-fit px-2 py-1 rounded block font-mono break-all">{order.merchantOrderId}</code>
                           </div>
                         )}
                         {order.phonePeTransactionId && (
                           <div>
                             <p className="text-xs text-muted-foreground mb-1">PhonePe Transaction ID</p>
-                            <code className="text-xs bg-muted w-fit px-2 py-1 rounded block font-mono break-all">
-                              {order.phonePeTransactionId}
-                            </code>
+                            <code className="text-xs bg-muted w-fit px-2 py-1 rounded block font-mono break-all">{order.phonePeTransactionId}</code>
                           </div>
                         )}
                       </div>
@@ -403,9 +362,7 @@ function OrderDetailModal({ orderId, onClose, onUpdateStatus, onRequestCancel })
                     {order.notes && (
                       <div className="pt-1">
                         <p className="text-xs text-muted-foreground mb-1">Order Notes</p>
-                        <p className="text-sm text-foreground bg-muted/40 rounded-lg p-3 border border-border/40">
-                          {order.notes}
-                        </p>
+                        <p className="text-sm text-foreground bg-muted/40 rounded-lg p-3 border border-border/40">{order.notes}</p>
                       </div>
                     )}
                   </CardContent>
@@ -421,11 +378,7 @@ function OrderDetailModal({ orderId, onClose, onUpdateStatus, onRequestCancel })
                     {addr ? (
                       <div className="bg-muted/30 p-4 rounded-lg border border-border/50 space-y-0.5">
                         {addr.name   && <p className="font-semibold text-sm">{addr.name}</p>}
-                        {addr.phone  && (
-                          <p className="text-sm text-muted-foreground flex items-center gap-1.5">
-                            <Phone className="w-3.5 h-3.5" />{addr.phone}
-                          </p>
-                        )}
+                        {addr.phone  && <p className="text-sm text-muted-foreground flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" />{addr.phone}</p>}
                         {addr.street && <p className="text-sm text-muted-foreground">{addr.street}</p>}
                         <p className="text-sm text-muted-foreground">
                           {[addr.city, addr.state].filter(Boolean).join(", ")}
@@ -451,14 +404,11 @@ function OrderDetailModal({ orderId, onClose, onUpdateStatus, onRequestCancel })
                       <span className="font-medium">{fmt(totalPrice)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground flex items-center gap-1.5">
-                        <Truck className="w-3.5 h-3.5" /> Shipping
-                      </span>
-                      {shippingCost > 0 ? (
-                        <span className="font-medium">{fmt(shippingCost)}</span>
-                      ) : (
-                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">FREE</Badge>
-                      )}
+                      <span className="text-muted-foreground flex items-center gap-1.5"><Truck className="w-3.5 h-3.5" /> Shipping</span>
+                      {shippingCost > 0
+                        ? <span className="font-medium">{fmt(shippingCost)}</span>
+                        : <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">FREE</Badge>
+                      }
                     </div>
                     {taxAmount > 0 && (
                       <div className="flex justify-between text-sm">
@@ -467,56 +417,34 @@ function OrderDetailModal({ orderId, onClose, onUpdateStatus, onRequestCancel })
                       </div>
                     )}
                     {hasCoupon && (
-                      <>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground flex items-center gap-1.5">
-                            <BadgePercent className="w-3.5 h-3.5 text-violet-600" />
-                            <span className="text-violet-700 font-medium flex items-center gap-1.5">
-                              Coupon Discount
-                              {coupon?.code && (
-                                <span className="ml-2 font-mono text-xs px-1.5 py-0.5 bg-violet-50 border border-violet-200 rounded text-violet-600">
-                                  {coupon.code}
-                                </span>
-                              )}<p className="text-[11px] text-violet-600 capitalize">
-                                                                {coupon.discountType === "percentage"
-                                                                    ? `${coupon.discountValue}% off`
-                                                                    : coupon.discountType === "fixed"
-                                                                    ? `₹${coupon.discountValue} flat off`
-                                                                    : coupon.discountType}
-                                                            </p>
-                            </span>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground flex items-center gap-1.5">
+                          <BadgePercent className="w-3.5 h-3.5 text-violet-600" />
+                          <span className="text-violet-700 font-medium flex items-center gap-1.5">
+                            Coupon Discount
+                            {coupon?.code && (
+                              <span className="font-mono text-xs px-1.5 py-0.5 bg-violet-50 border border-violet-200 rounded text-violet-600">
+                                {coupon.code}
+                              </span>
+                            )}
+                            {coupon?.discountType && (
+                              <span className="text-[11px] text-violet-500">
+                                ({coupon.discountType === "percentage"
+                                  ? `${coupon.discountValue}% off`
+                                  : coupon.discountType === "fixed"
+                                  ? `₹${coupon.discountValue} flat off`
+                                  : coupon.discountType})
+                              </span>
+                            )}
                           </span>
-                          <span className="font-semibold text-violet-700">− {fmt(discount)}</span>
-                        </div>
-                        {/* {coupon && (
-                          <div className="flex items-center justify-between bg-violet-50 border border-violet-100 rounded-lg px-3 py-2.5">
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center">
-                                <Ticket className="w-4 h-4 text-violet-600" />
-                              </div>
-                              <div>
-                                <p className="text-xs font-bold text-violet-800 font-mono">{coupon.code}</p>
-                                <p className="text-[11px] text-violet-600 capitalize">
-                                  {coupon.discountType === "percentage"
-                                    ? `${coupon.discountValue}% off`
-                                    : coupon.discountType === "fixed"
-                                    ? `₹${coupon.discountValue} flat off`
-                                    : coupon.discountType}
-                                </p>
-                              </div>
-                            </div>
-                            <span className="text-sm font-bold text-violet-700">− {fmt(discount)}</span>
-                          </div>
-                        )} */}
-                      </>
+                        </span>
+                        <span className="font-semibold text-violet-700">− {fmt(discount)}</span>
+                      </div>
                     )}
                     <Separator />
                     <div className="flex justify-between items-center pt-1">
                       <span className="font-bold text-base">Total Paid</span>
-                      <div className="text-right">
-                        <span className="font-bold text-lg text-primary">{fmt(finalAmt)}</span>
-                      
-                      </div>
+                      <span className="font-bold text-lg text-primary">{fmt(finalAmt)}</span>
                     </div>
                   </CardContent>
                 </Card>
@@ -533,12 +461,10 @@ function OrderDetailModal({ orderId, onClose, onUpdateStatus, onRequestCancel })
                 </Card>
               </TabsContent>
 
-              {/* ── Customer ── */}
+              {/* Customer */}
               <TabsContent value="customer" className="space-y-4 mt-4">
                 <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base">Customer Information</CardTitle>
-                  </CardHeader>
+                  <CardHeader className="pb-3"><CardTitle className="text-base">Customer Information</CardTitle></CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold text-lg flex-shrink-0">
@@ -546,46 +472,31 @@ function OrderDetailModal({ orderId, onClose, onUpdateStatus, onRequestCancel })
                       </div>
                       <div>
                         <p className="font-semibold">{getCustomerName(order)}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Customer ID: {order.userId || order.user?.id || "N/A"}
-                        </p>
+                        <p className="text-sm text-muted-foreground">Customer ID: {order.userId || order.user?.id || "N/A"}</p>
                       </div>
                     </div>
                     <Separator />
                     <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm">
-                        <Phone className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                        <span>{getCustomerPhone(order)}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <Mail className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                        <span className="break-all">{getCustomerEmail(order)}</span>
-                      </div>
+                      <div className="flex items-center gap-2 text-sm"><Phone className="w-4 h-4 text-muted-foreground flex-shrink-0" /><span>{getCustomerPhone(order)}</span></div>
+                      <div className="flex items-center gap-2 text-sm"><Mail className="w-4 h-4 text-muted-foreground flex-shrink-0" /><span className="break-all">{getCustomerEmail(order)}</span></div>
                     </div>
                     <Separator />
                     <div>
-                      <p className="text-sm font-medium mb-2 flex items-center gap-1.5">
-                        <MapPin className="w-3.5 h-3.5 text-muted-foreground" /> Delivery Address
-                      </p>
+                      <p className="text-sm font-medium mb-2 flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-muted-foreground" /> Delivery Address</p>
                       {addr ? (
                         <div className="text-sm text-muted-foreground space-y-0.5 bg-muted/30 p-3 rounded-lg border border-border/50">
                           {addr.name   && <p className="font-semibold text-foreground">{addr.name}</p>}
                           {addr.street && <p>{addr.street}</p>}
-                          <p>
-                            {[addr.city, addr.state].filter(Boolean).join(", ")}
-                            {(addr.pincode || addr.zipCode) ? ` — ${addr.pincode || addr.zipCode}` : ""}
-                          </p>
+                          <p>{[addr.city, addr.state].filter(Boolean).join(", ")}{(addr.pincode || addr.zipCode) ? ` — ${addr.pincode || addr.zipCode}` : ""}</p>
                           {addr.country && <p>{addr.country}</p>}
                         </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">No address provided</p>
-                      )}
+                      ) : <p className="text-sm text-muted-foreground">No address provided</p>}
                     </div>
                   </CardContent>
                 </Card>
               </TabsContent>
 
-              {/* ── Items ── */}
+              {/* Items */}
               <TabsContent value="items" className="space-y-4 mt-4">
                 <Card>
                   <CardHeader className="pb-3">
@@ -604,17 +515,13 @@ function OrderDetailModal({ orderId, onClose, onUpdateStatus, onRequestCancel })
                           <div key={index} className="flex items-start justify-between p-4 border border-border rounded-lg gap-3 hover:bg-muted/20 transition-colors">
                             <div className="flex items-start gap-3">
                               <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0 border border-border/40">
-                                {imgSrc ? (
-                                  <img src={imgSrc} alt={item.name || "Product"} className="w-full h-full object-cover"
-                                    onError={(e) => { e.target.style.display = "none"; }} />
-                                ) : (
-                                  <Package className="h-6 w-6 text-muted-foreground" />
-                                )}
+                                {imgSrc
+                                  ? <img src={imgSrc} alt={item.name || "Product"} className="w-full h-full object-cover" onError={(e) => { e.target.style.display = "none"; }} />
+                                  : <Package className="h-6 w-6 text-muted-foreground" />
+                                }
                               </div>
                               <div className="space-y-1">
-                                <h4 className="font-medium text-sm leading-snug">
-                                  {item.name || item.productName || `Product #${item.productId}`}
-                                </h4>
+                                <h4 className="font-medium text-sm leading-snug">{item.name || item.productName || `Product #${item.productId}`}</h4>
                                 <div className="text-xs text-muted-foreground space-y-0.5">
                                   {item.code      && <div className="flex items-center gap-1"><Tag className="h-3 w-3" /> Code: {item.code}</div>}
                                   {item.colorName && <div>Color: {item.colorName}</div>}
@@ -633,34 +540,19 @@ function OrderDetailModal({ orderId, onClose, onUpdateStatus, onRequestCancel })
                           </div>
                         );
                       })}
-
                       <Separator />
-
                       <div className="space-y-2 pt-1">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Subtotal</span>
-                          <span>{fmt(totalPrice)}</span>
-                        </div>
+                        <div className="flex justify-between text-sm"><span className="text-muted-foreground">Subtotal</span><span>{fmt(totalPrice)}</span></div>
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">Shipping</span>
-                          {shippingCost > 0
-                            ? <span>{fmt(shippingCost)}</span>
-                            : <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">FREE</Badge>
-                          }
+                          {shippingCost > 0 ? <span>{fmt(shippingCost)}</span> : <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">FREE</Badge>}
                         </div>
-                        {taxAmount > 0 && (
-                          <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Tax / GST</span>
-                            <span>{fmt(taxAmount)}</span>
-                          </div>
-                        )}
+                        {taxAmount > 0 && <div className="flex justify-between text-sm"><span className="text-muted-foreground">Tax / GST</span><span>{fmt(taxAmount)}</span></div>}
                         {hasCoupon && (
                           <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground flex items-center gap-1.5">
                               <BadgePercent className="w-3.5 h-3.5 text-violet-600" />
-                              <span className="text-violet-700 font-medium">
-                                Coupon{coupon?.code && ` (${coupon.code})`}
-                              </span>
+                              <span className="text-violet-700 font-medium">Coupon{coupon?.code && ` (${coupon.code})`}</span>
                             </span>
                             <span className="text-violet-700 font-semibold">− {fmt(discount)}</span>
                           </div>
@@ -668,9 +560,7 @@ function OrderDetailModal({ orderId, onClose, onUpdateStatus, onRequestCancel })
                         <Separator />
                         <div className="flex justify-between items-center pt-1">
                           <span className="font-bold">Total Paid</span>
-                          <div className="text-right">
-                            <span className="font-bold text-lg text-primary">{fmt(finalAmt)}</span>
-                          </div>
+                          <span className="font-bold text-lg text-primary">{fmt(finalAmt)}</span>
                         </div>
                       </div>
                     </div>
@@ -679,15 +569,10 @@ function OrderDetailModal({ orderId, onClose, onUpdateStatus, onRequestCancel })
               </TabsContent>
             </Tabs>
 
-            {/* Footer actions */}
             <div className="flex justify-end gap-2 pt-1">
               <Button variant="outline" onClick={onClose}>Close</Button>
               {order.orderStatus !== "cancelled" && order.orderStatus !== "delivered" && (
-                <Button
-                  variant="outline"
-                  className="text-destructive border-destructive/30 hover:bg-destructive/5"
-                  onClick={() => onRequestCancel(order)}
-                >
+                <Button variant="outline" className="text-destructive border-destructive/30 hover:bg-destructive/5" onClick={() => onRequestCancel(order)}>
                   <XCircle className="w-4 h-4 mr-2" /> Cancel Order
                 </Button>
               )}
@@ -702,9 +587,9 @@ function OrderDetailModal({ orderId, onClose, onUpdateStatus, onRequestCancel })
   );
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* ══════════════════════════════════════════════════════
    MAIN COMPONENT
-═══════════════════════════════════════════════════════════ */
+══════════════════════════════════════════════════════ */
 export const OrderManagement = () => {
   const navigate = useNavigate();
 
@@ -722,17 +607,16 @@ export const OrderManagement = () => {
   const [pageSize, setPageSize]                       = useState(15);
   const [pagination, setPagination]                   = useState({ page: 1, limit: 15, total: 0, totalPages: 1 });
   const [stats, setStats]                             = useState({
-    total:0, pending:0, processing:0, shipped:0, delivered:0, cancelled:0,
-    revenue:0, monthlyRevenue:0, weeklyRevenue:0,
+    total: 0, pending: 0, processing: 0, shipped: 0, delivered: 0, cancelled: 0,
+    revenue: 0, monthlyRevenue: 0, weeklyRevenue: 0,
+    // ── NEW: track cancelled amounts separately ──
+    cancelledRevenue: 0, cancelledMonthlyRevenue: 0, cancelledWeeklyRevenue: 0,
   });
-
-  // Cancel confirmation state
-  const [cancelTarget, setCancelTarget]     = useState(null); // the order object to cancel
-  const [isCancelling, setIsCancelling]     = useState(false);
-
+  const [cancelTarget, setCancelTarget] = useState(null);
+  const [isCancelling, setIsCancelling] = useState(false);
   const { toast } = useToast();
 
-  /* ── fetch list ── */
+  /* ── fetch orders ── */
   const fetchOrders = async (page = 1, limit = pageSize) => {
     try {
       setLoading(true);
@@ -750,25 +634,48 @@ export const OrderManagement = () => {
       const ordersData     = response.data.data.orders     || [];
       const paginationData = response.data.data.pagination || { page, limit, total: 0, totalPages: 1 };
       const serverCounts   = response.data.data.statusCounts || {};
-      const serverRevenue  = response.data.data.totalRevenue ?? 0;
+      const serverRevenue          = response.data.data.totalRevenue          ?? 0; // non-cancelled paid only (after backend fix)
+      const serverCancelledRevenue = response.data.data.cancelledRevenue      ?? null; // null = backend not yet updated
 
       setOrders(ordersData);
       setPagination(paginationData);
 
+      /* ── Revenue calculations — CLIENT SIDE (current page only)
+         Split into paid-non-cancelled vs cancelled buckets ── */
       const now          = new Date();
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       const startOfWeek  = new Date(now);
       startOfWeek.setDate(now.getDate() - now.getDay());
       startOfWeek.setHours(0, 0, 0, 0);
-      let monthlyRev = 0, weeklyRev = 0;
+
+      let activeRev            = 0;
+      let monthlyRev           = 0;
+      let weeklyRev            = 0;
+      let cancelledRev         = 0;
+      let cancelledMonthlyRev  = 0;
+      let cancelledWeeklyRev   = 0;
+
       ordersData.forEach((o) => {
-        if (o.paymentStatus === "paid") {
-          const amt = parseFloat(o.finalAmount || 0);
-          const d   = new Date(o.createdAt || o.created_at);
+        const amt              = parseFloat(o.finalAmount || 0);
+        const d                = new Date(o.createdAt || o.created_at);
+        const isCancelledOrder = o.orderStatus === "cancelled";
+
+        if (isCancelledOrder) {
+          cancelledRev += amt;
+          if (d >= startOfMonth) cancelledMonthlyRev += amt;
+          if (d >= startOfWeek)  cancelledWeeklyRev  += amt;
+        } else if (o.paymentStatus === "paid") {
+          activeRev  += amt;
           if (d >= startOfMonth) monthlyRev += amt;
           if (d >= startOfWeek)  weeklyRev  += amt;
         }
       });
+
+      // If backend sends cancelledRevenue it means it already excludes cancelled from totalRevenue.
+      // Otherwise fall back to client-side activeRev (current page only, but correctly filtered).
+      const resolvedTotalRevenue = serverCancelledRevenue !== null
+        ? serverRevenue
+        : activeRev;
 
       setStats({
         total:      paginationData.total,
@@ -777,9 +684,12 @@ export const OrderManagement = () => {
         shipped:    serverCounts.shipped    || 0,
         delivered:  serverCounts.delivered  || 0,
         cancelled:  serverCounts.cancelled  || 0,
-        revenue:    serverRevenue,
-        monthlyRevenue: monthlyRev,
-        weeklyRevenue:  weeklyRev,
+        revenue:         resolvedTotalRevenue,
+        monthlyRevenue:  monthlyRev,
+        weeklyRevenue:   weeklyRev,
+        cancelledRevenue:        serverCancelledRevenue ?? cancelledRev,
+        cancelledMonthlyRevenue: cancelledMonthlyRev,
+        cancelledWeeklyRevenue:  cancelledWeeklyRev,
       });
     } catch (error) {
       toast({ title: "Error", description: error.message || "Failed to fetch orders", variant: "destructive" });
@@ -798,8 +708,17 @@ export const OrderManagement = () => {
     throw new Error(response.data.message || "Failed to update order status");
   };
 
+  /* ── recalcStats also excludes cancelled from revenue ── */
   const recalcStats = (list, total) => {
-    const revenue = list.reduce((s, o) => s + parseFloat(o.finalAmount || o.totalPrice || 0), 0);
+    // Only sum non-cancelled orders for revenue
+    const revenue = list
+      .filter(o => o.orderStatus !== "cancelled")
+      .reduce((s, o) => s + parseFloat(o.finalAmount || o.totalPrice || 0), 0);
+
+    const cancelledRevenue = list
+      .filter(o => o.orderStatus === "cancelled")
+      .reduce((s, o) => s + parseFloat(o.finalAmount || o.totalPrice || 0), 0);
+
     setStats(prev => ({
       ...prev,
       total:      total ?? list.length,
@@ -809,15 +728,11 @@ export const OrderManagement = () => {
       delivered:  list.filter(o => o.orderStatus === "delivered").length,
       cancelled:  list.filter(o => o.orderStatus === "cancelled").length,
       revenue,
+      cancelledRevenue,
     }));
   };
 
-  /* ── Cancel flow ──────────────────────────────────────────────
-     Step 1: requestCancel(order)  — opens CancelConfirmDialog
-     Step 2: confirmCancel()       — called after ID matches, executes API
-  ─────────────────────────────────────────────────────────── */
   const requestCancel = (order) => {
-    // Close the detail modal if open, then show confirm dialog
     setSelectedOrderId(null);
     setCancelTarget(order);
   };
@@ -828,9 +743,7 @@ export const OrderManagement = () => {
       setIsCancelling(true);
       const result = await updateOrderStatusApi(cancelTarget.id, { status: "cancelled" });
       if (result.success) {
-        const updated = orders.map(o =>
-          o.id === cancelTarget.id ? { ...o, orderStatus: "cancelled" } : o
-        );
+        const updated = orders.map(o => o.id === cancelTarget.id ? { ...o, orderStatus: "cancelled" } : o);
         setOrders(updated);
         recalcStats(updated, pagination.total);
         toast({ title: "Order Cancelled", description: `${cancelTarget.orderNumber} has been cancelled.` });
@@ -901,7 +814,35 @@ export const OrderManagement = () => {
     toast({ title: "Exported", description: `${orders.length} orders exported` });
   };
 
-  /* ─────────────────── render ─────────────────── */
+  /* ── stat card config with optional "cancelled sub-line" ── */
+  const statCards = loading ? [] : [
+    {
+      label: "Total Revenue",
+      value: fmt(stats.revenue),
+      icon: CreditCard, color: "text-green-600", bg: "bg-green-100",
+      // show cancelled amount below only if there's any
+      cancelledAmt: stats.cancelledRevenue,
+    },
+    {
+      label: "Monthly Revenue",
+      value: fmt(stats.monthlyRevenue),
+      icon: CreditCard, color: "text-blue-600", bg: "bg-blue-100",
+      cancelledAmt: stats.cancelledMonthlyRevenue,
+    },
+    {
+      label: "Weekly Revenue",
+      value: fmt(stats.weeklyRevenue),
+      icon: CreditCard, color: "text-purple-600", bg: "bg-purple-100",
+      cancelledAmt: stats.cancelledWeeklyRevenue,
+    },
+    { label: "Total Orders",  value: pagination.total,   icon: Package,     color: "text-primary",     bg: "bg-primary/10"  },
+    { label: "Pending",       value: stats.pending,      icon: Clock,       color: "text-yellow-600",  bg: "bg-yellow-100"  },
+    { label: "Processing",    value: stats.processing,   icon: RefreshCw,   color: "text-indigo-600",  bg: "bg-indigo-100"  },
+    { label: "Shipped",       value: stats.shipped,      icon: Truck,       color: "text-orange-600",  bg: "bg-orange-100"  },
+    { label: "Delivered",     value: stats.delivered,    icon: CheckCircle, color: "text-emerald-600", bg: "bg-emerald-100" },
+  ];
+
+  /* ── render ── */
   return (
     <div className="space-y-6">
 
@@ -932,24 +873,22 @@ export const OrderManagement = () => {
                 </div>
               </CardContent></Card>
             ))
-          : [
-              { label:"Total Revenue",   value:fmt(stats.revenue),        icon:CreditCard,  color:"text-green-600",   bg:"bg-green-100"  },
-              { label:"Monthly Revenue", value:fmt(stats.monthlyRevenue),  icon:CreditCard,  color:"text-blue-600",    bg:"bg-blue-100"   },
-              { label:"Weekly Revenue",  value:fmt(stats.weeklyRevenue),   icon:CreditCard,  color:"text-purple-600",  bg:"bg-purple-100" },
-              { label:"Total Orders",    value:pagination.total,           icon:Package,     color:"text-primary",     bg:"bg-primary/10" },
-              { label:"Pending",         value:stats.pending,              icon:Clock,       color:"text-yellow-600",  bg:"bg-yellow-100" },
-              { label:"Processing",      value:stats.processing,           icon:RefreshCw,   color:"text-indigo-600",  bg:"bg-indigo-100" },
-              { label:"Shipped",         value:stats.shipped,              icon:Truck,       color:"text-orange-600",  bg:"bg-orange-100" },
-              { label:"Delivered",       value:stats.delivered,            icon:CheckCircle, color:"text-emerald-600", bg:"bg-emerald-100"},
-            ].map((s, i) => (
+          : statCards.map((s, i) => (
               <Card key={i}><CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${s.bg} ${s.color}`}>
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${s.bg} ${s.color}`}>
                     <s.icon className="h-5 w-5" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-xs text-muted-foreground">{s.label}</p>
                     <p className="text-sm font-bold">{s.value}</p>
+                    {/* ── Cancelled sub-line — only on revenue cards ── */}
+                    {s.cancelledAmt > 0 && (
+                      <p className="text-[10px] text-red-400 flex items-center gap-0.5 mt-0.5 leading-tight">
+                        <XCircle className="w-2.5 h-2.5 flex-shrink-0" />
+                        {fmt(s.cancelledAmt)} cancelled
+                      </p>
+                    )}
                   </div>
                 </div>
               </CardContent></Card>
@@ -1052,50 +991,42 @@ export const OrderManagement = () => {
                       const isCod = order.paymentMethod === "cod";
                       const disc  = parseFloat(order.discountAmount || 0);
                       return (
-                        <TableRow key={order.id}
-                          className={`text-sm ${order.orderStatus === "cancelled" ? "bg-red-50/30" : ""}`}>
-
+                        <TableRow key={order.id} className={`text-sm ${order.orderStatus === "cancelled" ? "bg-red-50/30" : ""}`}>
                           <TableCell className="align-middle py-3">
-                            <p className="font-mono text-xs font-semibold truncate max-w-[150px]" title={order.orderNumber}>
-                              {order.orderNumber}
-                            </p>
+                            <p className="font-mono text-xs font-semibold truncate max-w-[150px]" title={order.orderNumber}>{order.orderNumber}</p>
                             {order.trackingId && (
                               <p className="flex items-center gap-1 text-[10px] text-muted-foreground mt-0.5">
-                                <Truck className="h-2.5 w-2.5" />
-                                <span className="truncate max-w-[130px]">{order.trackingId}</span>
+                                <Truck className="h-2.5 w-2.5" /><span className="truncate max-w-[130px]">{order.trackingId}</span>
                               </p>
                             )}
                           </TableCell>
-
                           <TableCell className="align-middle py-3">
                             <p className="font-medium truncate max-w-[160px] text-sm">{getCustomerName(order)}</p>
-                            <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
-                              <Phone className="h-2.5 w-2.5" />{getCustomerPhone(order)}
-                            </p>
+                            <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5"><Phone className="h-2.5 w-2.5" />{getCustomerPhone(order)}</p>
                           </TableCell>
-
                           <TableCell className="align-middle py-3">
                             <span className="font-semibold">{countItems(order.orderItems)}</span>
                             <span className="text-muted-foreground text-[11px]"> items</span>
                           </TableCell>
-
                           <TableCell className="align-middle py-3">
-                            <p className="font-semibold text-sm">{fmt(order.finalAmount || order.totalPrice || 0)}</p>
-                            {disc > 0 && (
+                            <p className={`font-semibold text-sm ${order.orderStatus === "cancelled" ? "line-through text-muted-foreground" : ""}`}>
+                              {fmt(order.finalAmount || order.totalPrice || 0)}
+                            </p>
+                            {order.orderStatus === "cancelled" && (
+                              <p className="text-[10px] text-red-400 flex items-center gap-0.5 mt-0.5">
+                                <XCircle className="w-2.5 h-2.5" /> cancelled
+                              </p>
+                            )}
+                            {order.orderStatus !== "cancelled" && disc > 0 && (
                               <p className="text-[10px] text-violet-600 flex items-center gap-0.5 mt-0.5">
                                 <BadgePercent className="w-2.5 h-2.5" />−{fmt(disc)}
                               </p>
                             )}
                           </TableCell>
-
                           <TableCell className="align-middle py-3">
                             <p className="text-xs text-muted-foreground whitespace-nowrap">{fmtDate(order.createdAt)}</p>
                           </TableCell>
-
-                          <TableCell className="align-middle py-3">
-                            <StatusBadge status={order.orderStatus} />
-                          </TableCell>
-
+                          <TableCell className="align-middle py-3"><StatusBadge status={order.orderStatus} /></TableCell>
                           <TableCell className="align-middle py-3">
                             <div className="flex flex-col gap-1">
                               <div className="flex items-center gap-1.5">
@@ -1111,17 +1042,13 @@ export const OrderManagement = () => {
                               )}
                             </div>
                           </TableCell>
-
                           <TableCell className="align-middle py-3">
                             <StatusBadge status={order.isCouponProvided ? "provided" : "notprovided"} />
                           </TableCell>
-
                           <TableCell className="text-right align-middle py-3">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem onClick={() => setSelectedOrderId(order.id)}>
@@ -1137,22 +1064,17 @@ export const OrderManagement = () => {
                                 </DropdownMenuItem>
                                 {order.paymentMethod === "cod" && (
                                   order.paymentStatus !== "paid" ? (
-                                    <DropdownMenuItem onClick={() => updateCodPaymentStatus(order.id, "paid")}
-                                      className="text-green-600 focus:text-green-700">
+                                    <DropdownMenuItem onClick={() => updateCodPaymentStatus(order.id, "paid")} className="text-green-600 focus:text-green-700">
                                       <CheckCircle className="h-4 w-4 mr-2" /> Mark Payment as Paid
                                     </DropdownMenuItem>
                                   ) : (
-                                    <DropdownMenuItem onClick={() => updateCodPaymentStatus(order.id, "pending")}
-                                      className="text-yellow-600 focus:text-yellow-700">
+                                    <DropdownMenuItem onClick={() => updateCodPaymentStatus(order.id, "pending")} className="text-yellow-600 focus:text-yellow-700">
                                       <Clock className="h-4 w-4 mr-2" /> Mark Payment as Unpaid
                                     </DropdownMenuItem>
                                   )
                                 )}
                                 {order.orderStatus !== "cancelled" && order.orderStatus !== "delivered" && (
-                                  <DropdownMenuItem
-                                    onClick={() => requestCancel(order)}
-                                    className="text-destructive focus:text-destructive"
-                                  >
+                                  <DropdownMenuItem onClick={() => requestCancel(order)} className="text-destructive focus:text-destructive">
                                     <XCircle className="h-4 w-4 mr-2" /> Cancel Order
                                   </DropdownMenuItem>
                                 )}
@@ -1171,7 +1093,6 @@ export const OrderManagement = () => {
                 </Table>
               </div>
 
-              {/* Pagination */}
               {pagination.totalPages > 1 && (
                 <div className="flex items-center justify-between mt-6 px-6 pb-6">
                   <div className="text-sm text-muted-foreground">
@@ -1179,29 +1100,23 @@ export const OrderManagement = () => {
                     {Math.min(pagination.page*pagination.limit, pagination.total)} of {pagination.total} orders
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Button variant="outline" size="sm"
-                      onClick={() => fetchOrders(pagination.page-1, pageSize)}
-                      disabled={pagination.page === 1 || loading}>
+                    <Button variant="outline" size="sm" onClick={() => fetchOrders(pagination.page-1, pageSize)} disabled={pagination.page===1||loading}>
                       <ChevronLeft className="h-4 w-4 mr-1" /> Previous
                     </Button>
                     <div className="flex items-center gap-1">
                       {Array.from({length: Math.min(5, pagination.totalPages)}, (_, i) => {
                         let p;
-                        if      (pagination.totalPages <= 5)                p = i + 1;
-                        else if (pagination.page <= 3)                      p = i + 1;
+                        if      (pagination.totalPages <= 5)                 p = i + 1;
+                        else if (pagination.page <= 3)                       p = i + 1;
                         else if (pagination.page >= pagination.totalPages-2) p = pagination.totalPages-4+i;
-                        else                                                p = pagination.page-2+i;
+                        else                                                 p = pagination.page-2+i;
                         return (
                           <Button key={p} variant={pagination.page===p?"default":"outline"} size="sm"
-                            className="h-8 w-8" onClick={() => fetchOrders(p, pageSize)} disabled={loading}>
-                            {p}
-                          </Button>
+                            className="h-8 w-8" onClick={() => fetchOrders(p, pageSize)} disabled={loading}>{p}</Button>
                         );
                       })}
                     </div>
-                    <Button variant="outline" size="sm"
-                      onClick={() => fetchOrders(pagination.page+1, pageSize)}
-                      disabled={pagination.page === pagination.totalPages || loading}>
+                    <Button variant="outline" size="sm" onClick={() => fetchOrders(pagination.page+1, pageSize)} disabled={pagination.page===pagination.totalPages||loading}>
                       Next <ChevronRight className="h-4 w-4 ml-1" />
                     </Button>
                   </div>
@@ -1212,7 +1127,6 @@ export const OrderManagement = () => {
         </CardContent>
       </Card>
 
-      {/* ── Order Detail Modal ── */}
       {selectedOrderId && (
         <OrderDetailModal
           orderId={selectedOrderId}
@@ -1228,7 +1142,6 @@ export const OrderManagement = () => {
         />
       )}
 
-      {/* ── Cancel Confirmation Dialog ── */}
       {cancelTarget && (
         <CancelConfirmDialog
           order={cancelTarget}
@@ -1238,14 +1151,12 @@ export const OrderManagement = () => {
         />
       )}
 
-      {/* ── Update Status Dialog ── */}
       <Dialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Update Order Status</DialogTitle>
             <DialogDescription>
-              Update status for:{" "}
-              <span className="font-mono font-semibold">{orderToUpdate?.orderNumber}</span>
+              Update status for: <span className="font-mono font-semibold">{orderToUpdate?.orderNumber}</span>
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -1258,29 +1169,23 @@ export const OrderManagement = () => {
                   <SelectItem value="processing">Processing</SelectItem>
                   <SelectItem value="shipped">Shipped</SelectItem>
                   <SelectItem value="delivered">Delivered</SelectItem>
-                  {/* <SelectItem value="cancelled">Cancelled</SelectItem> */}
                 </SelectContent>
               </Select>
             </div>
             {updateStatus === "shipped" && (
               <div className="space-y-2">
                 <Label htmlFor="trackingId">Tracking ID</Label>
-                <Input id="trackingId" placeholder="Enter tracking ID"
-                  value={trackingId} onChange={e => setTrackingId(e.target.value)} />
+                <Input id="trackingId" placeholder="Enter tracking ID" value={trackingId} onChange={e => setTrackingId(e.target.value)} />
                 <p className="text-xs text-muted-foreground">Leave empty to auto-generate</p>
               </div>
             )}
             <div className="space-y-2">
               <Label htmlFor="notes">Notes</Label>
-              <Textarea id="notes" placeholder="Add notes about this status update..."
-                value={notes} onChange={e => setNotes(e.target.value)} rows={3} />
+              <Textarea id="notes" placeholder="Add notes about this status update..." value={notes} onChange={e => setNotes(e.target.value)} rows={3} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setIsUpdateDialogOpen(false);
-              setUpdateStatus(""); setTrackingId(""); setNotes("");
-            }}>Cancel</Button>
+            <Button variant="outline" onClick={() => { setIsUpdateDialogOpen(false); setUpdateStatus(""); setTrackingId(""); setNotes(""); }}>Cancel</Button>
             <Button onClick={handleUpdateStatus} disabled={!updateStatus}>Update Status</Button>
           </DialogFooter>
         </DialogContent>
