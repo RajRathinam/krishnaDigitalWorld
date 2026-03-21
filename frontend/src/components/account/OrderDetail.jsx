@@ -509,6 +509,8 @@ export default function OrderDetail() {
         }
 
         setOrder(o);
+        console.log(o);
+        
       } else {
         toast({ title: "Error", description: res.message || "Order not found", variant: "destructive" });
         navigate("/account/orders");

@@ -58,11 +58,11 @@ export const AddAdvertisement = ({ onCreated }) => {
 
   // Position options
   const positionOptions = [
-    { value: "homepage_top", label: "Homepage Top" },
     { value: "homepage_middle", label: "Homepage Middle" },
     { value: "homepage_bottom", label: "Homepage Bottom" },
-    { value: "sidebar", label: "Sidebar" },
-    { value: "popup", label: "Popup" }
+    // { value: "homepage_top", label: "Homepage Top" },
+    // { value: "sidebar", label: "Sidebar" },
+    // { value: "popup", label: "Popup" }
   ];
 
   // Type options

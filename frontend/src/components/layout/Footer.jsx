@@ -350,7 +350,7 @@ export function Footer() {
           <div className="mt-8 pt-8 border-t border-primary-foreground/10">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="flex items-center gap-3">
-                <MapPin className="w-12 h-12 md:w-10 md:h-10 text-accent" />
+                <MapPin className="w-7 h-6 text-accent" />
                 <div>
                   <p className="font-medium text-primary-foreground">Store Location</p>
                   <p className="text-xs md:text-sm text-primary-foreground/60">

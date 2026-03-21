@@ -148,43 +148,20 @@ export const createSubadmin = async (req, res) => {
  */
 export const getSubadmins = async (req, res) => {
   try {
-    // Only admin can view subadmins
     if (req.user.role !== 'admin') {
-      return res.status(403).json({
-        success: false,
-        message: 'Only admin can view subadmins'
-      });
+      return res.status(403).json({ success: false, message: 'Only admin can view subadmins' });
     }
 
     const subadmins = await User.findAll({
-      where: {
-        role: 'subadmin',
-        isActive: true
-      },
-      attributes: [
-        'id',
-        'name',
-        'phone',
-        'email',
-        'role',
-        'isActive',
-        'isVerified',
-        'createdAt',
-        'updatedAt'
-      ],
+      where: { role: 'subadmin' }, // ← removed isActive: true filter
+      attributes: ['id', 'name', 'phone', 'email', 'role', 'isActive', 'isVerified', 'createdAt', 'updatedAt'],
       order: [['createdAt', 'DESC']]
     });
 
-    res.status(200).json({
-      success: true,
-      data: subadmins
-    });
+    res.status(200).json({ success: true, data: subadmins });
   } catch (error) {
     console.error('Get subadmins error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error while fetching subadmins'
-    });
+    res.status(500).json({ success: false, message: 'Server error while fetching subadmins' });
   }
 };
 
@@ -255,43 +232,23 @@ export const updateSubadmin = async (req, res) => {
  */
 export const deleteSubadmin = async (req, res) => {
   try {
-    // Only admin can delete subadmins
     if (req.user.role !== 'admin') {
-      return res.status(403).json({
-        success: false,
-        message: 'Only admin can delete subadmins'
-      });
+      return res.status(403).json({ success: false, message: 'Only admin can delete subadmins' });
     }
 
     const { id } = req.params;
-
-    const subadmin = await User.findOne({
-      where: {
-        id,
-        role: 'subadmin'
-      }
-    });
+    const subadmin = await User.findOne({ where: { id, role: 'subadmin' } });
 
     if (!subadmin) {
-      return res.status(404).json({
-        success: false,
-        message: 'Subadmin not found'
-      });
+      return res.status(404).json({ success: false, message: 'Subadmin not found' });
     }
 
-    // Soft delete by setting isActive to false
-    await subadmin.update({ isActive: false });
+    await subadmin.destroy(); // ← hard delete instead of soft delete
 
-    res.status(200).json({
-      success: true,
-      message: 'Subadmin deactivated successfully'
-    });
+    res.status(200).json({ success: true, message: 'Subadmin deleted successfully' });
   } catch (error) {
     console.error('Delete subadmin error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error while deleting subadmin'
-    });
+    res.status(500).json({ success: false, message: 'Server error while deleting subadmin' });
   }
 };
 

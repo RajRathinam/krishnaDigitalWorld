@@ -18,60 +18,38 @@ import { createObjectCsvStringifier } from 'csv-writer';
  * @route   GET /api/admin/stats
  * @access  Private (Admin)
  */
-/**
- * @desc    Get dashboard statistics - only basic counts
- * @route   GET /api/admin/stats
- * @access  Private (Admin)
- */
 export const getDashboardStats = async (req, res) => {
   try {
     console.log('=== Getting Dashboard Basic Stats ===');
 
-    // Get basic counts with individual try-catch for each
     let totalUsers = 0;
     let totalProducts = 0;
     let totalOrders = 0;
 
     try {
-      // Total active customers
-      totalUsers = await User.count({
-        where: {
-          role: 'customer',
-          isActive: true
-        }
-      });
+      totalUsers = await User.count({ where: { role: 'customer', isActive: true } });
       console.log('Total users count:', totalUsers);
     } catch (error) {
       console.error('Error counting users:', error.message);
-      totalUsers = 0;
     }
 
     try {
-      // Total active products
-      totalProducts = await Product.count({
-        where: {
-          isActive: true
-        }
-      });
+      totalProducts = await Product.count({ where: { isActive: true } });
       console.log('Total products count:', totalProducts);
     } catch (error) {
       console.error('Error counting products:', error.message);
-      totalProducts = 0;
     }
 
     try {
-      // Total orders (all orders)
       totalOrders = await Order.count();
       console.log('Total orders count:', totalOrders);
     } catch (error) {
       console.error('Error counting orders:', error.message);
-      totalOrders = 0;
     }
 
-    // Fetch orders: Prioritize Pending, but also show Recent
+    // Fetch orders: prioritise pending, then recent
     let recentOrders = [];
     try {
-      // 1. Fetch top 10 Pending
       const pendingOrders = await Order.findAll({
         where: { orderStatus: 'pending' },
         limit: 10,
@@ -79,48 +57,40 @@ export const getDashboardStats = async (req, res) => {
         include: [{ model: User, as: 'user', attributes: ['id', 'name', 'email'] }]
       });
 
-      // 2. Fetch top 5 Recent (any status)
       const latestOrders = await Order.findAll({
         limit: 5,
         order: [['id', 'DESC']],
         include: [{ model: User, as: 'user', attributes: ['id', 'name', 'email'] }]
       });
 
-      // 3. Merge and Deduplicate
       const orderMap = new Map();
       pendingOrders.forEach(o => orderMap.set(o.id, o));
       latestOrders.forEach(o => orderMap.set(o.id, o));
 
-      // Convert to array and sort by ID desc
       recentOrders = Array.from(orderMap.values())
         .sort((a, b) => b.id - a.id)
-        .slice(0, 10); // Show max 10 cards
-
+        .slice(0, 10);
     } catch (err) {
-      console.error("Dashboard Recent Orders Error:", err.message);
+      console.error('Dashboard Recent Orders Error:', err.message);
     }
 
-    // Fetch popular products based on Sales Quantity
+    // Popular products by sales quantity
     let popularProducts = [];
     try {
-      // 1. Fetch recent 200 orders to calculate popularity
       const ordersForStats = await Order.findAll({
         limit: 200,
         attributes: ['orderItems'],
         order: [['id', 'DESC']]
       });
 
-      // 2. Aggregate quantities
       const productSales = {};
       ordersForStats.forEach(order => {
         let items = order.orderItems;
-        // Parse if string
         if (typeof items === 'string') {
-          try { items = JSON.parse(items); } catch (e) { items = []; }
+          try { items = JSON.parse(items); } catch { items = []; }
         }
         if (Array.isArray(items)) {
           items.forEach(item => {
-            // Handle various structures: item.id, item.productId, item.product.id
             const pId = item.productId || (item.product ? item.product.id : item.id);
             const qty = item.quantity || 0;
             if (pId && qty) {
@@ -130,24 +100,17 @@ export const getDashboardStats = async (req, res) => {
         }
       });
 
-      // 3. Sort by sales
-      const sortedIds = Object.keys(productSales).sort((a, b) => productSales[b] - productSales[a]).slice(0, 5);
+      const sortedIds = Object.keys(productSales)
+        .sort((a, b) => productSales[b] - productSales[a])
+        .slice(0, 5);
 
       if (sortedIds.length > 0) {
-        // 4. Fetch product details
         popularProducts = await Product.findAll({
           where: { id: sortedIds },
           attributes: ['id', 'name', 'price', 'rating', 'totalReviews', 'colorsAndImages']
         });
-
-        // 5. Re-sort to match sales order (Product.findAll returns unsorted)
-        popularProducts.sort((a, b) => {
-          const salesA = productSales[a.id] || 0;
-          const salesB = productSales[b.id] || 0;
-          return salesB - salesA;
-        });
+        popularProducts.sort((a, b) => (productSales[b.id] || 0) - (productSales[a.id] || 0));
       } else {
-        // Fallback to rating if no sales
         popularProducts = await Product.findAll({
           where: { isActive: true },
           limit: 5,
@@ -155,89 +118,100 @@ export const getDashboardStats = async (req, res) => {
           attributes: ['id', 'name', 'price', 'rating', 'totalReviews', 'colorsAndImages']
         });
       }
-
     } catch (err) {
-      console.error("Dashboard Popular Products Error:", err.message);
+      console.error('Dashboard Popular Products Error:', err.message);
     }
 
-    // Calculate revenue figures (only from PAID orders)
-    let totalRevenue = 0;
-    let monthlyRevenue = 0;
-    let weeklyRevenue = 0;
-    let newUsersThisMonth = 0;
+    // ─── Revenue — EXCLUDE cancelled orders ───────────────────────────────────
+    // Previous code only filtered by paymentStatus: 'paid' which still included
+    // cancelled orders that had been paid (e.g. COD marked paid then cancelled).
+    // Fix: add orderStatus: { [Op.ne]: 'cancelled' } to every revenue query.
+    // ─────────────────────────────────────────────────────────────────────────
+    let totalRevenue       = 0;
+    let monthlyRevenue     = 0;
+    let weeklyRevenue      = 0;
+    let cancelledRevenue   = 0;
+    let cancelledOrders    = 0;
+    let newUsersThisMonth  = 0;
     let newOrdersThisMonth = 0;
 
     try {
-      const now = new Date();
+      const now          = new Date();
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const startOfWeek = new Date(now);
-      startOfWeek.setDate(now.getDate() - now.getDay()); // Start of current week (Sunday)
+      const startOfWeek  = new Date(now);
+      startOfWeek.setDate(now.getDate() - now.getDay());
       startOfWeek.setHours(0, 0, 0, 0);
 
-      // Sum finalAmount across ALL PAID orders only
-      const totalRevenueRaw = await Order.sum('finalAmount', {
-        where: { paymentStatus: 'paid' }
-      });
-      totalRevenue = parseFloat(totalRevenueRaw) || 0;
+      // ── Base filter shared by all three revenue queries ──
+      // paymentStatus = 'paid'  AND  orderStatus != 'cancelled'
+      const revenueWhere = {
+        paymentStatus: 'paid',
+        orderStatus:   { [Op.ne]: 'cancelled' },   // ← THE FIX
+      };
 
-      // Sum finalAmount for PAID orders created this month
-      const monthlyRevenueRaw = await Order.sum('finalAmount', {
-        where: { 
-          paymentStatus: 'paid',
-          createdAt: { [Op.gte]: startOfMonth } 
-        }
-      });
-      monthlyRevenue = parseFloat(monthlyRevenueRaw) || 0;
+      // All-time revenue (non-cancelled, paid)
+      totalRevenue = parseFloat(
+        await Order.sum('finalAmount', { where: revenueWhere }) || 0
+      );
 
-      // Sum finalAmount for PAID orders created this week
-      const weeklyRevenueRaw = await Order.sum('finalAmount', {
-        where: { 
-          paymentStatus: 'paid',
-          createdAt: { [Op.gte]: startOfWeek } 
-        }
-      });
-      weeklyRevenue = parseFloat(weeklyRevenueRaw) || 0;
+      // Monthly revenue (non-cancelled, paid, this month)
+      monthlyRevenue = parseFloat(
+        await Order.sum('finalAmount', {
+          where: { ...revenueWhere, createdAt: { [Op.gte]: startOfMonth } }
+        }) || 0
+      );
 
-      // New users this month
+      // Weekly revenue (non-cancelled, paid, this week)
+      weeklyRevenue = parseFloat(
+        await Order.sum('finalAmount', {
+          where: { ...revenueWhere, createdAt: { [Op.gte]: startOfWeek } }
+        }) || 0
+      );
+
+      // Cancelled order stats — surfaced in the frontend callout banner
+      cancelledOrders  = await Order.count({ where: { orderStatus: 'cancelled' } });
+      cancelledRevenue = parseFloat(
+        await Order.sum('finalAmount', { where: { orderStatus: 'cancelled' } }) || 0
+      );
+
       newUsersThisMonth = await User.count({
-        where: {
-          role: 'customer',
-          createdAt: { [Op.gte]: startOfMonth }
-        }
+        where: { role: 'customer', createdAt: { [Op.gte]: startOfMonth } }
       });
 
-      // New orders this month (all statuses)
       newOrdersThisMonth = await Order.count({
         where: { createdAt: { [Op.gte]: startOfMonth } }
       });
 
-      console.log('Revenue totals (paid orders only):', { totalRevenue, monthlyRevenue, weeklyRevenue });
+      console.log('Revenue (cancelled excluded):', { totalRevenue, monthlyRevenue, weeklyRevenue });
+      console.log('Cancelled:', { cancelledOrders, cancelledRevenue });
     } catch (revenueError) {
       console.error('Error calculating revenue:', revenueError.message);
     }
 
-    // Prepare response data
     const responseData = {
       counts: {
-        totalUsers: totalUsers,
-        totalProducts: totalProducts,
-        totalOrders: totalOrders,
-        totalRevenue: totalRevenue,
-        monthlyRevenue: monthlyRevenue,
-        weeklyRevenue: weeklyRevenue,
-        newUsersThisMonth: newUsersThisMonth,
-        newOrdersThisMonth: newOrdersThisMonth
+        totalUsers,
+        totalProducts,
+        totalOrders,
+        totalRevenue,
+        monthlyRevenue,
+        weeklyRevenue,
+        // Extra fields for the frontend callout
+        cancelledOrders,
+        cancelledRevenue,
+        newUsersThisMonth,
+        newOrdersThisMonth,
       },
-      recentOrders: recentOrders,
-      popularProducts: popularProducts
+      recentOrders,
+      popularProducts,
     };
 
     console.log('Sending response data:', responseData);
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: 'Dashboard statistics fetched successfully',
-      data: responseData
+      data: responseData,
     });
 
   } catch (error) {
@@ -245,24 +219,19 @@ export const getDashboardStats = async (req, res) => {
     console.error('Error:', error.message);
     console.error('Error stack:', error.stack);
 
-    // Return empty data structure on error
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: 'Using minimal dashboard data',
       data: {
         counts: {
-          totalUsers: 0,
-          totalProducts: 0,
-          totalOrders: 0,
-          totalRevenue: 0,
-          monthlyRevenue: 0,
-          yearlyRevenue: 0,
-          newUsersThisMonth: 0,
-          newOrdersThisMonth: 0
+          totalUsers: 0, totalProducts: 0, totalOrders: 0,
+          totalRevenue: 0, monthlyRevenue: 0, weeklyRevenue: 0,
+          cancelledOrders: 0, cancelledRevenue: 0,
+          newUsersThisMonth: 0, newOrdersThisMonth: 0,
         },
         recentOrders: [],
-        popularProducts: []
-      }
+        popularProducts: [],
+      },
     });
   }
 };

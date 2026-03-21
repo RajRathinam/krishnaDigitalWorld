@@ -6,53 +6,6 @@ import { Footer } from "@/components/layout/Footer";
 import { HelpCircle, Phone, Mail, Home, Clock, Users, Shield, Truck, CheckCircle } from "lucide-react";
 import { useShopInfo } from '@/contexts/ShopInfoContext';
 
-// Helper function to parse phone numbers from shopInfo
-const parsePhoneNumbers = (phoneData) => {
-  if (!phoneData) return [];
-  
-  // If it's already an array, return it
-  if (Array.isArray(phoneData)) {
-    return phoneData.filter(phone => phone && typeof phone === 'string' && phone.trim());
-  }
-  
-  // If it's a string
-  if (typeof phoneData === 'string') {
-    // Try to parse as JSON first
-    try {
-      const parsed = JSON.parse(phoneData);
-      if (Array.isArray(parsed)) {
-        return parsed.filter(phone => phone && typeof phone === 'string' && phone.trim());
-      }
-      // If it's an object, extract values
-      if (typeof parsed === 'object') {
-        const phones = [];
-        Object.values(parsed).forEach(value => {
-          if (value && typeof value === 'string' && value.trim()) {
-            phones.push(value.trim());
-          }
-        });
-        return phones;
-      }
-    } catch (error) {
-      // If not JSON, treat as single phone number
-      return phoneData.trim() ? [phoneData.trim()] : [];
-    }
-  }
-  
-  // If it's an object
-  if (typeof phoneData === 'object' && !Array.isArray(phoneData)) {
-    const phones = [];
-    Object.values(phoneData).forEach(value => {
-      if (value && typeof value === 'string' && value.trim()) {
-        phones.push(value.trim());
-      }
-    });
-    return phones;
-  }
-  
-  return [];
-};
-
 const HelpSupport = () => {
     const { shopInfo, loading } = useShopInfo();
     
@@ -65,16 +18,39 @@ const HelpSupport = () => {
         });
     }, []);
 
-    // Parse phone numbers from shopInfo
-    const phoneNumbers = parsePhoneNumbers(shopInfo?.phone);
+    // Get phone numbers - handle simple string case
+    const getPhoneNumbers = () => {
+        if (!shopInfo?.phone) return [];
+        
+        // If it's a string, return as array with one item
+        if (typeof shopInfo.phone === 'string' && shopInfo.phone.trim()) {
+            return [shopInfo.phone.trim()];
+        }
+        
+        // If it's an array
+        if (Array.isArray(shopInfo.phone)) {
+            return shopInfo.phone.filter(p => p && p.trim());
+        }
+        
+        return [];
+    };
+    
+    const phoneNumbers = getPhoneNumbers();
     
     // Use shopInfo data or fallback to defaults
-    const supportEmail = shopInfo?.email || "support@srikrishnahomeappliances.com";
+    const supportEmail = shopInfo?.supportEmail || shopInfo?.email || "support@srikrishnahomeappliances.com";
     
     // Set phone numbers with fallbacks
-    const primaryPhone = phoneNumbers.length > 0 ? phoneNumbers[0] : "+91 XXXXXXXXXX";
-    const secondaryPhone = phoneNumbers.length > 0 ? phoneNumbers[0] : "+91 XXXXXXXXXX";
-    const defaultPhone = primaryPhone; // Use first phone as default
+    const primaryPhone = phoneNumbers.length > 0 ? phoneNumbers[0] : "+91 98765 43210";
+    const secondaryPhone = shopInfo?.supportPhone || primaryPhone;
+    const whatsappNumber = shopInfo?.whatsappNumber || primaryPhone;
+    
+    // Format phone number for display
+    const formatPhone = (phone) => {
+        if (!phone) return "Not available";
+        // Remove any non-digit characters except +
+        return phone;
+    };
 
     const supportCategories = [
         {
@@ -82,10 +58,11 @@ const HelpSupport = () => {
             title: "Phone Support",
             description: "Call us for immediate assistance",
             details: [
-                `Sales & Enquiries: ${primaryPhone}`,
-                `Service Support: ${secondaryPhone}`
-            ],
-            action: `tel:${defaultPhone}`,
+                `Sales & Enquiries: ${formatPhone(primaryPhone)}`,
+                secondaryPhone ? `Service Support: ${formatPhone(secondaryPhone)}` : null,
+                `WhatsApp: ${formatPhone(whatsappNumber)}`
+            ].filter(Boolean),
+            action: `tel:${primaryPhone.replace(/\s/g, '')}`,
             color: "from-blue-500 to-cyan-500"
         },
         {
@@ -96,7 +73,9 @@ const HelpSupport = () => {
                 "Expert advice in person",
                 "Product demonstrations",
                 "Direct issue resolution",
-                shopInfo?.address ? `Address: ${shopInfo.address}` : ""
+                shopInfo?.address ? `${shopInfo.address}` : "",
+                shopInfo?.city && shopInfo?.state ? `${shopInfo.city}, ${shopInfo.state}` : "",
+                shopInfo?.pincode ? `PIN: ${shopInfo.pincode}` : ""
             ].filter(Boolean),
             action: null,
             color: "from-green-500 to-emerald-500"
@@ -107,8 +86,9 @@ const HelpSupport = () => {
             description: "Write to us for detailed queries",
             details: [
                 `General: ${supportEmail}`,
-                "Response within 24 hours"
-            ],
+                "Response within 24 hours",
+                shopInfo?.supportEmail ? "Support requests prioritized" : ""
+            ].filter(Boolean),
             action: `mailto:${supportEmail}`,
             color: "from-purple-500 to-violet-500"
         }
@@ -134,7 +114,7 @@ const HelpSupport = () => {
             icon: Clock,
             title: "Service Timing",
             description: shopInfo?.businessHours ? 
-                `Service Hours: 9 to 6` : 
+                "Service Hours: 9 AM - 8 PM (Mon-Sat)" : 
                 "Information about our service hours and response times"
         }
     ];
@@ -173,7 +153,6 @@ const HelpSupport = () => {
             <main>
                 {/* Hero Section */}
                 <section className="relative pt-24 pb-20 md:pt-32 md:pb-28 overflow-hidden">
-                    {/* Animated Background */}
                     <div className="absolute inset-0 bg-gradient-to-br from-accent/10 via-background to-accent/5"/>
                     <div className="absolute top-20 left-10 w-72 h-72 bg-accent/20 rounded-full blur-3xl animate-float"/>
                     <div className="absolute bottom-10 right-10 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-float" style={{ animationDelay: "1s" }}/>
@@ -221,7 +200,6 @@ const HelpSupport = () => {
                                         data-aos-delay={index * 100} 
                                         className="group relative bg-card rounded-2xl p-6 border border-border/60 hover:border-transparent hover:shadow-2xl transition-all duration-500 overflow-hidden cursor-pointer"
                                     >
-                                        {/* Gradient overlay on hover */}
                                         <div className={`absolute inset-0 bg-gradient-to-br ${category.color} opacity-0 group-hover:opacity-5 transition-opacity duration-500`}/>
                                         
                                         <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br ${category.color} mb-5 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}>
@@ -338,7 +316,7 @@ const HelpSupport = () => {
                             </p>
                             <div className="flex flex-col sm:flex-row gap-4 justify-center">
                                 <a 
-                                    href={`tel:${defaultPhone}`} 
+                                    href={`tel:${primaryPhone.replace(/\s/g, '')}`} 
                                     className="px-8 py-4 bg-foreground text-background font-semibold rounded-xl hover:bg-foreground/90 hover:scale-105 transition-all duration-300 shadow-xl flex items-center gap-3 justify-center"
                                 >
                                     <Phone className="w-5 h-5"/>
@@ -351,6 +329,17 @@ const HelpSupport = () => {
                                     <Mail className="w-5 h-5"/>
                                     Send Email
                                 </a>
+                                {whatsappNumber && (
+                                    <a 
+                                        href={`https://wa.me/${whatsappNumber.replace(/\D/g, '')}`} 
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="px-8 py-4 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 hover:scale-105 transition-all duration-300 shadow-xl flex items-center gap-3 justify-center"
+                                    >
+                                        <Phone className="w-5 h-5"/>
+                                        WhatsApp Support
+                                    </a>
+                                )}
                             </div>
                         </div>
                     </div>

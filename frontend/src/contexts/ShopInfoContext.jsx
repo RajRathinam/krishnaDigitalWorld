@@ -16,7 +16,32 @@ export const ShopInfoProvider = ({ children }) => {
       setLoading(true);
       const response = await shopInfoApi.getShopInfo();
       if (response.success && response.data) {
-        setShopInfo(response.data);
+        // Map the data to match your frontend naming convention
+        setShopInfo({
+          shopName: response.data.shopName,
+          email: response.data.email,
+          phone: response.data.phone,
+          alternatePhone: response.data.alternatePhone,
+          address: response.data.address,
+          city: response.data.city,
+          state: response.data.state,
+          pincode: response.data.pincode,
+          country: response.data.country,
+          locations: response.data.locations || [],
+          socialMedia: response.data.socialMedia || {},
+          businessHours: response.data.businessHours || {},
+          description: response.data.description,
+          map_embed_url: response.data.mapEmbedUrl, // Map from camelCase to snake_case
+          mapEmbedUrl: response.data.mapEmbedUrl,   // Also keep camelCase for consistency
+          logoUrl: response.data.logoUrl,
+          faviconUrl: response.data.faviconUrl,
+          currency: response.data.currency,
+          gstNumber: response.data.gstNumber,
+          supportEmail: response.data.supportEmail,
+          supportPhone: response.data.supportPhone,
+          whatsappNumber: response.data.whatsappNumber,
+          isActive: response.data.isActive
+        });
       } else {
         // Set default values if API fails
         setShopInfo({
@@ -30,7 +55,17 @@ export const ShopInfoProvider = ({ children }) => {
           country: 'India',
           locations: [],
           socialMedia: {},
-          businessHours: {}
+          businessHours: {},
+          map_embed_url: null,  // Add this
+          mapEmbedUrl: null,     // Add this
+          description: null,
+          logoUrl: null,
+          faviconUrl: null,
+          currency: 'INR',
+          gstNumber: null,
+          supportEmail: null,
+          supportPhone: null,
+          whatsappNumber: null
         });
       }
     } catch (error) {
@@ -47,7 +82,17 @@ export const ShopInfoProvider = ({ children }) => {
         country: 'India',
         locations: [],
         socialMedia: {},
-        businessHours: {}
+        businessHours: {},
+        map_embed_url: null,  // Add this
+        mapEmbedUrl: null,     // Add this
+        description: null,
+        logoUrl: null,
+        faviconUrl: null,
+        currency: 'INR',
+        gstNumber: null,
+        supportEmail: null,
+        supportPhone: null,
+        whatsappNumber: null
       });
     } finally {
       setLoading(false);
@@ -68,4 +113,3 @@ export const useShopInfo = () => {
   }
   return context;
 };
-

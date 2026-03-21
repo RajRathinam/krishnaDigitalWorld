@@ -8,7 +8,16 @@ import { useShopInfo } from '@/contexts/ShopInfoContext';
 
 const Contact = () => {
     const { shopInfo } = useShopInfo();
-    
+    // Function to open Google Maps with store location
+const openGoogleMaps = (address, city, state, pincode, country = 'India') => {
+  const fullAddress = [address, city, state, pincode, country]
+    .filter(part => part && part.trim() !== '')
+    .join(', ');
+  
+  const encodedAddress = encodeURIComponent(fullAddress);
+  // Use Google Maps URL that works on both mobile and desktop
+  window.open(`https://www.google.com/maps/search/?api=1&query=${encodedAddress}`, '_blank');
+};
     useEffect(() => {
         AOS.init({
             duration: 800,
@@ -316,14 +325,13 @@ const Contact = () => {
           {/* Directions Button */}
           <div className="text-center">
             <button 
-              onClick={() => {
-                // Generate Google Maps URL based on address
-                const address = encodeURIComponent(
-                  `${shopInfo?.shopName || 'Sri Krishna Home Appliances'} ${shopInfo?.address || 'Main Road'}, ${shopInfo?.city || 'Nagapattinam'}, ${shopInfo?.state || 'Tamil Nadu'}`
-                );
-                const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${address}`;
-                window.open(mapsUrl, '_blank', 'noopener,noreferrer');
-              }}
+             onClick={() => openGoogleMaps(
+                  shopInfo?.address,
+                  shopInfo?.city,
+                  shopInfo?.state,
+                  shopInfo?.pincode,
+                  shopInfo?.country
+                )}
               className="inline-flex items-center gap-2 px-6 py-3 text-xs bg-accent text-accent-foreground font-semibold rounded-xl hover:bg-accent/90 hover:scale-105 transition-all duration-300 shadow-lg"
             >
               <MapPin className="w-5 h-5"/>

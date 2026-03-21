@@ -186,25 +186,28 @@ export const getOrderDetails = async (req, res) => {
         {
           model: User,
           as: 'user',
-          attributes: ['id', 'name', 'phone', 'email', 'slug']
+          attributes: ['id', 'name', 'phone', 'email', 'slug'],
         },
         {
           model: Coupon,
           as: 'coupon',
-          attributes: ['id', 'code', 'discountType', 'discountValue']
-        }
-      ]
+          attributes: ['id', 'code', 'discountType', 'discountValue'],
+        },
+      ],
     });
 
     if (!order) {
       return res.status(404).json({
         success: false,
-        message: 'Order not found'
+        message: 'Order not found',
       });
     }
 
-    // Parse orderItems if it's a string
+    /* ─────────────────────────────────────────────────────────────────
+     * 1.  Parse orderItems
+     * ───────────────────────────────────────────────────────────────── */
     let orderItems = order.orderItems;
+
     if (typeof orderItems === 'string') {
       try {
         orderItems = JSON.parse(orderItems);
@@ -214,100 +217,192 @@ export const getOrderDetails = async (req, res) => {
       }
     }
 
-    // Ensure orderItems is an array
-    if (!Array.isArray(orderItems)) {
-      orderItems = [];
-    }
+    if (!Array.isArray(orderItems)) orderItems = [];
 
-    // Enrich order items with product details
+    /* ─────────────────────────────────────────────────────────────────
+     * 2.  Enrich each item with live product data + resolved image
+     * ───────────────────────────────────────────────────────────────── */
     const enrichedItems = await Promise.all(
       orderItems.map(async (item) => {
         try {
-          // Ensure item is an object
-          if (typeof item !== 'object' || item === null) {
-            return {};
-          }
+          if (typeof item !== 'object' || item === null) return {};
 
           const product = await Product.findByPk(item.productId, {
-            attributes: ['id', 'name', 'slug', 'images', 'sku', 'price']
+            attributes: ['id', 'name', 'slug', 'images', 'colorsAndImages', 'sku', 'price'],
           });
 
-          // Parse images if needed
+          /* -- images ------------------------------------------------- */
           let productImages = product?.images || [];
           if (typeof productImages === 'string') {
-            try {
-              productImages = JSON.parse(productImages);
-            } catch (e) {
-              productImages = [];
+            try { productImages = JSON.parse(productImages); } catch { productImages = []; }
+          }
+          if (!Array.isArray(productImages)) productImages = [];
+
+          /* -- colorsAndImages ---------------------------------------- */
+          let colorsAndImages = product?.colorsAndImages || {};
+          if (typeof colorsAndImages === 'string') {
+            try { colorsAndImages = JSON.parse(colorsAndImages); } catch { colorsAndImages = {}; }
+          }
+
+          /* -- best image for this item (3-level priority) ------------ */
+          let resolvedImage = item.image || null;
+
+          if (!resolvedImage && item.colorName && colorsAndImages[item.colorName]) {
+            const colorImgs = colorsAndImages[item.colorName];
+            if (Array.isArray(colorImgs) && colorImgs.length > 0) {
+              const mainImg = colorImgs.find((i) => i.type === 'main');
+              resolvedImage = mainImg?.url || colorImgs[0]?.url || null;
             }
           }
 
+          if (!resolvedImage && productImages.length > 0) {
+            const first = productImages[0];
+            resolvedImage = typeof first === 'string' ? first : first?.url || null;
+          }
+
+          /* -- numeric helpers ---------------------------------------- */
+          const itemPrice    = parseFloat(item.price    || 0);
+          const itemQuantity = parseInt(item.quantity   || 1, 10);
+          const itemTotal    = parseFloat(item.totalPrice || item.total || itemPrice * itemQuantity || 0);
+
           return {
-            id: item.id || null,
-            productId: item.productId || null,
-            quantity: item.quantity || 1,
-            price: item.price || 0,
-            totalPrice: item.totalPrice || (item.price * item.quantity) || 0,
-            colorName: item.colorName || item.color || null,
-            product: product ? {
-              id: product.id,
-              name: product.name,
-              slug: product.slug,
-              sku: product.sku,
-              price: product.price,
-              images: Array.isArray(productImages) ? productImages : []
-            } : null
+            id:          item.id          || null,
+            productId:   item.productId   || null,
+            name:        item.productName || item.name || product?.name || `Product #${item.productId}`,
+            productName: item.productName || item.name || product?.name || null,
+            quantity:    itemQuantity,
+            price:       itemPrice,
+            totalPrice:  itemTotal,
+            total:       itemTotal,
+            colorName:   item.colorName   || item.color || null,
+            variant:     item.variant     || null,
+            code:        item.code        || null,
+            tax:         item.tax         || null,
+            image:       resolvedImage,
+            product: product
+              ? {
+                  id:             product.id,
+                  name:           product.name,
+                  slug:           product.slug,
+                  sku:            product.sku,
+                  price:          parseFloat(product.price || 0),
+                  images:         productImages,
+                  colorsAndImages,
+                }
+              : null,
           };
         } catch (err) {
-          console.error('Error enriching item:', err);
+          console.error(`Error enriching item (productId: ${item?.productId}):`, err);
           return {
             ...item,
-            product: null
+            name:        item.productName || item.name || `Product #${item.productId}`,
+            productName: item.productName || item.name || null,
+            image:       item.image || null,
+            product:     null,
           };
         }
       })
     );
 
-    // Parse addresses if they're strings
+    /* ─────────────────────────────────────────────────────────────────
+     * 3.  Parse shipping / billing addresses
+     * ───────────────────────────────────────────────────────────────── */
     let shippingAddress = order.shippingAddress;
     if (shippingAddress && typeof shippingAddress === 'string') {
-      try {
-        shippingAddress = JSON.parse(shippingAddress);
-      } catch (e) {
-        console.error('Failed to parse shippingAddress:', e);
-        shippingAddress = {};
-      }
+      try { shippingAddress = JSON.parse(shippingAddress); }
+      catch (e) { console.error('Failed to parse shippingAddress:', e); shippingAddress = {}; }
     }
 
     let billingAddress = order.billingAddress;
     if (billingAddress && typeof billingAddress === 'string') {
-      try {
-        billingAddress = JSON.parse(billingAddress);
-      } catch (e) {
-        console.error('Failed to parse billingAddress:', e);
-        billingAddress = shippingAddress || {};
-      }
+      try { billingAddress = JSON.parse(billingAddress); }
+      catch (e) { console.error('Failed to parse billingAddress:', e); billingAddress = shippingAddress || {}; }
     }
 
-    // Get the order as plain object
-    const orderPlain = order.toJSON();
+    /* ─────────────────────────────────────────────────────────────────
+     * 4.  Normalise every DECIMAL price field to Number.
+     *     MySQL/Sequelize returns DECIMAL columns as strings — cast
+     *     once here so the frontend never has to parseFloat anything.
+     * ───────────────────────────────────────────────────────────────── */
+    const totalPrice     = parseFloat(order.totalPrice     || 0);
+    const shippingCost   = parseFloat(order.shippingCost   || 0);
+    const taxAmount      = parseFloat(order.taxAmount      || 0);
+    const discountAmount = parseFloat(order.discountAmount || 0);
+    const finalAmount    = parseFloat(
+      order.finalAmount ?? (totalPrice + shippingCost + taxAmount - discountAmount)
+    );
 
+    /* ─────────────────────────────────────────────────────────────────
+     * 5.  Build the enriched response.
+     *     Every field defined in the Order model is listed explicitly
+     *     so nothing is silently dropped or renamed.
+     * ───────────────────────────────────────────────────────────────── */
     const enrichedOrder = {
-      ...orderPlain,
-      orderItems: enrichedItems,
+
+      /* ── Core identifiers ──────────────────────────────────────── */
+      id:          order.id,
+      orderNumber: order.orderNumber,
+      userId:      order.userId,
+
+      /* ── Order & payment status ────────────────────────────────── */
+      orderStatus:      order.orderStatus,
+      paymentStatus:    order.paymentStatus,
+      paymentMethod:    order.paymentMethod,
+      isCouponProvided: order.isCouponProvided,
+
+      /* ── Items & addresses (enriched / parsed above) ───────────── */
+      orderItems:     enrichedItems,
       shippingAddress,
-      billingAddress
+      billingAddress,
+
+      /* ── Full price breakdown (all Numbers) ────────────────────── */
+      totalPrice,       // subtotal before shipping/tax/discount
+      shippingCost,     // delivery charge  (0 = free shipping)
+      taxAmount,        // GST / tax
+      discountAmount,   // amount deducted by coupon
+      finalAmount,      // what customer actually paid
+
+      /* ── Tracking ──────────────────────────────────────────────── */
+      trackingId: order.trackingId || null,
+      notes:      order.notes      || null,
+
+      /* ── Coupon FK + full coupon object ────────────────────────── */
+      couponId: order.couponId || null,
+      coupon:   order.coupon   || null,   // { id, code, discountType, discountValue }
+
+      /* ── PhonePe / payment-gateway fields ──────────────────────── */
+      merchantOrderId:      order.merchantOrderId      || null,
+      phonePeTransactionId: order.phonePeTransactionId || null,
+      phonePeResponse:      order.phonePeResponse      || null,
+
+      /* ── Timestamps
+       *    The model sets  createdAt: 'created_at', updatedAt: 'updated_at'
+       *    so Sequelize exposes them as order.created_at / order.updated_at.
+       *    We surface both aliases so the frontend works either way.
+       * ─────────────────────────────────────────────────────────── */
+      createdAt:  order.created_at || order.createdAt || null,
+      updatedAt:  order.updated_at || order.updatedAt || null,
+      created_at: order.created_at || order.createdAt || null,
+      updated_at: order.updated_at || order.updatedAt || null,
+
+      /* ── Associated user ───────────────────────────────────────── */
+      user: order.user || null,   // { id, name, phone, email, slug }
+
+      /* ── Derived convenience flags (saves re-calculation in UI) ── */
+      hasCoupon:  discountAmount > 0 || !!order.coupon,
+      isFreeShip: shippingCost === 0,
     };
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
-      data: enrichedOrder
+      data: enrichedOrder,
     });
+
   } catch (error) {
     console.error('Get order details error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: 'Server error while fetching order details'
+      message: 'Server error while fetching order details',
     });
   }
 };

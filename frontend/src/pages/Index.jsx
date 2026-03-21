@@ -1,23 +1,23 @@
 /**
  * Index Page - E-Commerce Home Page
- * 
- * This is the main landing page of the e-commerce application.
- * It displays various sections including hero slider, categories, deals, 
- * best sellers, and featured products.
- * 
- * @component
- * @returns {JSX.Element} The home page component
+ *
+ * Advertisements are rendered at their configured positions:
+ *  • homepage_top    → Slim banner immediately below the Header
+ *  • homepage_middle → Cinematic carousel between BestSellers and PromoBanners
+ *  • homepage_bottom → Compact carousel between BrandShowcase and BundleOffers
+ *  • sidebar         → Fixed floating card on the right edge (always visible)
+ *  • popup           → Session-modal shown 2 s after page load (once per session)
  */
 
 import { useEffect } from "react";
 import AOS from "aos";
 import "aos/dist/aos.css";
 
-// Layout Components
+// Layout
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 
-// Home Page Components - Import from centralized index
+// Home sections
 import {
   HeroSlider,
   CategoryGrid,
@@ -29,91 +29,100 @@ import {
   BrandShowcase,
   BundleOffers,
   FeaturedProjects,
-  AdvertisementCarousel
+  AdvertisementCarousel,
 } from "@/components/home";
-// Import SubcategorySlider
 import { SubcategorySlider } from "@/components/home";
 
-
 const Index = () => {
-  /**
-   * Initialize AOS (Animate On Scroll) library and handle signup modal
-   */
   useEffect(() => {
-    // Initialize AOS animations
     AOS.init({
       duration: 600,
       easing: "ease-out-cubic",
       once: true,
       offset: 50,
-      disable: 'mobile' // Disable animations on mobile to prevent blank spaces
+      disable: "mobile",
     });
   }, []);
 
   return (
     <div className="min-h-screen bg-background overflow-x-hidden w-full">
-      {/* Header Navigation */}
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
       <Header />
 
-      {/* Main Content */}
-      <main className="relative ">
-        {/* Hero Section - Full width banner with call-to-action */}
+      {/* ── AD: homepage_top — slim dismissable banner below header ─────── */}
+      <AdvertisementCarousel position="homepage_top" />
+
+      <main className="relative">
+        {/* ── Hero ────────────────────────────────────────────────────────── */}
         <HeroSlider />
 
-        {/* Subcategory Slider - Circle images of subcategories */}
+        {/* ── Subcategory circles ─────────────────────────────────────────── */}
         <div data-aos="fade-up">
           <SubcategorySlider />
         </div>
 
-        {/* Category Grid - Browse products by category */}
+        {/* ── Categories ──────────────────────────────────────────────────── */}
         <CategoryGrid />
 
-        {/* Deal of the Day - Time-limited offers */}
+        {/* ── Deal of the Day ─────────────────────────────────────────────── */}
         <div data-aos="fade-up">
           <DealOfTheDay />
         </div>
 
-        {/* Best Sellers - Most popular products */}
+        {/* ── Best Sellers ────────────────────────────────────────────────── */}
         <div data-aos="fade-up" data-aos-delay="100">
           <BestSellers />
         </div>
 
-        {/* Promotional Banners - Marketing campaigns */}
+        {/* ── AD: homepage_middle — cinematic video carousel ──────────────── */}
+        <div data-aos="fade-up" data-aos-delay="50">
+          <AdvertisementCarousel position="homepage_middle" />
+        </div>
+
+        {/* ── Promo Banners ───────────────────────────────────────────────── */}
         <div data-aos="fade-up" data-aos-delay="100">
           <PromoBanners />
         </div>
 
-        {/* Product Showcase - Featured/Recommended products */}
+        {/* ── Product Showcase ────────────────────────────────────────────── */}
         <div data-aos="fade-up" data-aos-delay="100">
           <ProductShowcase />
         </div>
 
-        {/* Featured Projects - Showcase installations/case studies */}
+        {/* ── Featured Projects ───────────────────────────────────────────── */}
         <div data-aos="fade-up" data-aos-delay="100">
           <FeaturedProjects />
         </div>
 
-        {/* Brand Showcase - Featured brands */}
+        {/* ── Brand Showcase ──────────────────────────────────────────────── */}
         <div data-aos="fade-up" data-aos-delay="100">
           <BrandShowcase />
         </div>
 
-        <div data-aos="fade-up" data-aos-delay="100">
-          <AdvertisementCarousel />
+        {/* ── AD: homepage_bottom — compact carousel before bundle offers ─── */}
+        <div data-aos="fade-up" data-aos-delay="50">
+          <AdvertisementCarousel position="homepage_bottom" />
         </div>
-        {/* Bundle Offers - Special combo deals */}
+
+        {/* ── Bundle Offers ───────────────────────────────────────────────── */}
         <div data-aos="fade-up" data-aos-delay="100">
           <BundleOffers />
         </div>
- {/* Bundle Offers - Special combo deals */}
-        {/* Trust Badges - Social proof and guarantees */}
+
+        {/* ── Trust Badges ────────────────────────────────────────────────── */}
         <div data-aos="fade-up" data-aos-delay="100">
           <TrustBadges />
         </div>
       </main>
 
-      {/* Footer */}
+      {/* ── Footer ──────────────────────────────────────────────────────────── */}
       <Footer />
+
+      {/* ── AD: sidebar — fixed floating card, always visible ───────────── */}
+      <AdvertisementCarousel position="sidebar" />
+
+      {/* ── AD: popup — session modal shown 2 s after load ──────────────── */}
+      <AdvertisementCarousel position="popup" />
     </div>
   );
 };

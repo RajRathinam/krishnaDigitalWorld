@@ -4,10 +4,10 @@ import "aos/dist/aos.css";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { useShopInfo } from '@/contexts/ShopInfoContext';
-import { FileText, AlertCircle, ShoppingBag, CreditCard, Truck, RefreshCcw, Shield, Gavel, Mail, Phone, CheckCircle, Calendar, ExternalLink, MapPin } from "lucide-react";
+import { FileText, AlertCircle, ShoppingBag, CreditCard, Truck, RefreshCcw, Shield, Gavel, Mail, Phone, CheckCircle, Calendar, ExternalLink, MapPin, Info, Building2, Scale, Landmark } from "lucide-react";
 
 const TermsConditions = () => {
-    const { shopInfo } = useShopInfo();
+    const { shopInfo, loading } = useShopInfo();
     
     useEffect(() => {
         AOS.init({
@@ -171,6 +171,22 @@ const TermsConditions = () => {
         return "Nagapattinam, Tamil Nadu";
     };
 
+    // Build full address for display
+    const fullAddress = [
+        shopInfo?.address,
+        shopInfo?.city,
+        shopInfo?.state,
+        shopInfo?.pincode
+    ].filter(part => part && part.trim() !== '').join(', ');
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-background flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-background overflow-x-hidden">
             <Header />
@@ -182,44 +198,42 @@ const TermsConditions = () => {
                     <div className="absolute top-20 left-10 w-72 h-72 bg-accent/20 rounded-full blur-3xl animate-float"/>
                     <div className="absolute bottom-10 right-10 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-float" style={{ animationDelay: "1s" }}/>
                     
-                <div className="container mx-auto px-4 relative z-10">
-    <div className="max-w-4xl mx-auto text-center">
-        <div data-aos="fade-up">
-            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent font-medium text-sm mb-6">
-                <FileText className="w-4 h-4"/>
-                Legal Information
-            </span>
-        </div>
+                    <div className="container mx-auto px-4 relative z-10">
+                        <div className="max-w-4xl mx-auto text-center">
+                            <div data-aos="fade-up">
+                                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent font-medium text-sm mb-6">
+                                    <FileText className="w-4 h-4"/>
+                                    Legal Information
+                                </span>
+                            </div>
 
-        <h1 
-            data-aos="fade-up" 
-            data-aos-delay="100" 
-            className="font-heading text-3xl md:text-6xl font-bold text-foreground mb-6 leading-tight"
-        >
-            Terms & <span className="text-accent">Conditions</span>
-        </h1>
+                            <h1 
+                                data-aos="fade-up" 
+                                data-aos-delay="100" 
+                                className="font-heading text-3xl md:text-6xl font-bold text-foreground mb-6 leading-tight"
+                            >
+                                Terms & <span className="text-accent">Conditions</span>
+                            </h1>
 
-        <p 
-            data-aos="fade-up" 
-            data-aos-delay="200" 
-            className="text-sm md:text-xl text-muted-foreground max-w-2xl mx-auto"
-        >
-            Welcome to {shopInfo?.shopName || "Sri Krishna Home Appliances"}. 
-            By accessing or using our website, store services, or purchasing our products, 
-            you agree to comply with these Terms & Conditions.
-        </p>
+                            <p 
+                                data-aos="fade-up" 
+                                data-aos-delay="200" 
+                                className="text-sm md:text-xl text-muted-foreground max-w-2xl mx-auto"
+                            >
+                                Welcome to {shopInfo?.shopName || "Sri Krishna Home Appliances"}. 
+                                By accessing or using our website, store services, or purchasing our products, 
+                                you agree to comply with these Terms & Conditions.
+                            </p>
 
-        {/* Ownership Line */}
-        <p 
-            data-aos="fade-up" 
-            data-aos-delay="300"
-            className="text-xs md:text-base text-muted-foreground mt-4"
-        >
-            This website is owned and operated by <span className="text-accent font-heading">Sri Krishna Home Appliances & Furnitures</span>.
-        </p>
-    </div>
-</div>
-
+                            <p 
+                                data-aos="fade-up" 
+                                data-aos-delay="300"
+                                className="text-xs md:text-base text-muted-foreground mt-4"
+                            >
+                                This website is owned and operated by <span className="text-accent font-heading">{shopInfo?.shopName || "Sri Krishna Home Appliances"}</span>.
+                            </p>
+                        </div>
+                    </div>
                 </section>
 
                 {/* Important Notice */}
@@ -341,15 +355,15 @@ const TermsConditions = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                                     <button 
                                         onClick={handleEmailClick}
-                                        className="flex items-center gap-4 p-4 bg-background rounded-xl border border-border hover:border-accent/50 transition-all duration-300 cursor-pointer text-left"
+                                        className="flex items-center gap-4 p-4 bg-background rounded-xl border border-border hover:border-accent/50 transition-all duration-300 cursor-pointer text-left group"
                                     >
-                                        <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-accent/10">
+                                        <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-accent/10 group-hover:bg-accent/20 transition-colors">
                                             <Mail className="w-5 h-5 text-accent"/>
                                         </div>
                                         <div>
                                             <h4 className="font-heading font-semibold text-foreground">Email</h4>
-                                            <p className="text-accent text-sm hover:text-accent/80 transition-colors truncate">
-                                                {shopInfo?.supportEmail || shopInfo?.email || "Email Us"}
+                                            <p className="text-accent text-sm group-hover:text-accent/80 transition-colors truncate">
+                                                {shopInfo?.supportEmail || shopInfo?.email || "support@srikrishnahomeappliances.com"}
                                             </p>
                                             <p className="text-xs text-muted-foreground mt-1">Click to send an email</p>
                                         </div>
@@ -357,58 +371,110 @@ const TermsConditions = () => {
                                     
                                     <button 
                                         onClick={handlePhoneClick}
-                                        className="flex items-center gap-4 p-4 bg-background rounded-xl border border-border hover:border-accent/50 transition-all duration-300 cursor-pointer text-left"
+                                        className="flex items-center gap-4 p-4 bg-background rounded-xl border border-border hover:border-accent/50 transition-all duration-300 cursor-pointer text-left group"
                                     >
-                                        <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-accent/10">
+                                        <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-accent/10 group-hover:bg-accent/20 transition-colors">
                                             <Phone className="w-5 h-5 text-accent"/>
                                         </div>
                                         <div>
                                             <h4 className="font-heading font-semibold text-foreground">Phone</h4>
-                                            <p className="text-accent text-sm hover:text-accent/80 transition-colors">
-                                                {shopInfo?.supportPhone || shopInfo?.phone || "Call Us"}
+                                            <p className="text-accent text-sm group-hover:text-accent/80 transition-colors">
+                                                {shopInfo?.supportPhone || shopInfo?.phone || "+91 98765 43210"}
                                             </p>
                                             <p className="text-xs text-muted-foreground mt-1">Click to make a call</p>
                                         </div>
                                     </button>
                                 </div>
 
-                                {/* Location Information */}
-                                <div className="mb-6">
-                                    <h4 className="font-heading font-semibold text-foreground mb-3 flex items-center gap-2">
-                                        <MapPin className="w-5 h-5 text-accent"/>
-                                        Legal Jurisdiction
-                                    </h4>
-                                    <p className="text-sm text-muted-foreground">
-                                        {shopInfo?.shopName || "Sri Krishna Home Appliances"}<br />
-                                        {shopInfo?.address ? (
-                                            <>
-                                                {shopInfo.address}<br />
-                                                {shopInfo.city && `${shopInfo.city}, `}
-                                                {shopInfo.state && `${shopInfo.state} - `}
-                                                {shopInfo.pincode}
-                                            </>
-                                        ) : (
-                                            <>
-                                                Nagapattinam, Tamil Nadu<br />
-                                                India
-                                            </>
-                                        )}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground mt-2">
-                                        All legal matters are subject to jurisdiction in {getJurisdiction()}
-                                    </p>
+                                {/* Legal Jurisdiction Card - Enhanced Card Design */}
+                                <div className="mb-6 p-5 bg-gradient-to-br from-accent/5 to-background rounded-xl border border-border hover:border-accent/40 hover:shadow-lg transition-all duration-300">
+                                    <div className="flex items-start gap-4">
+                                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-accent/20">
+                                            <Scale className="w-6 h-6 text-accent"/>
+                                        </div>
+                                        <div className="flex-1">
+                                            <h4 className="font-heading text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
+                                                Legal Jurisdiction
+                                                <span className="text-xs bg-accent/10 text-accent px-2 py-1 rounded-full">Governing Law</span>
+                                            </h4>
+                                            <div className="space-y-3">
+                                                <div className="flex items-start gap-2">
+                                                    <Landmark className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
+                                                    <p className="text-sm text-muted-foreground">
+                                                        These Terms & Conditions are governed by the laws of <span className="text-foreground font-medium">India</span>.
+                                                    </p>
+                                                </div>
+                                                <div className="flex items-start gap-2">
+                                                    <MapPin className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
+                                                    <p className="text-sm text-muted-foreground">
+                                                        Any disputes arising from these terms shall be subject to the exclusive jurisdiction of the courts in 
+                                                        <span className="text-foreground font-medium"> {getJurisdiction()}</span>.
+                                                    </p>
+                                                </div>
+                                                <div className="flex items-start gap-2">
+                                                    <Building2 className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
+                                                    <p className="text-sm text-muted-foreground">
+                                                        Registered Office: {shopInfo?.shopName || "Sri Krishna Home Appliances"}<br />
+                                                        {fullAddress ? (
+                                                            <span className="text-foreground">{fullAddress}, {shopInfo?.country || "India"}</span>
+                                                        ) : (
+                                                            <span className="text-foreground">Nagapattinam, Tamil Nadu, India</span>
+                                                        )}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="mt-4 pt-3 border-t border-border">
+                                                <p className="text-xs text-muted-foreground">
+                                                    By using our services, you agree to submit to the jurisdiction of these courts for any legal proceedings.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                {/* GST Information */}
+                                {/* GST Information Card */}
                                 {shopInfo?.gstNumber && (
-                                    <div className="mb-6 p-4 bg-accent/10 rounded-xl border border-accent/20">
-                                        <h4 className="font-heading font-semibold text-foreground mb-2">GST Information</h4>
-                                        <p className="text-sm text-muted-foreground">
-                                            GST Number: <span className="text-foreground font-medium">{shopInfo.gstNumber}</span>
-                                        </p>
+                                    <div className="mb-6 p-4 bg-gradient-to-r from-accent/5 to-accent/10 rounded-xl border border-accent/20 hover:border-accent/40 transition-all duration-300">
+                                        <div className="flex items-start gap-3">
+                                            <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-accent/20">
+                                                <FileText className="w-5 h-5 text-accent"/>
+                                            </div>
+                                            <div className="flex-1">
+                                                <h4 className="font-heading font-semibold text-foreground mb-1">GST Information</h4>
+                                                <p className="text-sm text-muted-foreground">
+                                                    GST Number: <span className="text-foreground font-medium">{shopInfo.gstNumber}</span>
+                                                </p>
+                                                <p className="text-xs text-muted-foreground mt-2">
+                                                    This GST number is registered under {shopInfo?.shopName || "Sri Krishna Home Appliances"} for all business transactions.
+                                                </p>
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
 
+                                {/* Alternative Contact Card */}
+                                {!shopInfo?.gstNumber && (
+                                    <div className="mb-6 p-4 bg-muted/30 rounded-xl border border-border">
+                                        <div className="flex items-start gap-3">
+                                            <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-accent/10">
+                                                <Info className="w-5 h-5 text-accent"/>
+                                            </div>
+                                            <div className="flex-1">
+                                                <h4 className="font-heading font-semibold text-foreground mb-1">Business Information</h4>
+                                                <p className="text-sm text-muted-foreground">
+                                                    GST number will be provided on request. For any tax-related queries, please contact our support team.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Response Time Note */}
+                                <div className="mt-6 pt-6 border-t border-border text-center">
+                                    <p className="text-xs text-muted-foreground">
+                                        We strive to respond to all legal inquiries within 2-3 business days.
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>

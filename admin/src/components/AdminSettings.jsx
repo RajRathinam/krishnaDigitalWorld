@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
 import { adminApi } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -30,7 +31,7 @@ import { Badge } from "@/components/ui/badge";
 export const AdminSettings = () => {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
-
+const [activeTab, setActiveTab] = useState(isAdmin ? "subadmins" : "shop-info");
   // Subadmin state
   const [subadmins, setSubadmins] = useState([]);
   const [loadingSubadmins, setLoadingSubadmins] = useState(false);
@@ -144,7 +145,7 @@ export const AdminSettings = () => {
           ...data,
           socialMedia: data.socialMedia || prev.socialMedia,
           businessHours: data.businessHours || prev.businessHours,
-          locations: ensureArray(data.locations) // Use helper function here
+          locations: ensureArray(data.locations)
         }));
       }
     } catch (error) {
@@ -200,15 +201,36 @@ export const AdminSettings = () => {
     setSubadminDialogOpen(true);
   };
 
-  const handleDeleteSubadmin = async (id) => {
-    if (!confirm('Are you sure you want to deactivate this subadmin?')) return;
+  // Toggle active/inactive — keeps subadmin in the table
+  const handleToggleSubadmin = async (subadmin) => {
     try {
-      await adminApi.deleteSubadmin(id);
+      await adminApi.updateSubadmin(subadmin.id, { isActive: !subadmin.isActive });
+      setSubadmins(prev =>
+        prev.map(s => s.id === subadmin.id ? { ...s, isActive: !s.isActive } : s)
+      );
       toast({
         title: "Success",
-        description: "Subadmin deactivated successfully"
+        description: `Subadmin ${!subadmin.isActive ? 'activated' : 'deactivated'} successfully`
       });
-      loadSubadmins();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update subadmin status",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Hard delete — removes subadmin from DB and table
+  const handleDeleteSubadmin = async (id) => {
+    if (!confirm('Are you sure you want to permanently delete this subadmin?')) return;
+    try {
+      await adminApi.deleteSubadmin(id);
+      setSubadmins(prev => prev.filter(s => s.id !== id));
+      toast({
+        title: "Success",
+        description: "Subadmin deleted successfully"
+      });
     } catch (error) {
       toast({
         title: "Error",
@@ -267,7 +289,11 @@ export const AdminSettings = () => {
 
   return (
     <div className="space-y-6">
-      <Tabs defaultValue={isAdmin ? "subadmins" : "shop-info"} className="space-y-6">
+     <Tabs
+  value={activeTab}
+  onValueChange={setActiveTab}
+  className="space-y-6"
+>
         <TabsList className="grid w-full grid-cols-2 lg:w-auto lg:inline-flex">
           {isAdmin && (
             <TabsTrigger value="subadmins" className="gap-2">
@@ -314,12 +340,16 @@ export const AdminSettings = () => {
                         <TableHead>Phone</TableHead>
                         <TableHead>Email</TableHead>
                         <TableHead>Status</TableHead>
+                        <TableHead>Active</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {subadmins.map((subadmin) => (
-                        <TableRow key={subadmin.id}>
+                        <TableRow
+                          key={subadmin.id}
+                          className={!subadmin.isActive ? "opacity-60" : ""}
+                        >
                           <TableCell>{subadmin.name}</TableCell>
                           <TableCell>{subadmin.phone}</TableCell>
                           <TableCell>{subadmin.email || '-'}</TableCell>
@@ -327,6 +357,13 @@ export const AdminSettings = () => {
                             <Badge variant={subadmin.isActive ? "default" : "secondary"}>
                               {subadmin.isActive ? "Active" : "Inactive"}
                             </Badge>
+                          </TableCell>
+                          {/* Toggle column */}
+                          <TableCell>
+                            <Switch
+                              checked={subadmin.isActive}
+                              onCheckedChange={() => handleToggleSubadmin(subadmin)}
+                            />
                           </TableCell>
                           <TableCell>
                             <div className="flex gap-2">
@@ -340,6 +377,7 @@ export const AdminSettings = () => {
                               <Button
                                 variant="ghost"
                                 size="sm"
+                                className="text-destructive hover:text-destructive"
                                 onClick={() => handleDeleteSubadmin(subadmin.id)}
                               >
                                 <Trash2 className="h-4 w-4" />
@@ -502,7 +540,7 @@ export const AdminSettings = () => {
               </div>
 
               {/* Live Shop Locations */}
-              <div className="space-y-4">
+              <div className="space-y-4 hidden">
                 <h3 className="text-lg font-semibold">Live Shop Locations</h3>
                 <div className="border rounded-lg p-4 space-y-4">
                   <div className="grid md:grid-cols-2 gap-4">
@@ -640,7 +678,7 @@ export const AdminSettings = () => {
                       placeholder="Google Maps embed URL"
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-2 hidden">
                     <Label>Logo URL</Label>
                     <Input
                       value={shopInfo.logoUrl}
@@ -648,7 +686,7 @@ export const AdminSettings = () => {
                       placeholder="https://..."
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-2 hidden">
                     <Label>Favicon URL</Label>
                     <Input
                       value={shopInfo.faviconUrl}
@@ -662,14 +700,16 @@ export const AdminSettings = () => {
           </Card>
         </TabsContent>
       </Tabs>
-
       {/* Save Button for Shop Info */}
-      <div className="flex justify-end">
-        <Button onClick={handleShopInfoSave} disabled={savingShopInfo}>
-          <Save className="h-4 w-4 mr-2" />
-          {savingShopInfo ? "Saving..." : "Save Shop Information"}
-        </Button>
-      </div>
+{activeTab === "shop-info" && (
+  <div className="flex justify-end">
+    <Button onClick={handleShopInfoSave} disabled={savingShopInfo}>
+      <Save className="h-4 w-4 mr-2" />
+      {savingShopInfo ? "Saving..." : "Save Shop Information"}
+    </Button>
+  </div>
+)}
+
 
       {/* Subadmin Dialog */}
       <Dialog open={subadminDialogOpen} onOpenChange={setSubadminDialogOpen}>

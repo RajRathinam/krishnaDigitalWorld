@@ -102,6 +102,28 @@ export const createCoupon = async (req, res) => {
       });
     }
     
+    // Process userIds - store as integer (single user) or null
+    let processedUserIds = null;
+    if (userIds) {
+      // If userIds is an array, take the first element
+      if (Array.isArray(userIds) && userIds.length > 0) {
+        processedUserIds = parseInt(userIds[0]);
+      } 
+      // If userIds is a string, parse it
+      else if (typeof userIds === 'string') {
+        try {
+          const parsed = JSON.parse(userIds);
+          processedUserIds = Array.isArray(parsed) ? parseInt(parsed[0]) : parseInt(parsed);
+        } catch (e) {
+          processedUserIds = parseInt(userIds);
+        }
+      }
+      // If userIds is a number directly
+      else if (typeof userIds === 'number') {
+        processedUserIds = userIds;
+      }
+    }
+    
     // Create coupon
     const coupon = await Coupon.create({
       code,
@@ -117,7 +139,7 @@ export const createCoupon = async (req, res) => {
       isSingleUse,
       applicableCategories: applicableCategories ? JSON.parse(applicableCategories) : [],
       excludedProducts: excludedProducts ? JSON.parse(excludedProducts) : [],
-      userIds: userIds ? JSON.parse(userIds) : []
+      userIds: processedUserIds  // Store as integer (or null)
     });
     
     res.status(201).json({
@@ -205,6 +227,41 @@ export const updateCoupon = async (req, res) => {
     // Don't allow updating code if coupon has been used
     if (req.body.code && coupon.usedCount > 0) {
       delete req.body.code;
+    }
+    
+    // Process userIds if present in request body
+    if (req.body.userIds !== undefined) {
+      let processedUserIds = null;
+      if (req.body.userIds) {
+        // Handle various input formats
+        if (Array.isArray(req.body.userIds) && req.body.userIds.length > 0) {
+          processedUserIds = parseInt(req.body.userIds[0]);
+        } else if (typeof req.body.userIds === 'string') {
+          try {
+            const parsed = JSON.parse(req.body.userIds);
+            processedUserIds = Array.isArray(parsed) ? parseInt(parsed[0]) : parseInt(parsed);
+          } catch (e) {
+            processedUserIds = parseInt(req.body.userIds);
+          }
+        } else if (typeof req.body.userIds === 'number') {
+          processedUserIds = req.body.userIds;
+        }
+      }
+      req.body.userIds = processedUserIds;
+    }
+    
+    // Process applicableCategories if present
+    if (req.body.applicableCategories) {
+      req.body.applicableCategories = typeof req.body.applicableCategories === 'string' 
+        ? JSON.parse(req.body.applicableCategories) 
+        : req.body.applicableCategories;
+    }
+    
+    // Process excludedProducts if present
+    if (req.body.excludedProducts) {
+      req.body.excludedProducts = typeof req.body.excludedProducts === 'string' 
+        ? JSON.parse(req.body.excludedProducts) 
+        : req.body.excludedProducts;
     }
     
     // Update coupon
@@ -298,7 +355,6 @@ export const deleteCoupon = async (req, res) => {
     });
   }
 };
-
 /**
  * @desc    Validate coupon for cart
  * @route   POST /api/coupons/validate
@@ -339,9 +395,13 @@ export const validateCouponForCart = async (req, res) => {
       });
     }
     
-    // Check if user-specific coupon
-    if (coupon.userIds && coupon.userIds.length > 0) {
-      if (!coupon.userIds.includes(req.user.id)) {
+    // Check if user-specific coupon (userIds is now integer, not array)
+    if (coupon.userIds !== null && coupon.userIds !== undefined) {
+      // Convert both to integers for comparison
+      const allowedUserId = parseInt(coupon.userIds);
+      const currentUserId = parseInt(req.user.id);
+      
+      if (allowedUserId !== currentUserId) {
         return res.status(403).json({
           success: false,
           message: 'This coupon is not available for your account'
@@ -598,7 +658,7 @@ export const assignCouponToUser = async (req, res) => {
       return codeArray.join('');
     };
 
-    // Create coupon
+    // Create coupon with userIds as integer (not array)
     const coupon = await Coupon.create({
       code: generateUniqueCouponCode(),
       description: description || `Custom ${discountValue}${discountType === 'percentage' ? '%' : '₹'} discount for ${user.name}`,
@@ -611,7 +671,7 @@ export const assignCouponToUser = async (req, res) => {
       usageLimit: 1,
       isSingleUse,
       isActive: true,
-      userIds: [userId] // Restrict to this user
+      userIds: parseInt(userId) // Store as integer, not array
     });
 
     // Assign coupon to user
@@ -659,7 +719,6 @@ export const assignCouponToUser = async (req, res) => {
     });
   }
 };
-
 /**
  * @desc    Get all coupons for a specific user (admin)
  * @route   GET /api/admin/users/:userId/coupons

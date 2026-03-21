@@ -14,7 +14,7 @@ import {
   incrementAdClicks,
   getActiveAdvertisements
 } from '../controllers/advertisementController.js';
-import { authenticate, requireAdmin } from '../middleware/auth.js';
+import { authenticate, requireAdmin,requireAdminOrSubadmin } from '../middleware/auth.js';
 import { fileFilter } from '../middleware/upload.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -120,13 +120,13 @@ router.patch('/:id/views', incrementAdViews);
 router.patch('/:id/clicks', incrementAdClicks);
 
 // Admin routes
-router.get('/', authenticate, requireAdmin, getAdvertisements);
-router.get('/:id', authenticate, requireAdmin, getAdvertisement);
+router.get('/', authenticate, requireAdminOrSubadmin, getAdvertisements);
+router.get('/:id', authenticate, requireAdminOrSubadmin, getAdvertisement);
 
 router.post(
   '/',
   authenticate,
-  requireAdmin,
+  requireAdminOrSubadmin,
   (req, res, next) => {
     upload.fields([
       { name: 'video', maxCount: 1 },
@@ -145,7 +145,7 @@ router.post(
 router.put(
   '/:id',
   authenticate,
-  requireAdmin,
+  requireAdminOrSubadmin,
   (req, res, next) => {
     upload.fields([
       { name: 'video', maxCount: 1 },
@@ -161,7 +161,7 @@ router.put(
   updateAdvertisement
 );
 
-router.delete('/:id', authenticate, requireAdmin, deleteAdvertisement);
-router.patch('/:id/status', authenticate, requireAdmin, updateAdvertisementStatus);
+router.delete('/:id', authenticate, requireAdminOrSubadmin, deleteAdvertisement);
+router.patch('/:id/status', authenticate, requireAdminOrSubadmin, updateAdvertisementStatus);
 
 export default router;

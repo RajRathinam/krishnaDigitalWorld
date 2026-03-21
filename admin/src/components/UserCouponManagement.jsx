@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Loader2, AlertCircle, Trash2, Gift, Search,X, Plus, ChevronRight } from "lucide-react";
+import { Loader2, AlertCircle, Trash2, Gift, Search, X, Plus, ChevronRight, Ticket, CheckCircle, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,6 +42,12 @@ export const UserCouponManagement = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [users, setUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
+  const [stats, setStats] = useState({
+    total: 0,
+    available: 0,
+    used: 0,
+    expired: 0
+  });
 
   const fetchUserCoupons = async (pageNum = 1) => {
     try {
@@ -67,6 +73,22 @@ export const UserCouponManagement = () => {
         setUserCoupons(response.data.data.userCoupons);
         setTotalPages(response.data.data.pagination.totalPages);
         setPage(pageNum);
+        
+        // Update stats from the response
+        if (response.data.data.stats) {
+          setStats(response.data.data.stats);
+        } else {
+          // Calculate stats from the fetched data if not provided by API
+          const coupons = response.data.data.userCoupons;
+          const now = new Date();
+          const calculatedStats = {
+            total: response.data.data.pagination.total || coupons.length,
+            available: coupons.filter(uc => !uc.isUsed && new Date(uc.coupon.validUntil) > now).length,
+            used: coupons.filter(uc => uc.isUsed).length,
+            expired: coupons.filter(uc => !uc.isUsed && new Date(uc.coupon.validUntil) <= now).length
+          };
+          setStats(calculatedStats);
+        }
       } else {
         setError(response.data.message || "Failed to fetch user coupons");
       }
@@ -234,6 +256,65 @@ export const UserCouponManagement = () => {
         </Button>
       </div>
 
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Total Coupons</p>
+                <p className="text-2xl font-bold">{stats.total}</p>
+              </div>
+              <div className="h-12 w-12 bg-primary/10 rounded-full flex items-center justify-center">
+                <Ticket className="h-6 w-6 text-primary" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Available</p>
+                <p className="text-2xl font-bold text-green-600">{stats.available}</p>
+              </div>
+              <div className="h-12 w-12 bg-green-500/10 rounded-full flex items-center justify-center">
+                <CheckCircle className="h-6 w-6 text-green-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Used</p>
+                <p className="text-2xl font-bold text-blue-600">{stats.used}</p>
+              </div>
+              <div className="h-12 w-12 bg-blue-500/10 rounded-full flex items-center justify-center">
+                <CheckCircle className="h-6 w-6 text-blue-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Expired</p>
+                <p className="text-2xl font-bold text-orange-600">{stats.expired}</p>
+              </div>
+              <div className="h-12 w-12 bg-orange-500/10 rounded-full flex items-center justify-center">
+                <Clock className="h-6 w-6 text-orange-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Filters */}
       <Card>
         <CardContent className="pt-6">
@@ -305,8 +386,13 @@ export const UserCouponManagement = () => {
                 }}
                 className="mb-2 hidden"
               />
+              {loadingUsers && (
+                <div className="text-center py-2">
+                  <Loader2 className="w-4 h-4 animate-spin inline" />
+                </div>
+              )}
               {users.length > 0 && (
-                <div className="border rounded-md max-h-48 overflow-y-auto">
+                <div className="border rounded-md max-h-48 overflow-y-auto mb-2">
                   {users.map((user) => (
                     <div
                       key={user.id}
@@ -325,53 +411,53 @@ export const UserCouponManagement = () => {
                   ))}
                 </div>
               )}
-          {/* Selected User Display */}
-{selectedUserId && selectedUserData && (
-  <div className="flex items-center gap-2 p-3 border rounded-md bg-muted/30">
-    <div className="flex-1 flex items-center gap-3">
-      <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center">
-        <span className="text-sm font-medium text-accent">
-          {selectedUserData.name?.charAt(0).toUpperCase()}
-        </span>
-      </div>
-      <div>
-        <p className="text-sm font-medium">{selectedUserData.name}</p>
-        <p className="text-xs text-muted-foreground">
-          {selectedUserData.email || selectedUserData.phone}
-        </p>
-      </div>
-    </div>
-    <Button
-      variant="ghost"
-      size="icon"
-      className="h-8 w-8"
-      onClick={() => {
-        setSelectedUserId("");
-        setSelectedUserData(null);
-      }}
-    >
-      <X className="h-4 w-4" />
-    </Button>
-  </div>
-)}
+              {/* Selected User Display */}
+              {selectedUserId && selectedUserData && (
+                <div className="flex items-center gap-2 p-3 border rounded-md bg-muted/30">
+                  <div className="flex-1 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center">
+                      <span className="text-sm font-medium text-accent">
+                        {selectedUserData.name?.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">{selectedUserData.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {selectedUserData.email || selectedUserData.phone}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 hidden"
+                    onClick={() => {
+                      setSelectedUserId("");
+                      setSelectedUserData(null);
+                    }}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
 
-{selectedUserId && !selectedUserData && (
-  <div className="flex items-center gap-2 p-3 border rounded-md bg-muted/30">
-    <div className="flex-1">
-      <p className="text-sm text-muted-foreground">User #{selectedUserId}</p>
-    </div>
-    <Button
-      variant="ghost"
-      size="icon"
-      className="h-8 w-8"
-      onClick={() => setSelectedUserId("")}
-    >
-      <X className="h-4 w-4" />
-    </Button>
-  </div>
-)}
+              {selectedUserId && !selectedUserData && (
+                <div className="flex items-center gap-2 p-3 border rounded-md bg-muted/30">
+                  <div className="flex-1">
+                    <p className="text-sm text-muted-foreground">User #{selectedUserId}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setSelectedUserId("")}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </div>
-  <div>
+            <div>
               <label className="text-sm font-medium mb-2 block">
                 Discount Type
               </label>
@@ -396,8 +482,6 @@ export const UserCouponManagement = () => {
                 onChange={(e) => setDiscountValue(e.target.value)}
               />
             </div>
-
-          
           </div>
 
           <DialogFooter>
@@ -470,12 +554,18 @@ export const UserCouponManagement = () => {
                         </span>
                       </TableCell>
                       <TableCell>
-                        <Badge
-                          variant={uc.isUsed ? "secondary" : "outline"}
-                          className={uc.isUsed ? "bg-blue-500/10 text-blue-600" : ""}
-                        >
-                          {uc.isUsed ? "Used" : "Available"}
-                        </Badge>
+                        {new Date(uc.coupon.validUntil) < new Date() && !uc.isUsed ? (
+                          <Badge variant="secondary" className="bg-orange-500/10 text-orange-600">
+                            Expired
+                          </Badge>
+                        ) : (
+                          <Badge
+                            variant={uc.isUsed ? "secondary" : "outline"}
+                            className={uc.isUsed ? "bg-blue-500/10 text-blue-600" : ""}
+                          >
+                            {uc.isUsed ? "Used" : "Available"}
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell>
                         <span className="text-sm">

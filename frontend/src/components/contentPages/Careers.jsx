@@ -64,42 +64,21 @@ const benefits = [
 const Careers = () => {
   const { shopInfo } = useShopInfo();
   
-  // Helper function to extract Google Maps URL from embed URL
-  const getGoogleMapsUrl = (embedUrl) => {
-    if (!embedUrl) return null;
+  // Function to open Google Maps with store location (same logic as Header)
+  const openGoogleMaps = () => {
+    const fullAddress = [
+      shopInfo?.address,
+      shopInfo?.city,
+      shopInfo?.state,
+      shopInfo?.pincode,
+      shopInfo?.country || 'India'
+    ]
+      .filter(part => part && part.trim() !== '')
+      .join(', ');
     
-    try {
-      // If it's already a Google Maps URL, return it
-      if (embedUrl.includes('maps.google.com') || embedUrl.includes('google.com/maps')) {
-        // Convert embed URL to regular Google Maps URL
-        if (embedUrl.includes('/embed?')) {
-          // Extract the place/query parameter from embed URL
-          const url = new URL(embedUrl);
-          const query = url.searchParams.get('q') || 
-                       url.searchParams.get('pb') || 
-                       url.pathname.split('/').pop();
-          return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query || shopInfo?.address || '')}`;
-        }
-        return embedUrl;
-      }
-      
-      // If it's an embed iframe src, extract the URL
-      if (embedUrl.includes('src="')) {
-        const match = embedUrl.match(/src="([^"]+)"/);
-        if (match && match[1]) {
-          return getGoogleMapsUrl(match[1]);
-        }
-      }
-      
-      return null;
-    } catch (error) {
-      console.error('Error parsing map URL:', error);
-      return null;
-    }
+    const encodedAddress = encodeURIComponent(fullAddress);
+    window.open(`https://www.google.com/maps/search/?api=1&query=${encodedAddress}`, '_blank');
   };
-
-  // Get the primary map URL
-  const primaryMapUrl = shopInfo?.mapEmbedUrl ? getGoogleMapsUrl(shopInfo.mapEmbedUrl) : null;
   
   // Prepare apply methods based on shopInfo
   const applyMethods = [
@@ -109,8 +88,7 @@ const Careers = () => {
         description: shopInfo?.address || "Come directly to our store with your resume",
         method: 'visit',
         color: "from-blue-500 to-cyan-500",
-        detail: primaryMapUrl || shopInfo?.address || null,
-        actionText: "Open in Maps"
+        actionText: "Get Directions"
     },
     {
         icon: Phone,
@@ -118,7 +96,6 @@ const Careers = () => {
         description: shopInfo?.phone || "Call us to discuss the position and schedule an interview",
         method: 'call',
         color: "from-green-500 to-emerald-500",
-        detail: shopInfo?.phone ? `Call ${shopInfo.phone}` : null,
         actionText: shopInfo?.phone || "Call Now"
     },
     {
@@ -127,7 +104,6 @@ const Careers = () => {
         description: shopInfo?.supportEmail || shopInfo?.email || "Send your resume and cover letter to our careers email",
         method: 'email',
         color: "from-purple-500 to-violet-500",
-        detail: shopInfo?.supportEmail || shopInfo?.email || null,
         actionText: shopInfo?.supportEmail || shopInfo?.email || "Email Us"
     }
   ];
@@ -144,27 +120,10 @@ const Careers = () => {
     const handleApply = (method) => {
         switch (method.method) {
             case 'visit':
-                // Open Google Maps with the map URL or address
-                if (method.detail) {
-                    if (method.detail.startsWith('http')) {
-                        // It's a direct URL, open it
-                        window.open(method.detail, '_blank');
-                    } else {
-                        // It's an address, open Google Maps search
-                        const address = encodeURIComponent(method.detail);
-                        window.open(`https://www.google.com/maps/search/?api=1&query=${address}`, '_blank');
-                    }
-                } else if (shopInfo?.address) {
-                    // Fallback to address from shopInfo
-                    const address = encodeURIComponent(shopInfo.address);
-                    window.open(`https://www.google.com/maps/search/?api=1&query=${address}`, '_blank');
-                } else {
-                    alert("Please visit our store location. Contact us for directions.");
-                }
+                openGoogleMaps();
                 break;
             case 'call':
                 if (shopInfo?.phone) {
-                    // Clean phone number for tel: link
                     const phoneNumber = shopInfo.phone.replace(/[^\d+]/g, '');
                     window.location.href = `tel:${phoneNumber}`;
                 } else {
@@ -186,6 +145,15 @@ const Careers = () => {
 
     // Get primary location for display
     const primaryLocation = shopInfo?.locations?.[0] || null;
+    
+    // Build full address for display
+    const fullAddress = [
+        shopInfo?.address,
+        shopInfo?.city,
+        shopInfo?.state,
+        shopInfo?.pincode,
+        shopInfo?.country
+    ].filter(part => part && part.trim() !== '').join(', ');
     
     return (
         <div className="min-h-screen bg-background overflow-x-hidden">
@@ -369,46 +337,16 @@ const Careers = () => {
                                         <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
                                             {method.description}
                                         </p>
-                                        {method.detail && (
-                                            <div className="flex items-center gap-1 text-accent font-medium text-sm group-hover:gap-2 transition-all">
-                                                <span className="truncate">
-                                                    {method.actionText}
-                                                </span>
-                                                <ExternalLink className="w-4 h-4 flex-shrink-0" />
-                                            </div>
-                                        )}
+                                        <div className="flex items-center gap-1 text-accent font-medium text-sm group-hover:gap-2 transition-all">
+                                            <span>{method.actionText}</span>
+                                            <ExternalLink className="w-4 h-4 flex-shrink-0" />
+                                        </div>
                                     </button>
                                 );
                             })}
                         </div>
                         
-               
                         
-                        {/* Store Location Info */}
-                        {primaryLocation && (
-                            <div className="max-w-4xl mx-auto mt-8 p-4 bg-card rounded-xl border border-border">
-                                <div className="flex items-center gap-3 mb-2">
-                                    <MapPin className="w-5 h-5 text-accent" />
-                                    <h4 className="font-heading text-lg font-semibold text-foreground">Main Store Location</h4>
-                                </div>
-                                <p className="text-muted-foreground mb-2">{primaryLocation.name}</p>
-                                <p className="text-sm text-muted-foreground">{primaryLocation.address}</p>
-                                {primaryLocation.phone && (
-                                    <p className="text-sm text-muted-foreground mt-1">
-                                        Location Phone: {primaryLocation.phone}
-                                    </p>
-                                )}
-                                {primaryLocation.mapUrl && (
-                                    <button
-                                        onClick={() => window.open(getGoogleMapsUrl(primaryLocation.mapUrl), '_blank')}
-                                        className="mt-3 inline-flex items-center gap-2 text-accent hover:text-accent/80 transition-colors text-sm"
-                                    >
-                                        <ExternalLink className="w-4 h-4" />
-                                        View this location on Google Maps
-                                    </button>
-                                )}
-                            </div>
-                        )}
                     </div>
                 </section>
 
@@ -427,7 +365,7 @@ const Careers = () => {
                             </p>
                             <div className="flex flex-col sm:flex-row gap-4 justify-center">
                                 <button 
-                                    onClick={() => handleApply({ method: 'call', detail: shopInfo?.phone })}
+                                    onClick={() => handleApply({ method: 'call' })}
                                     className="px-8 py-4 bg-foreground text-background font-semibold rounded-xl hover:bg-foreground/90 hover:scale-105 transition-all duration-300 shadow-xl flex items-center justify-center gap-2"
                                     disabled={!shopInfo?.phone}
                                 >
@@ -435,7 +373,7 @@ const Careers = () => {
                                     Call Now to Apply
                                 </button>
                                 <button 
-                                    onClick={() => handleApply({ method: 'visit' })}
+                                    onClick={openGoogleMaps}
                                     className="px-8 py-4 bg-transparent border-2 border-foreground text-foreground font-semibold rounded-xl hover:bg-foreground/10 transition-all duration-300 flex items-center justify-center gap-2"
                                 >
                                     <MapPin className="w-5 h-5" />

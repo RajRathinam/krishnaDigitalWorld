@@ -396,7 +396,7 @@ export const ProductManagement = () => {
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       {/* Stats Overview - Updated to include new flags */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {loading ? (
           // Skeleton Stats Cards
           Array.from({ length: 6 }).map((_, i) => (
@@ -717,7 +717,7 @@ export const ProductManagement = () => {
                                 Active
                               </Badge>
                             ) : (
-                              <Badge variant="secondary" className="w-fit text-[10px] whitespace-nowrap">Draft</Badge>
+                              <Badge variant="secondary" className="w-fit text-[10px] whitespace-nowrap">InActive</Badge>
                             )}
                           </div>
                         </td>
