@@ -117,7 +117,12 @@ const handleUploadError = (err, req, res, next) => {
 // Public routes (for frontend display)
 router.get('/active', getActiveAdvertisements);
 router.patch('/:id/views', incrementAdViews);
+// HEAD/GET probes (e.g. media stack) must not 404; counting stays PATCH-only to avoid double counts
+router.head('/:id/views', (req, res) => res.status(204).end());
+router.get('/:id/views', (req, res) => res.status(204).end());
 router.patch('/:id/clicks', incrementAdClicks);
+router.head('/:id/clicks', (req, res) => res.status(204).end());
+router.get('/:id/clicks', (req, res) => res.status(204).end());
 
 // Admin routes
 router.get('/', authenticate, requireAdminOrSubadmin, getAdvertisements);
