@@ -8,25 +8,23 @@ import {
   updateShopInfo,
   getShopInfoPublic
 } from '../controllers/settingsController.js';
-import { authenticate, requireAdmin,requireAdminOrSubadmin } from '../middleware/auth.js';
+import { authenticate, requireAdmin, requireAdminOrSubadmin } from '../middleware/auth.js';
 
-const router = express.Router();
+/**
+ * Public shop banner (GET /api/shop-info only).
+ * Do not mount a blanket router.use(authenticate) at /api — it catches /api/auth/* etc.
+ */
+export const publicShopRouter = express.Router();
+publicShopRouter.get('/shop-info', getShopInfoPublic);
 
-// Public route for shop info (used in frontend)
-router.get('/shop-info', getShopInfoPublic);
-
-// Admin/Subadmin routes (require authentication)
-router.use(authenticate);
-
-// Shop info routes (admin and subadmin can access)
-router.get('/shop-info', getShopInfo);
-router.put('/shop-info',requireAdminOrSubadmin, updateShopInfo);
-
-// Subadmin management routes (admin only)
-router.post('/subadmins', requireAdmin, createSubadmin);
-router.get('/subadmins', requireAdmin, getSubadmins);
-router.put('/subadmins/:id', requireAdmin, updateSubadmin);
-router.delete('/subadmins/:id', requireAdmin, deleteSubadmin);
-
-export default router;
-
+/**
+ * Admin / subadmin settings (GET/PUT /api/admin/settings/shop-info, subadmins CRUD).
+ * Each protected route lists authenticate explicitly — no catch-all middleware.
+ */
+export const adminSettingsRouter = express.Router();
+adminSettingsRouter.get('/shop-info', authenticate, getShopInfo);
+adminSettingsRouter.put('/shop-info', authenticate, requireAdminOrSubadmin, updateShopInfo);
+adminSettingsRouter.post('/subadmins', authenticate, requireAdmin, createSubadmin);
+adminSettingsRouter.get('/subadmins', authenticate, requireAdmin, getSubadmins);
+adminSettingsRouter.put('/subadmins/:id', authenticate, requireAdmin, updateSubadmin);
+adminSettingsRouter.delete('/subadmins/:id', authenticate, requireAdmin, deleteSubadmin);

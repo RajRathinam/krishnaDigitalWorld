@@ -14,7 +14,10 @@ export const authenticate = async (req, res, next) => {
     console.log('Request method:', req.method);
     
     // Get token from header, body, or cookie
-    let token = req.headers.authorization || req.body.token || req.query.token;
+    let token =
+      req.headers?.authorization ||
+      req.body?.token ||
+      req.query?.token;
     
     console.log('Raw Authorization header:', req.headers.authorization);
     console.log('Raw cookies:', req.cookies);
@@ -119,7 +122,10 @@ export const authenticate = async (req, res, next) => {
 export const optionalAuthenticate = async (req, res, next) => {
   try {
     // Get token from header, body, or cookie
-    let token = req.headers.authorization || req.body.token || req.query.token;
+    let token =
+      req.headers?.authorization ||
+      req.body?.token ||
+      req.query?.token;
     
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
       token = req.headers.authorization.substring(7);

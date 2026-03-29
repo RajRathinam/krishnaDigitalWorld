@@ -10,7 +10,7 @@ import couponRoutes from './couponRoutes.js';
 import categoryRoutes from './categoryRoutes.js';
 import brandRoutes from './brandRoutes.js';
 import modelRoutes from './modelRoutes.js';
-import settingsRoutes from './settingsRoutes.js';
+import { publicShopRouter, adminSettingsRouter } from './settingsRoutes.js';
 import heroSliderRoutes from './heroSliderRoutes.js';
 import paymentRoutes from './paymentRoutes.js';
 
@@ -27,7 +27,8 @@ export {
   categoryRoutes,
   brandRoutes,
   modelRoutes,
-  settingsRoutes,
+  publicShopRouter,
+  adminSettingsRouter,
   heroSliderRoutes,
   paymentRoutes
 };

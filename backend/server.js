@@ -21,7 +21,8 @@ import {
   categoryRoutes,
   brandRoutes,
   modelRoutes,
-  settingsRoutes,
+  publicShopRouter,
+  adminSettingsRouter,
   heroSliderRoutes,
   paymentRoutes
 } from './routes/index.js';
@@ -162,10 +163,10 @@ app.use('/api/advertisements', advertisementRoutes);
 app.use('/api/brands', brandRoutes);
 app.use('/api/models', modelRoutes);
 app.use('/api/birthdays', birthdayRoutes);
-app.use('/api/admin/settings', settingsRoutes);
+app.use('/api/admin/settings', adminSettingsRouter);
 app.use('/api/hero-slider', heroSliderRoutes);
-app.use('/api', settingsRoutes); // Public shop info route
-app.use('/api/payments', paymentRoutes); // PhonePe PG v2
+app.use('/api/payments', paymentRoutes); // PhonePe PG v2 — must be before /api catch-all
+app.use('/api', publicShopRouter); // GET /api/shop-info only (no catch-all auth)
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
