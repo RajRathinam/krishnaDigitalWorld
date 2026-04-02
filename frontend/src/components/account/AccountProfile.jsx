@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
-import { Calendar, MapPin, User } from "lucide-react";
-import { baseUrl } from '@/config/baseUrl';
+import { Calendar, MapPin, User, Camera } from "lucide-react";
+import { getImageUrl } from "@/lib/utils";
+import { baseUrl } from '@/config/baseUrl'; // If baseUrl is still needed elsewhere, keep it, but getImageUrl is better
 
 const API_BASE_URL = baseUrl;
 
@@ -11,7 +12,7 @@ const getAuthToken = () => localStorage.getItem('authToken');
 const apiRequest = async (endpoint, options = {}) => {
   const token = getAuthToken();
   const headers = {
-    'Content-Type': 'application/json',
+    ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
     ...(token && { 'Authorization': `Bearer ${token}` }),
     ...options.headers,
   };
@@ -50,6 +51,8 @@ export default function AccountProfile() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
+  const [profileImage, setProfileImage] = useState(null);
+  const [profileImagePreview, setProfileImagePreview] = useState("");
 
   // Primary address fields
   const [street, setStreet] = useState("");
@@ -91,6 +94,18 @@ export default function AccountProfile() {
     }
   }, [user]);
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setProfileImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfileImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   // DOB editable only if user has not set it yet
   const dobEditable = !(user && user.dateOfBirth);
 
@@ -99,24 +114,30 @@ export default function AccountProfile() {
     
     setIsSaving(true);
     try {
-      const updateData = {
-        name,
-        email: email || null
-      };
+      // Use FormData for profile update
+      const formData = new FormData();
+      formData.append('name', name);
+      if (email) formData.append('email', email);
+      if (dateOfBirth && dobEditable) formData.append('dateOfBirth', dateOfBirth);
       
-      if (dateOfBirth && dobEditable) updateData.dateOfBirth = dateOfBirth;
+      if (profileImage) {
+        formData.append('profileImage', profileImage);
+      }
       
-      // Update primary address
       if (street.trim() || city.trim() || pincode.trim()) {
-        updateData.address = {
+        const addressData = {
           street: street.trim(),
           city: city.trim(),
           state: state.trim(),
           pincode: pincode.trim(),
         };
+        formData.append('address', JSON.stringify(addressData));
       }
       
-      const response = await api.updateMe(updateData);
+      const response = await apiRequest('/auth/me', {
+        method: 'PUT',
+        body: formData,
+      });
       if (response.success) {
         toast({ title: 'Profile updated successfully' });
         await refreshUser();
@@ -151,6 +172,33 @@ export default function AccountProfile() {
       <h2 className="text-lg font-bold text-foreground mb-4">Profile Settings</h2>
 
       <div className="space-y-6">
+        {/* Avatar Upload */}
+        <div className="flex flex-col items-center gap-4 mb-6">
+          <div className="relative group">
+            <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-accent/20 bg-muted flex items-center justify-center">
+              {profileImagePreview || user?.profileImage ? (
+                <img 
+                  src={profileImagePreview || getImageUrl(user?.profileImage)} 
+                  alt="Profile" 
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <User className="w-12 h-12 text-muted-foreground" />
+              )}
+            </div>
+            <label className="absolute inset-0 flex items-center justify-center bg-black/40 text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-full">
+              <Camera className="w-6 h-6" />
+              <input 
+                type="file" 
+                className="hidden" 
+                accept="image/*"
+                onChange={handleImageChange}
+              />
+            </label>
+          </div>
+          <p className="text-xs text-muted-foreground">Click the camera to update profile picture</p>
+        </div>
+
         {/* Basic Information */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <div>

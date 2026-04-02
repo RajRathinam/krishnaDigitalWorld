@@ -320,7 +320,7 @@ export const AdminOverview = () => {
                 <Gift className="h-5 w-5 text-pink-500" /> Today's Birthdays
               </CardTitle>
               {todayBirthdays.length > 0 && (
-                <Button variant="ghost" size="sm" className="h-8 text-xs"
+                <Button variant="ghost" size="sm" className="h-8 text-xs hidden"
                   onClick={handleSendAllBirthdayWishes} disabled={sendingWishes.length > 0}>
                   Send All
                 </Button>
@@ -340,13 +340,13 @@ export const AdminOverview = () => {
                           <p className="text-[10px] text-muted-foreground">{user.email}</p>
                         </div>
                       </div>
-                      <Button size="sm"
+                      {/* <Button size="sm"
                         variant={user.giftReceived ? "secondary" : "default"}
                         className={user.giftReceived ? "text-green-600 bg-green-50 hover:bg-green-100" : "bg-pink-600 hover:bg-pink-700"}
                         onClick={() => handleSendBirthdayWish(user.id)}
                         disabled={sendingWishes.includes(user.id) || user.giftReceived}>
                         {sendingWishes.includes(user.id) ? "..." : user.giftReceived ? "Sent" : "Wish"}
-                      </Button>
+                      </Button> */}
                     </div>
                   ))}
                 </div>

@@ -242,6 +242,7 @@ export const getMe = async (req, res) => {
       address: userData.address || null,
       additionalAddresses: userData.additionalAddresses || [],
       isVerified: userData.isVerified,
+      profileImage: userData.profileImage,
       createdAt: userData.createdAt
     };
 
@@ -265,7 +266,7 @@ export const getMe = async (req, res) => {
  */
 export const updateMe = async (req, res) => {
   try {
-    const result = await updateUserProfile(req.user.id, req.body);
+    const result = await updateUserProfile(req.user.id, req.body, req.uploadedFiles);
 
     if (!result.success) {
       return res.status(400).json(result);

@@ -1,5 +1,6 @@
 import { User, Order, Review, Cart } from '../models/index.js';
 import { sanitizeUserForPublic } from '../utils/helpers.js';
+import { deleteImages } from '../middleware/upload.js';
 
 /**
  * @desc    Get public user profile by slug
@@ -103,6 +104,18 @@ export const updateProfile = async (req, res) => {
     
     // Don't allow role or phone changes
     const { role, phone, ...updateData } = req.body;
+    
+    // Check for uploaded profile image
+    if (req.uploadedFiles && req.uploadedFiles.length > 0) {
+      const oldImage = user.profileImage;
+      updateData.profileImage = req.uploadedFiles[0].url;
+      
+      // Delete old image if it exists
+      if (oldImage && oldImage.startsWith('/uploads/')) {
+        const publicId = oldImage.replace('/uploads/', '');
+        await deleteImages([publicId]);
+      }
+    }
     
     // Update user
     await user.update(updateData);

@@ -10,6 +10,19 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { toast } from "@/hooks/use-toast";
 import api from "@/lib/api";
 
+// ─── Theme tokens ────────────────────────────────────────────────────────────
+// Primary yellow : #e8c700
+// Light yellow   : #fdf6b2
+// Gray dark      : #1a1a1a  (text)
+// Gray mid       : #6b7280  (muted)
+// Gray light     : #f3f4f6  (surface)
+// White          : #ffffff
+// ─────────────────────────────────────────────────────────────────────────────
+
+const Y  = "#ffc107";   // honey yellow
+const YL = "#fff9e6";   // soft butter
+const YD = "#e6a800";   // dark honey
+
 // Helper function to format currency
 const formatCurrency = (amount) => {
   return new Intl.NumberFormat("en-IN", {
@@ -75,38 +88,27 @@ const authApi = {
   },
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Welcome Animation — all colors use CSS vars (bg-primary, text-primary, etc.)
-// so they automatically match your site theme.
-// ─────────────────────────────────────────────────────────────────────────────
-
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 function rand(min, max) {
   return Math.random() * (max - min) + min;
 }
 
-// A single burst particle (dot or square) that flies out from the centre
-function BurstParticle({ angle, distance, delay, size, isSquare, colorClass }) {
+// ─── Burst particle ───────────────────────────────────────────────────────────
+function BurstParticle({ angle, distance, delay, size, isSquare, color }) {
   const rad = (angle * Math.PI) / 180;
   const tx = Math.cos(rad) * distance;
   const ty = Math.sin(rad) * distance;
-
   return (
     <motion.div
       initial={{ opacity: 0, x: 0, y: 0, scale: 0, rotate: 0 }}
-      animate={{
-        opacity: [0, 1, 1, 0],
-        x: tx,
-        y: ty,
-        scale: [0, 1.3, 1, 0],
-        rotate: rand(-200, 200),
-      }}
+      animate={{ opacity: [0, 1, 1, 0], x: tx, y: ty, scale: [0, 1.3, 1, 0], rotate: rand(-200, 200) }}
       transition={{ duration: rand(0.9, 1.6), delay, ease: "easeOut" }}
-      className={colorClass}
       style={{
         position: "absolute",
         width: size,
         height: size,
         borderRadius: isSquare ? 3 : "50%",
+        background: color,
         pointerEvents: "none",
         top: "50%",
         left: "50%",
@@ -117,29 +119,15 @@ function BurstParticle({ angle, distance, delay, size, isSquare, colorClass }) {
   );
 }
 
-// Vertical falling streamer ribbon
+// ─── Falling streamer ─────────────────────────────────────────────────────────
 function Streamer({ delay, x }) {
-  const colorClasses = [
-    "bg-primary",
-    "bg-primary/60",
-    "bg-primary/40",
-    "bg-accent",
-    "bg-accent/70",
-    "bg-primary/20",
-  ];
-  const color = colorClasses[Math.floor(rand(0, colorClasses.length))];
-
+  const colors = [Y, YD, "#fff", "#e5e7eb", YL, "#d1d5db"];
+  const color = colors[Math.floor(rand(0, colors.length))];
   return (
     <motion.div
       initial={{ opacity: 0, y: "-8%", rotate: rand(-25, 25) }}
-      animate={{
-        opacity: [0, 1, 1, 0],
-        y: "108%",
-        rotate: rand(-200, 200),
-        x: [0, rand(-18, 18), rand(-18, 18)],
-      }}
+      animate={{ opacity: [0, 1, 1, 0], y: "108%", rotate: rand(-200, 200), x: [0, rand(-18, 18), rand(-18, 18)] }}
       transition={{ duration: rand(1.8, 3.0), delay, ease: "easeIn" }}
-      className={color}
       style={{
         position: "absolute",
         left: `${x}%`,
@@ -147,14 +135,15 @@ function Streamer({ delay, x }) {
         width: rand(3, 7),
         height: rand(10, 24),
         borderRadius: 2,
+        background: color,
         pointerEvents: "none",
       }}
     />
   );
 }
 
-// Spinning orbit ring with a glowing dot
-function OrbitRing({ radius, speed, delay, dotClass }) {
+// ─── Orbit ring ───────────────────────────────────────────────────────────────
+function OrbitRing({ radius, speed, delay, dotColor }) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.2 }}
@@ -165,7 +154,7 @@ function OrbitRing({ radius, speed, delay, dotClass }) {
         width: radius * 2,
         height: radius * 2,
         borderRadius: "50%",
-        border: "1px dashed hsl(var(--primary) / 0.2)",
+        border: `1px dashed ${Y}44`,
         top: "50%",
         left: "50%",
         transform: "translate(-50%, -60%)",
@@ -178,7 +167,6 @@ function OrbitRing({ radius, speed, delay, dotClass }) {
         style={{ width: "100%", height: "100%", position: "relative" }}
       >
         <div
-          className={dotClass}
           style={{
             position: "absolute",
             top: 0,
@@ -187,7 +175,8 @@ function OrbitRing({ radius, speed, delay, dotClass }) {
             width: 8,
             height: 8,
             borderRadius: "50%",
-            boxShadow: "0 0 8px currentColor",
+            background: dotColor,
+            boxShadow: `0 0 8px ${dotColor}`,
           }}
         />
       </motion.div>
@@ -195,7 +184,7 @@ function OrbitRing({ radius, speed, delay, dotClass }) {
   );
 }
 
-// Flipping coupon card — front uses bg-primary, back uses bg-card
+// ─── Flip coupon card ─────────────────────────────────────────────────────────
 function CouponCard() {
   const [flipped, setFlipped] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -224,111 +213,88 @@ function CouponCard() {
         animate={{ rotateY: flipped ? 180 : 0 }}
         transition={{ duration: 0.75, ease: "easeInOut" }}
         onClick={() => setFlipped((f) => !f)}
-        style={{
-          transformStyle: "preserve-3d",
-          position: "relative",
-          width: 230,
-          height: 72,
-          cursor: "pointer",
-        }}
+        style={{ transformStyle: "preserve-3d", position: "relative", width: 240, height: 76, cursor: "pointer" }}
       >
-        {/* Front — primary colour */}
+        {/* Front */}
         <div
-          className="bg-primary"
           style={{
             position: "absolute",
             inset: 0,
             backfaceVisibility: "hidden",
             borderRadius: 14,
+            background: `linear-gradient(135deg, ${Y} 0%, ${YD} 100%)`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             gap: 12,
-            boxShadow: "0 10px 28px hsl(var(--primary) / 0.4)",
+            boxShadow: `0 10px 28px ${Y}66`,
           }}
         >
           <motion.div
             animate={{ rotate: [0, -15, 15, -8, 8, 0], scale: [1, 1.2, 1] }}
             transition={{ delay: 1.1, duration: 0.8 }}
           >
-            <Gift className="w-7 h-7 text-primary-foreground" />
+            <Gift style={{ width: 28, height: 28, color: "#1a1a1a" }} />
           </motion.div>
           <div>
-            <div
-              className="text-primary-foreground/70"
-              style={{
-                fontSize: 10,
-                letterSpacing: 1.5,
-                textTransform: "uppercase",
-                fontWeight: 600,
-              }}
-            >
+            <div style={{ fontSize: 10, letterSpacing: 1.5, textTransform: "uppercase", fontWeight: 700, color: "#1a1a1a99" }}>
               Your reward
             </div>
-            <div
-              className="text-primary-foreground"
-              style={{ fontSize: 22, fontWeight: 900, letterSpacing: -0.5, lineHeight: 1 }}
-            >
+            <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: -0.5, lineHeight: 1, color: "#1a1a1a" }}>
               10% OFF
             </div>
           </div>
-          <span
-            className="text-primary-foreground/50 absolute right-3 flex items-center"
-          >
-            <RefreshCw className="w-3 h-3" />
+          <span style={{ position: "absolute", right: 10, color: "#1a1a1a55", display: "flex", alignItems: "center" }}>
+            <RefreshCw style={{ width: 12, height: 12 }} />
           </span>
         </div>
 
-        {/* Back — card background with primary accents */}
+        {/* Back */}
         <div
-          className="bg-card border border-primary/30"
           style={{
             position: "absolute",
             inset: 0,
             backfaceVisibility: "hidden",
             transform: "rotateY(180deg)",
             borderRadius: 14,
+            background: "#fff",
+            border: `2px dashed ${Y}`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             flexDirection: "column",
             gap: 4,
-            boxShadow: "0 10px 28px hsl(var(--primary) / 0.15)",
+            boxShadow: `0 10px 28px ${Y}33`,
           }}
         >
-          <div
-            className="text-muted-foreground"
-            style={{ fontSize: 9, letterSpacing: 2.5, textTransform: "uppercase" }}
-          >
+          <div style={{ fontSize: 9, letterSpacing: 2.5, textTransform: "uppercase", color: "#9ca3af" }}>
             Coupon Code
           </div>
-          <div
-            className="text-primary"
-            style={{ fontSize: 20, fontWeight: 900, letterSpacing: 5, fontFamily: "monospace" }}
-          >
+          <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: 5, fontFamily: "monospace", color: "#1a1a1a" }}>
             WELCOME10
           </div>
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={handleCopy}
-            className={`border border-primary/40 ${
-              copied ? "text-green-500" : "text-primary"
-            }`}
             style={{
               marginTop: 2,
-              padding: "2px 12px",
+              padding: "3px 14px",
               borderRadius: 20,
               fontSize: 10,
-              fontWeight: 600,
+              fontWeight: 700,
               letterSpacing: 0.5,
               cursor: "pointer",
-              background: "transparent",
-              transition: "color 0.2s",
+              background: copied ? "#d1fae5" : YL,
+              color: copied ? "#065f46" : "#1a1a1a",
+              border: `1px solid ${copied ? "#6ee7b7" : Y}`,
+              transition: "all 0.2s",
             }}
           >
             {copied ? (
-              <span className="flex items-center gap-1"><Check className="w-3 h-3" /> Copied!</span>
+              <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <Check style={{ width: 12, height: 12 }} /> Copied!
+              </span>
             ) : (
               "Copy code"
             )}
@@ -339,54 +305,61 @@ function CouponCard() {
   );
 }
 
-// The complete success screen
+// ─── Success screen ───────────────────────────────────────────────────────────
 function WelcomeSuccessStep({ username, authMode, onClose }) {
-  const particleColorClasses = [
-    "bg-primary",
-    "bg-primary/70",
-    "bg-primary/40",
-    "bg-accent",
-    "bg-accent/60",
-  ];
+  const particleColors = [Y, YD, YL, "#fff", "#e5e7eb", "#d1d5db"];
 
-  const burstParticles = Array.from({ length: 36 }, (_, i) => ({
+  const burstParticles = Array.from({ length: 40 }, (_, i) => ({
     id: i,
-    angle: (360 / 36) * i + rand(-6, 6),
-    distance: rand(55, 130),
+    angle: (360 / 40) * i + rand(-6, 6),
+    distance: rand(55, 140),
     delay: rand(0, 0.4),
-    size: rand(5, 13),
+    size: rand(5, 14),
     isSquare: Math.random() > 0.6,
-    colorClass: particleColorClasses[i % particleColorClasses.length],
+    color: particleColors[i % particleColors.length],
   }));
 
-  const streamers = Array.from({ length: 22 }, (_, i) => ({
+  const streamers = Array.from({ length: 26 }, (_, i) => ({
     id: i,
     delay: rand(0, 1.2),
     x: rand(4, 96),
   }));
 
   return (
-    <div className="relative flex flex-col items-center justify-center min-h-[420px] overflow-hidden p-8">
-      {/* Soft radial bg glow using primary */}
+    <div
+      style={{
+        position: "relative",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: 440,
+        overflow: "hidden",
+        padding: "2.5rem 2rem",
+        background: "#fff",
+      }}
+    >
+      {/* Yellow radial glow */}
       <div
-        className="absolute inset-0 pointer-events-none"
         style={{
-          background:
-            "radial-gradient(ellipse at 50% 22%, hsl(var(--primary) / 0.16) 0%, hsl(var(--primary) / 0.05) 45%, transparent 70%)",
+          position: "absolute",
+          inset: 0,
+          pointerEvents: "none",
+          background: `radial-gradient(ellipse at 50% 20%, ${Y}28 0%, ${Y}0a 45%, transparent 70%)`,
         }}
       />
 
-      {/* Falling streamers */}
+      {/* Streamers */}
       {streamers.map((s) => (
         <Streamer key={s.id} delay={s.delay} x={s.x} />
       ))}
 
       {/* Orbit rings */}
-      <OrbitRing radius={80}  speed={8}  delay={0.3} dotClass="bg-primary" />
-      <OrbitRing radius={108} speed={13} delay={0.5} dotClass="bg-primary/60" />
-      <OrbitRing radius={138} speed={19} delay={0.7} dotClass="bg-accent" />
+      <OrbitRing radius={82}  speed={8}  delay={0.3} dotColor={Y} />
+      <OrbitRing radius={112} speed={13} delay={0.5} dotColor={YD} />
+      <OrbitRing radius={144} speed={19} delay={0.7} dotColor="#d1d5db" />
 
-      {/* Central icon + burst particles */}
+      {/* Central icon + burst */}
       <div style={{ position: "relative", marginBottom: 28, zIndex: 2 }}>
         {burstParticles.map((p) => (
           <BurstParticle key={p.id} {...p} />
@@ -396,16 +369,15 @@ function WelcomeSuccessStep({ username, authMode, onClose }) {
           initial={{ scale: 0, rotate: -35 }}
           animate={{ scale: 1, rotate: 0 }}
           transition={{ delay: 0.15, duration: 0.7, ease: "backOut" }}
-          className="bg-primary/10"
           style={{
-            width: 88,
-            height: 88,
+            width: 92,
+            height: 92,
             borderRadius: "50%",
+            background: YL,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            boxShadow:
-              "0 0 0 10px hsl(var(--primary) / 0.08), 0 0 0 22px hsl(var(--primary) / 0.04)",
+            boxShadow: `0 0 0 12px ${Y}22, 0 0 0 26px ${Y}0d`,
             position: "relative",
             zIndex: 10,
           }}
@@ -419,20 +391,34 @@ function WelcomeSuccessStep({ username, authMode, onClose }) {
               animate={{ rotate: [0, -18, 18, -10, 10, 0], scale: [1, 1.15, 1] }}
               transition={{ delay: 0.75, duration: 0.9 }}
             >
-              <PartyPopper className="w-10 h-10 text-primary" />
+              <PartyPopper style={{ width: 42, height: 42, color: YD }} />
             </motion.div>
           </motion.div>
         </motion.div>
       </div>
 
-      {/* "You're in" label */}
+      {/* "You're in" */}
       <motion.p
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.48, duration: 0.4 }}
-        className="text-primary text-xs font-bold uppercase tracking-widest mb-2 relative z-10 flex items-center gap-2"
+        style={{
+          color: YD,
+          fontSize: 11,
+          fontWeight: 800,
+          textTransform: "uppercase",
+          letterSpacing: "0.2em",
+          marginBottom: 8,
+          position: "relative",
+          zIndex: 10,
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+        }}
       >
-        <Star className="w-3 h-3 fill-primary" /> You're in <Star className="w-3 h-3 fill-primary" />
+        <Star style={{ width: 12, height: 12, fill: Y, color: Y }} />
+        You're in
+        <Star style={{ width: 12, height: 12, fill: Y, color: Y }} />
       </motion.p>
 
       {/* Main heading */}
@@ -440,81 +426,159 @@ function WelcomeSuccessStep({ username, authMode, onClose }) {
         initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.58, duration: 0.45 }}
-        className="text-3xl font-bold text-center relative z-10 mb-1"
-        style={{ letterSpacing: -0.5 }}
+        style={{
+          fontSize: 30,
+          fontWeight: 900,
+          textAlign: "center",
+          letterSpacing: -0.5,
+          color: "#111827",
+          position: "relative",
+          zIndex: 10,
+          marginBottom: 4,
+          lineHeight: 1.2,
+        }}
       >
         Welcome,{" "}
         <motion.span
           initial={{ opacity: 0, scale: 0.85 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.72, type: "spring" }}
-          className="text-primary"
+          style={{ color: YD }}
         >
           {username || "Friend"}
         </motion.span>{" "}
-        <PartyPopper className="inline w-7 h-7 text-primary" />
+        <PartyPopper style={{ display: "inline", width: 26, height: 26, color: YD }} />
       </motion.h2>
 
-      {/* Subtext — different message per mode */}
+      {/* Subtext */}
       <motion.p
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.88, duration: 0.5 }}
-        className="text-muted-foreground text-center text-sm relative z-10 max-w-[240px] leading-relaxed mb-6"
+        style={{
+          color: "#6b7280",
+          textAlign: "center",
+          fontSize: 14,
+          position: "relative",
+          zIndex: 10,
+          maxWidth: 240,
+          lineHeight: 1.6,
+          marginBottom: 24,
+        }}
       >
         {authMode === "register"
           ? "You're now part of our community. Here's a little gift to get you started."
           : "You're now part of our community. Happy shopping!"}
       </motion.p>
 
-      {/* 3D flip coupon — signup only */}
+      {/* Coupon (register only) */}
       {authMode === "register" && (
-        <div className="relative z-10 mb-1">
+        <div style={{ position: "relative", zIndex: 10, marginBottom: 4 }}>
           <CouponCard />
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 2.1 }}
-            className="text-muted-foreground text-center mt-2"
-            style={{ fontSize: 10, letterSpacing: 0.4 }}
+            style={{ color: "#9ca3af", textAlign: "center", marginTop: 8, fontSize: 10, letterSpacing: 0.4 }}
           >
             Tap card to flip • Copy code at checkout
           </motion.p>
         </div>
       )}
 
-      {/* CTA — same Button component + classes as the rest of the dialog */}
+      {/* CTA */}
       <motion.div
         initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1.15, duration: 0.5, ease: "backOut" }}
-        className="relative z-10 mt-6"
+        style={{ position: "relative", zIndex: 10, marginTop: 24 }}
       >
-        <Button
+        <motion.button
+          whileHover={{ scale: 1.04, boxShadow: `0 12px 32px ${Y}88` }}
+          whileTap={{ scale: 0.97 }}
           onClick={onClose}
-          className="px-10 h-12 text-base font-semibold bg-primary hover:bg-primary/90 rounded-full"
+          style={{
+            padding: "0 40px",
+            height: 50,
+            fontSize: 15,
+            fontWeight: 700,
+            borderRadius: 999,
+            background: `linear-gradient(135deg, ${Y} 0%, ${YD} 100%)`,
+            color: "#1a1a1a",
+            border: "none",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            boxShadow: `0 6px 20px ${Y}55`,
+            transition: "box-shadow 0.2s",
+          }}
         >
-          <span className="flex items-center gap-2">
-            <ShoppingBag className="w-4 h-4" />
-            Start Shopping
-            <motion.span
-              animate={{ x: [0, 4, 0] }}
-              transition={{ repeat: Infinity, duration: 1.2, ease: "easeInOut" }}
-              className="flex"
-            >
-              <ArrowRight className="w-4 h-4" />
-            </motion.span>
-          </span>
-        </Button>
+          <ShoppingBag style={{ width: 18, height: 18 }} />
+          Start Shopping
+          <motion.span
+            animate={{ x: [0, 4, 0] }}
+            transition={{ repeat: Infinity, duration: 1.2, ease: "easeInOut" }}
+            style={{ display: "flex" }}
+          >
+            <ArrowRight style={{ width: 16, height: 16 }} />
+          </motion.span>
+        </motion.button>
       </motion.div>
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SignupDialog — info & otp steps are exactly the original code
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Shared input style helpers ───────────────────────────────────────────────
+const inputStyle = {
+  height: 48,
+  paddingLeft: 40,
+  background: "#f9fafb",
+  border: "1.5px solid #e5e7eb",
+  borderRadius: 10,
+  fontSize: 15,
+  color: "#111827",
+  outline: "none",
+  width: "100%",
+  transition: "border-color 0.2s",
+};
 
+const focusStyle = { borderColor: Y, boxShadow: `0 0 0 3px ${Y}33` };
+
+// ─── Primary button ───────────────────────────────────────────────────────────
+function PrimaryButton({ onClick, disabled, children }) {
+  return (
+    <motion.button
+      whileHover={!disabled ? { scale: 1.02, boxShadow: `0 8px 24px ${Y}66` } : {}}
+      whileTap={!disabled ? { scale: 0.98 } : {}}
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        width: "100%",
+        height: 50,
+        fontSize: 15,
+        fontWeight: 700,
+        borderRadius: 12,
+        background: disabled
+          ? "#e5e7eb"
+          : `linear-gradient(135deg, ${Y} 0%, ${YD} 100%)`,
+        color: disabled ? "#9ca3af" : "#1a1a1a",
+        border: "none",
+        cursor: disabled ? "not-allowed" : "pointer",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 8,
+        boxShadow: disabled ? "none" : `0 4px 14px ${Y}44`,
+        transition: "background 0.2s, box-shadow 0.2s",
+      }}
+    >
+      {children}
+    </motion.button>
+  );
+}
+
+// ─── Main dialog ──────────────────────────────────────────────────────────────
 export function SignupDialog({ open, onOpenChange }) {
   const [step, setStep] = useState("info");
   const [username, setUsername] = useState("");
@@ -524,20 +588,16 @@ export function SignupDialog({ open, onOpenChange }) {
   const [error, setError] = useState("");
   const [authMode, setAuthMode] = useState("register");
   const [devOtp, setDevOtp] = useState(null);
+  const [focusedField, setFocusedField] = useState(null);
 
   const navigate = useNavigate();
 
   const sendLoginOtp = async (phone) => {
     try {
       const response = await authApi.login({ phone });
-      if (response.data?.otp) {
-        setDevOtp(response.data.otp);
-        return response.data.otp;
-      }
+      if (response.data?.otp) { setDevOtp(response.data.otp); return response.data.otp; }
       return response.success;
-    } catch (error) {
-      throw new Error(error.message || "Failed to send OTP");
-    }
+    } catch (error) { throw new Error(error.message || "Failed to send OTP"); }
   };
 
   const loginWithOtp = async (phone, otp) => {
@@ -549,58 +609,32 @@ export function SignupDialog({ open, onOpenChange }) {
         localStorage.setItem("user", JSON.stringify(user));
         window.dispatchEvent(new Event("authChanged"));
         return user;
-      } else {
-        throw new Error(response.message || "OTP verification failed");
-      }
-    } catch (error) {
-      throw new Error(error.message || "OTP verification failed");
-    }
+      } else { throw new Error(response.message || "OTP verification failed"); }
+    } catch (error) { throw new Error(error.message || "OTP verification failed"); }
   };
 
   useEffect(() => {
     if (!open) {
-      setTimeout(() => {
-        setStep("info");
-        setUsername("");
-        setPhone("");
-        setOtp("");
-        setError("");
-      }, 300);
+      setTimeout(() => { setStep("info"); setUsername(""); setPhone(""); setOtp(""); setError(""); }, 300);
     }
   }, [open]);
 
   const handleTryToClose = () => {
     if (step !== "success") {
-      toast({
-        title: "Please sign up to continue",
-        description: "Complete the signup to access exclusive deals!",
-        variant: "destructive",
-      });
+      toast({ title: "Please sign up to continue", description: "Complete the signup to access exclusive deals!", variant: "destructive" });
     }
   };
 
   const handleGenerateOTP = async () => {
-    if (authMode === "register" && !username.trim()) {
-      setError("Please enter your name");
-      return;
-    }
-    if (!phone.trim() || phone.length < 10) {
-      setError("Please enter a valid phone number");
-      return;
-    }
-    setError("");
-    setIsLoading(true);
+    if (authMode === "register" && !username.trim()) { setError("Please enter your name"); return; }
+    if (!phone.trim() || phone.length < 10) { setError("Please enter a valid phone number"); return; }
+    setError(""); setIsLoading(true);
     try {
       if (authMode === "register") {
         const response = await authApi.register({ name: username, phone });
         const otp = response?.data?.otp;
-        toast({
-          title: response.message || "OTP sent successfully",
-          description: otp ? `OTP: ${otp}` : undefined,
-          variant: "default",
-        });
-        setDevOtp(otp || null);
-        setStep("otp");
+        toast({ title: response.message || "OTP sent successfully", description: otp ? `OTP: ${otp}` : undefined, variant: "default" });
+        setDevOtp(otp || null); setStep("otp");
       } else {
         const returned = await sendLoginOtp(phone);
         toast({ title: "OTP sent successfully", variant: "default" });
@@ -609,85 +643,84 @@ export function SignupDialog({ open, onOpenChange }) {
       }
     } catch (err) {
       setDevOtp(null);
-      const errorMessage =
-        err.response?.data?.message || err?.message || "Failed to send OTP";
+      const errorMessage = err.response?.data?.message || err?.message || "Failed to send OTP";
       setError(errorMessage);
       toast({ title: "Error", description: errorMessage, variant: "destructive" });
-    } finally {
-      setIsLoading(false);
-    }
+    } finally { setIsLoading(false); }
   };
 
   const handleVerifyOTP = async () => {
-    if (otp.length !== 6) {
-      setError("Please enter the complete OTP");
-      return;
-    }
-    setError("");
-    setIsLoading(true);
+    if (otp.length !== 6) { setError("Please enter the complete OTP"); return; }
+    setError(""); setIsLoading(true);
     try {
       if (authMode === "register") {
         const response = await authApi.verifyOtp(phone, otp);
         if (response.success && response.data) {
           const { token, user } = response.data;
-          localStorage.setItem("authToken", token);
-          localStorage.setItem("user", JSON.stringify(user));
+          localStorage.setItem("authToken", token); localStorage.setItem("user", JSON.stringify(user));
           window.dispatchEvent(new Event("authChanged"));
           toast({ title: "Signed up successfully", variant: "default" });
           setStep("success");
-        } else {
-          throw new Error(response.message || "OTP verification failed");
-        }
+        } else { throw new Error(response.message || "OTP verification failed"); }
       } else {
         const user = await loginWithOtp(phone, otp);
         toast({ title: "Signed in successfully", variant: "default" });
-        setUsername(user.name || "");
-        setDevOtp(null);
-        setStep("success");
+        setUsername(user.name || ""); setDevOtp(null); setStep("success");
       }
     } catch (err) {
-      const errorMessage =
-        err.response?.data?.message || err?.message || "OTP verification failed";
-      const retryMsg = err?.retryAfter
-        ? ` Try again after ${err.retryAfter} seconds.`
-        : "";
+      const errorMessage = err.response?.data?.message || err?.message || "OTP verification failed";
+      const retryMsg = err?.retryAfter ? ` Try again after ${err.retryAfter} seconds.` : "";
       setError(errorMessage);
-      toast({
-        title: "Error",
-        description: errorMessage + retryMsg,
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+      toast({ title: "Error", description: errorMessage + retryMsg, variant: "destructive" });
+    } finally { setIsLoading(false); }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="sm:max-w-md p-0 overflow-hidden bg-gradient-to-br from-background via-background to-primary/5 border-primary/20"
-        onPointerDownOutside={(e) => {
-          e.preventDefault();
-          handleTryToClose();
+        className="sm:max-w-md p-0 overflow-hidden"
+        style={{
+          background: "#fff",
+          border: "none",
+          boxShadow: "0 32px 80px rgba(0,0,0,0.18), 0 0 0 1px #f3f4f6",
         }}
-        onEscapeKeyDown={(e) => {
-          e.preventDefault();
-          handleTryToClose();
-        }}
+        onPointerDownOutside={(e) => { e.preventDefault(); handleTryToClose(); }}
+        onEscapeKeyDown={(e) => { e.preventDefault(); handleTryToClose(); }}
       >
-        {/* Close button that shows toast */}
+        {/* Yellow top accent bar */}
+        <div style={{ height: 5, background: `linear-gradient(90deg, ${Y}, ${YD})`, borderRadius: "20px 20px 0 0" }} />
+
+        {/* Close button */}
         {step !== "success" && (
           <button
             onClick={handleTryToClose}
-            className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 z-10"
+            style={{
+              position: "absolute",
+              right: 16,
+              top: 16,
+              width: 32,
+              height: 32,
+              borderRadius: "50%",
+              background: "#f3f4f6",
+              border: "none",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 10,
+              transition: "background 0.15s",
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = "#e5e7eb")}
+            onMouseLeave={e => (e.currentTarget.style.background = "#f3f4f6")}
           >
-            <X className="h-4 w-4" />
+            <X style={{ width: 14, height: 14, color: "#6b7280" }} />
             <span className="sr-only">Close</span>
           </button>
         )}
 
         <AnimatePresence mode="wait">
-          {/* ── INFO STEP (unchanged from original) ───────────────────────── */}
+
+          {/* ── INFO STEP ─────────────────────────────────────────────────── */}
           {step === "info" && (
             <motion.div
               key="info"
@@ -695,150 +728,141 @@ export function SignupDialog({ open, onOpenChange }) {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.3 }}
-              className="p-6"
+              style={{ padding: "28px 28px 32px" }}
             >
-              <DialogHeader className="mb-6">
-                <div className="flex items-center justify-center mb-4">
-                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Sparkles className="w-8 h-8 text-primary" />
-                  </div>
+              {/* Icon */}
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
+                <div
+                  style={{
+                    width: 68,
+                    height: 68,
+                    borderRadius: "50%",
+                    background: YL,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: `0 0 0 8px ${Y}22`,
+                  }}
+                >
+                  <Sparkles style={{ width: 30, height: 30, color: YD }} />
                 </div>
-                <DialogTitle className="text-2xl font-bold text-center">
-                  {authMode === "register" ? "Join Our Community!" : "Welcome back!"}
-                </DialogTitle>
-                <div className="flex items-center justify-center gap-2 mt-3">
-                  <button
-                    onClick={() => setAuthMode("register")}
-                    className={`px-3 py-1 rounded-full text-sm ${
-                      authMode === "register"
-                        ? "bg-accent text-primary"
-                        : "bg-card text-foreground"
-                    }`}
-                  >
-                    Sign up
-                  </button>
-                  <button
-                    onClick={() => setAuthMode("login")}
-                    className={`px-3 py-1 rounded-full text-sm ${
-                      authMode === "login"
-                        ? "bg-accent text-primary"
-                        : "bg-card text-foreground"
-                    }`}
-                  >
-                    Sign in
-                  </button>
-                </div>
-                <p className="text-muted-foreground text-center mt-2">
-                  {authMode === "register"
-                    ? "Get exclusive deals and updates on your favorite hardware"
-                    : "Sign in with your phone number to continue"}
-                </p>
-              </DialogHeader>
+              </div>
 
-              <div className="space-y-4">
+              {/* Title */}
+              <h2 style={{ fontSize: 24, fontWeight: 900, textAlign: "center", color: "#111827", marginBottom: 14 }}>
+                {authMode === "register" ? "Join Our Community!" : "Welcome Back!"}
+              </h2>
+
+              {/* Mode toggle */}
+              <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 12 }}>
+                {["register", "login"].map((mode) => (
+                  <button
+                    key={mode}
+                    onClick={() => setAuthMode(mode)}
+                    style={{
+                      padding: "5px 18px",
+                      borderRadius: 999,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      border: "none",
+                      background: authMode === mode ? Y : "#f3f4f6",
+                      color: authMode === mode ? "#1a1a1a" : "#6b7280",
+                      transition: "all 0.2s",
+                      boxShadow: authMode === mode ? `0 2px 8px ${Y}66` : "none",
+                    }}
+                  >
+                    {mode === "register" ? "Sign up" : "Sign in"}
+                  </button>
+                ))}
+              </div>
+
+              {/* Subtext */}
+              <p style={{ color: "#6b7280", textAlign: "center", fontSize: 14, marginBottom: 24, lineHeight: 1.5 }}>
+                {authMode === "register"
+                  ? "Get exclusive deals and updates on your favorite product"
+                  : "Sign in with your phone number to continue"}
+              </p>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                {/* Name field */}
                 {authMode === "register" && (
-                  <div className="space-y-2">
-                    <Label htmlFor="username" className="text-sm font-medium">
-                      Your Name
-                    </Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="username"
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <label style={{ fontSize: 13, fontWeight: 600, color: "#374151" }}>Your Name</label>
+                    <div style={{ position: "relative" }}>
+                      <User style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", width: 16, height: 16, color: "#9ca3af" }} />
+                      <input
                         placeholder="Enter your name"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
-                        className="pl-10 h-12 bg-background/50 border-border/50 focus:border-primary"
+                        onFocus={() => setFocusedField("name")}
+                        onBlur={() => setFocusedField(null)}
+                        style={{ ...inputStyle, ...(focusedField === "name" ? focusStyle : {}) }}
                       />
                     </div>
                   </div>
                 )}
 
-                <div className="space-y-2">
-                  <Label htmlFor="phone" className="text-sm font-medium">
-                    Phone Number
-                  </Label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="phone"
+                {/* Phone field */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: "#374151" }}>Phone Number</label>
+                  <div style={{ position: "relative" }}>
+                    <Phone style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", width: 16, height: 16, color: "#9ca3af" }} />
+                    <input
                       type="tel"
                       placeholder="Enter phone number"
                       value={phone}
-                      onChange={(e) =>
-                        setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))
-                      }
-                      className="pl-10 h-12 bg-background/50 border-border/50 focus:border-primary"
+                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                      onFocus={() => setFocusedField("phone")}
+                      onBlur={() => setFocusedField(null)}
+                      style={{ ...inputStyle, ...(focusedField === "phone" ? focusStyle : {}) }}
                     />
                   </div>
                 </div>
 
+                {/* Error */}
                 {error && (
                   <motion.p
-                    initial={{ opacity: 0, y: -10 }}
+                    initial={{ opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="text-destructive text-sm text-center"
+                    style={{ color: "#ef4444", fontSize: 13, textAlign: "center" }}
                   >
                     {error}
                   </motion.p>
                 )}
 
-                <Button
-                  onClick={handleGenerateOTP}
-                  disabled={isLoading}
-                  className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary/90"
-                >
+                {/* Submit */}
+                <PrimaryButton onClick={handleGenerateOTP} disabled={isLoading}>
                   {isLoading ? (
                     <motion.div
                       animate={{ rotate: 360 }}
                       transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                      className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full"
+                      style={{ width: 20, height: 20, border: "2.5px solid #1a1a1a44", borderTopColor: "#1a1a1a", borderRadius: "50%" }}
                     />
-                  ) : authMode === "register" ? (
-                    "Generate OTP"
-                  ) : (
-                    "Send OTP"
-                  )}
-                </Button>
+                  ) : authMode === "register" ? "Generate OTP" : "Send OTP"}
+                </PrimaryButton>
 
-                <p className="text-xs text-muted-foreground text-center">
+                <p style={{ fontSize: 11, color: "#9ca3af", textAlign: "center" }}>
                   {authMode === "register"
                     ? "By signing up, you agree to our Terms & Privacy Policy"
                     : "We will send a one-time password to your phone."}
                 </p>
 
-                {authMode === "register" ? (
-                  <div className="text-center text-sm mt-2">
-                    Already have an account?{" "}
-                    <button
-                      onClick={() => {
-                        setAuthMode("login");
-                        setDevOtp(null);
-                      }}
-                      className="text-primary font-medium hover:underline"
-                    >
-                      Sign in
-                    </button>
-                  </div>
-                ) : (
-                  <div className="text-center text-sm mt-2">
-                    New here?{" "}
-                    <button
-                      onClick={() => {
-                        setAuthMode("register");
-                        setDevOtp(null);
-                      }}
-                      className="text-primary font-medium hover:underline"
-                    >
-                      Sign up
-                    </button>
-                  </div>
-                )}
+                {/* Toggle link */}
+                <div style={{ textAlign: "center", fontSize: 13, color: "#6b7280" }}>
+                  {authMode === "register" ? "Already have an account? " : "New here? "}
+                  <button
+                    onClick={() => { setAuthMode(authMode === "register" ? "login" : "register"); setDevOtp(null); }}
+                    style={{ color: YD, fontWeight: 700, background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
+                  >
+                    {authMode === "register" ? "Sign in" : "Sign up"}
+                  </button>
+                </div>
               </div>
             </motion.div>
           )}
 
-          {/* ── OTP STEP (unchanged from original) ────────────────────────── */}
+          {/* ── OTP STEP ───────────────────────────────────────────────────── */}
           {step === "otp" && (
             <motion.div
               key="otp"
@@ -846,82 +870,84 @@ export function SignupDialog({ open, onOpenChange }) {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3 }}
-              className="p-6"
+              style={{ padding: "28px 28px 32px" }}
             >
-              <DialogHeader className="mb-6">
-                <div className="flex items-center justify-center mb-4">
-                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Phone className="w-8 h-8 text-primary" />
-                  </div>
+              {/* Icon */}
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
+                <div
+                  style={{
+                    width: 68,
+                    height: 68,
+                    borderRadius: "50%",
+                    background: YL,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: `0 0 0 8px ${Y}22`,
+                  }}
+                >
+                  <Phone style={{ width: 30, height: 30, color: YD }} />
                 </div>
-                <DialogTitle className="text-2xl font-bold text-center">
-                  Verify Your Number
-                </DialogTitle>
-                <p className="text-muted-foreground text-center mt-2">
-                  Enter the 6-digit code sent to
-                  <br />
-                  <span className="font-medium text-foreground">+91 {phone}</span>
-                </p>
-              </DialogHeader>
+              </div>
 
+              <h2 style={{ fontSize: 24, fontWeight: 900, textAlign: "center", color: "#111827", marginBottom: 8 }}>
+                Verify Your Number
+              </h2>
+              <p style={{ color: "#6b7280", textAlign: "center", fontSize: 14, marginBottom: 24, lineHeight: 1.6 }}>
+                Enter the 6-digit code sent to<br />
+                <span style={{ fontWeight: 700, color: "#111827" }}>+91 {phone}</span>
+              </p>
+
+              {/* Dev OTP hint */}
               {devOtp && /^\d{6}$/.test(devOtp) && (
-                <div className="px-6 pb-2">
-                  <p className="text-sm text-muted-foreground">
-                    Dev OTP:{" "}
-                    <span className="font-mono text-primary font-bold">{devOtp}</span>
+                <div style={{ marginBottom: 12, padding: "8px 14px", background: YL, borderRadius: 8, border: `1px solid ${Y}` }}>
+                  <p style={{ fontSize: 13, color: "#1a1a1a" }}>
+                    Dev OTP: <span style={{ fontFamily: "monospace", fontWeight: 700, color: YD }}>{devOtp}</span>
                   </p>
                 </div>
               )}
 
-              <div className="space-y-6">
-                <div className="flex justify-center">
+              <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                {/* OTP Input — styled slots */}
+                <div style={{ display: "flex", justifyContent: "center" }}>
                   <InputOTP maxLength={6} value={otp} onChange={setOtp}>
                     <InputOTPGroup>
-                      <InputOTPSlot index={0} className="w-12 h-14 text-xl border-border/50" />
-                      <InputOTPSlot index={1} className="w-12 h-14 text-xl border-border/50" />
-                      <InputOTPSlot index={2} className="w-12 h-14 text-xl border-border/50" />
-                      <InputOTPSlot index={3} className="w-12 h-14 text-xl border-border/50" />
-                      <InputOTPSlot index={4} className="w-12 h-14 text-xl border-border/50" />
-                      <InputOTPSlot index={5} className="w-12 h-14 text-xl border-border/50" />
+                      {[0,1,2,3,4,5].map((i) => (
+                        <InputOTPSlot
+                          key={i}
+                          index={i}
+                          style={{ width: 46, height: 54, fontSize: 22, borderColor: "#e5e7eb", borderRadius: 10 }}
+                        />
+                      ))}
                     </InputOTPGroup>
                   </InputOTP>
                 </div>
 
                 {error && (
                   <motion.p
-                    initial={{ opacity: 0, y: -10 }}
+                    initial={{ opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="text-destructive text-sm text-center"
+                    style={{ color: "#ef4444", fontSize: 13, textAlign: "center" }}
                   >
                     {error}
                   </motion.p>
                 )}
 
-                <Button
-                  onClick={handleVerifyOTP}
-                  disabled={isLoading || otp.length !== 6}
-                  className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary/90"
-                >
+                <PrimaryButton onClick={handleVerifyOTP} disabled={isLoading || otp.length !== 6}>
                   {isLoading ? (
                     <motion.div
                       animate={{ rotate: 360 }}
                       transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                      className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full"
+                      style={{ width: 20, height: 20, border: "2.5px solid #1a1a1a44", borderTopColor: "#1a1a1a", borderRadius: "50%" }}
                     />
-                  ) : (
-                    "Verify OTP"
-                  )}
-                </Button>
+                  ) : "Verify OTP"}
+                </PrimaryButton>
 
-                <div className="flex items-center justify-center gap-2 text-sm">
-                  <span className="text-muted-foreground">Didn't receive code?</span>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 13 }}>
+                  <span style={{ color: "#6b7280" }}>Didn't receive code?</span>
                   <button
-                    type="button"
-                    onClick={() => {
-                      setStep("info");
-                      setDevOtp(null);
-                    }}
-                    className="text-primary font-medium hover:underline"
+                    onClick={() => { setStep("info"); setDevOtp(null); }}
+                    style={{ color: YD, fontWeight: 700, background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
                   >
                     Resend OTP
                   </button>
@@ -930,7 +956,7 @@ export function SignupDialog({ open, onOpenChange }) {
             </motion.div>
           )}
 
-          {/* ── SUCCESS STEP — new animation, theme-matched ────────────────── */}
+          {/* ── SUCCESS STEP ───────────────────────────────────────────────── */}
           {step === "success" && (
             <motion.div
               key="success"
@@ -939,13 +965,10 @@ export function SignupDialog({ open, onOpenChange }) {
               exit={{ opacity: 0, scale: 0.92 }}
               transition={{ duration: 0.4, ease: "easeOut" }}
             >
-              <WelcomeSuccessStep
-                username={username}
-                authMode={authMode}
-                onClose={() => onOpenChange(false)}
-              />
+              <WelcomeSuccessStep username={username} authMode={authMode} onClose={() => onOpenChange(false)} />
             </motion.div>
           )}
+
         </AnimatePresence>
       </DialogContent>
     </Dialog>

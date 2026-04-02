@@ -3,6 +3,7 @@ import { generateToken } from '../utils/jwt.js';
 import { generateSlug } from '../utils/slugGenerator.js';
 import { createOTP, verifyOTP } from './otpService.js';
 import { validateRegistration, validateLogin } from '../utils/validators.js';
+import { deleteImages } from '../middleware/upload.js';
 
 // Test user configuration
 const TEST_USER_PHONE = '1234567890';
@@ -349,6 +350,7 @@ export const completeRegistration = async (phone, otp) => {
         role: user.role,
         isVerified: user.isVerified,
         address: user.address,
+        profileImage: user.profileImage,
         additionalAddresses: user.additionalAddresses || []
       }
     };
@@ -547,6 +549,7 @@ export const completeLogin = async (phone, otp) => {
         role: user.role,
         isVerified: user.isVerified,
         address: user.address,
+        profileImage: user.profileImage,
         additionalAddresses: user.additionalAddresses || []
       }
     };
@@ -600,6 +603,7 @@ export const getCurrentUser = async (userId) => {
         additionalAddresses: user.additionalAddresses || [],
         isVerified: user.isVerified,
         isActive: user.isActive,
+        profileImage: user.profileImage,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt
       }
@@ -613,7 +617,7 @@ export const getCurrentUser = async (userId) => {
 /**
  * Update user profile with additional address support
  */
-export const updateUserProfile = async (userId, updateData) => {
+export const updateUserProfile = async (userId, updateData, uploadedFiles = null) => {
   try {
     const user = await User.findByPk(userId);
 
@@ -632,6 +636,18 @@ export const updateUserProfile = async (userId, updateData) => {
     // Don't allow phone change via profile update
     if (updateData.phone) {
       delete updateData.phone;
+    }
+
+    // Handle profile image update
+    if (uploadedFiles && uploadedFiles.length > 0) {
+      const oldImage = user.profileImage;
+      updateData.profileImage = uploadedFiles[0].url;
+
+      // Delete old image if it exists
+      if (oldImage && oldImage.startsWith('/uploads/')) {
+        const publicId = oldImage.replace('/uploads/', '');
+        await deleteImages([publicId]);
+      }
     }
 
     // Handle address updates
@@ -671,6 +687,7 @@ export const updateUserProfile = async (userId, updateData) => {
         address: updatedUser.address,
         additionalAddresses: updatedUser.additionalAddresses || [],
         isVerified: updatedUser.isVerified,
+        profileImage: updatedUser.profileImage,
         createdAt: updatedUser.createdAt
       }
     };

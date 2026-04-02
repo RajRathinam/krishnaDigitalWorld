@@ -18,7 +18,13 @@ if (!fs.existsSync(uploadsDir)) {
  */
 const diskStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, uploadsDir);
+    const folder = req.uploadFolder || '';
+    const dest = path.join(uploadsDir, folder);
+    if (!fs.existsSync(dest)) {
+      fs.mkdirSync(dest, { recursive: true });
+      console.log('✅ Created subdirectory:', dest);
+    }
+    cb(null, dest);
   },
   filename: (req, file, cb) => {
     const timestamp = Date.now();
@@ -57,22 +63,31 @@ export const upload = multer({
 /**
  * Single image upload middleware
  */
-export const uploadSingleImage = (fieldName = 'image') => {
-  return upload.single(fieldName);
+export const uploadSingleImage = (fieldName = 'image', subDir = '') => {
+  return (req, res, next) => {
+    if (subDir) req.uploadFolder = subDir;
+    upload.single(fieldName)(req, res, next);
+  };
 };
 
 /**
  * Multiple images upload middleware
  */
-export const uploadMultipleImages = (fieldName = 'images', maxCount = 20) => {
-  return upload.array(fieldName, maxCount);
+export const uploadMultipleImages = (fieldName = 'images', maxCount = 20, subDir = '') => {
+  return (req, res, next) => {
+    if (subDir) req.uploadFolder = subDir;
+    upload.array(fieldName, maxCount)(req, res, next);
+  };
 };
 
 /**
  * Product images upload middleware (accepts any field name)
  */
 export const uploadProductImages = () => {
-  return upload.any(); // Accepts any field name for images
+  return (req, res, next) => {
+    req.uploadFolder = 'products';
+    upload.any()(req, res, next);
+  };
 };
 
 /**
@@ -116,12 +131,14 @@ export const processUploadedFiles = (req, res, next) => {
   if (req.files && req.files.length > 0) {
     console.log(`Found ${req.files.length} uploaded files`);
 
+    const folder = req.uploadFolder ? `${req.uploadFolder}/` : '';
+
     req.uploadedFiles = req.files.map(file => {
-      const localPath = `/uploads/${file.filename}`;
+      const localPath = `/uploads/${folder}${file.filename}`;
       console.log(`File saved locally: ${localPath}`);
       return {
         url: localPath, // Local path instead of Cloudinary URL
-        publicId: file.filename,
+        publicId: `${folder}${file.filename}`, // Include folder prefix for deletion
         originalName: file.originalname,
         size: file.size,
         mimetype: file.mimetype
@@ -130,12 +147,13 @@ export const processUploadedFiles = (req, res, next) => {
 
     console.log('Uploaded files processed:', req.uploadedFiles.length);
   } else if (req.file) {
-    const localPath = `/uploads/${req.file.filename}`;
+    const folder = req.uploadFolder ? `${req.uploadFolder}/` : '';
+    const localPath = `/uploads/${folder}${req.file.filename}`;
     console.log('Single file saved locally:', localPath);
 
     req.uploadedFiles = [{
       url: localPath, // Local path instead of Cloudinary URL
-      publicId: req.file.filename,
+      publicId: `${folder}${req.file.filename}`, // Include folder prefix for deletion
       originalName: req.file.originalname,
       size: req.file.size,
       mimetype: req.file.mimetype

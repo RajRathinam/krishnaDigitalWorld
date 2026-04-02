@@ -487,7 +487,7 @@ export const BirthdayManagement = () => {
                 return (<TableRow key={customer.id} className={isToday ? "bg-primary/5" : ""}>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      {isToday && <span className="text-lg">🎂</span>}
+                      {isToday && <span className="text-lg"><Cake/></span>}
                       <div>
                         <p className="font-medium">{customer.name}</p>
                         <p className="text-xs text-muted-foreground">{customer.id}</p>

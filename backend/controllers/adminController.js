@@ -388,7 +388,7 @@ export const exportUsers = async (req, res) => {
       attributes: [
         'id', 'customerCode', 'name', 'slug', 'phone', 'email',
         'role', 'dateOfBirth', 'isVerified', 'isActive',
-        'giftReceived', 'createdAt'
+        'giftReceived', 'profileImage', 'createdAt'
       ],
       order: [['createdAt', 'DESC']]
     });
@@ -932,6 +932,7 @@ export const getCustomerAnalytics = async (req, res) => {
         'dateOfBirth',
         'isVerified',
         'isActive',
+        'profileImage',
         // Use literal with correct column names (snake_case)
         [
           sequelize.literal(`(
@@ -991,7 +992,8 @@ export const getCustomerAnalytics = async (req, res) => {
           ? new Date(userData.createdAt).toISOString().split('T')[0]
           : new Date().toISOString().split('T')[0],
         isVerified: userData.isVerified || false,
-        isActive: userData.isActive || true
+        isActive: userData.isActive || true,
+        profileImage: userData.profileImage || null
       };
     });
 

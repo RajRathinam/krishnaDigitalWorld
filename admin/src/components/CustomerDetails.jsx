@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import api from "@/lib/api";
+import { getImageUrl } from "@/lib/utils";
 
 /* ═══════════════════════════════════════════════
    HELPERS
@@ -93,6 +94,7 @@ export const CustomerDetails = () => {
           giftReceived:        d.giftReceived  || false,
           createdAt:           d.created_at    || d.createdAt || new Date().toISOString(),
           updatedAt:           d.updated_at    || d.updatedAt || new Date().toISOString(),
+          profileImage:        d.profileImage,
           address:             d.address,
           additionalAddresses: d.additionalAddresses || [],
           orders,
@@ -166,6 +168,17 @@ export const CustomerDetails = () => {
           <Button variant="outline" size="icon" onClick={() => navigate("/analytics")}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
+          <div className="w-16 h-16 rounded-full overflow-hidden bg-muted border-2 border-border flex items-center justify-center flex-shrink-0 mr-2">
+            {customer.profileImage ? (
+              <img 
+                src={getImageUrl(customer.profileImage)} 
+                alt={customer.name} 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <User className="h-8 w-8 text-muted-foreground" />
+            )}
+          </div>
           <div>
             <h1 className="text-3xl font-bold tracking-tight">{customer.name}</h1>
             <div className="flex items-center gap-2 mt-1 flex-wrap">

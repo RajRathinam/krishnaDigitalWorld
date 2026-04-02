@@ -696,14 +696,20 @@ export const createProduct = async (req, res) => {
         const file = req.uploadedFiles[i];
         const tempPath = path.join(__dirname, '..', file.url);
         const filename = `prod-${Date.now()}-${i}.webp`;
-        const finalUrl = `/uploads/${filename}`;
-        const finalPath = path.join(__dirname, '..', 'uploads', filename);
+        const finalUrl = `/uploads/products/${filename}`;
+        const finalPath = path.join(__dirname, '..', 'uploads', 'products', filename);
 
         try {
+          // Ensure products directory exists
+          const productsDir = path.dirname(finalPath);
+          if (!fs.existsSync(productsDir)) {
+            fs.mkdirSync(productsDir, { recursive: true });
+          }
+
           await processProductImage(tempPath, finalPath);
           deleteFile(tempPath);
           file.url = finalUrl;
-          file.publicId = filename;
+          file.publicId = `products/${filename}`;
         } catch (procErr) {
           console.error(`Failed to process image ${file.url}:`, procErr);
           // Continue with original file if processing fails, or throw if preferred

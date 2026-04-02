@@ -141,7 +141,7 @@ const App = () => {
                     <Route path="/cart" element={<Cart />} />
                     <Route path="/checkout" element={<Checkout />} />
                     <Route path="/payment/return" element={<PaymentReturn />} />
-                    
+
                     {/* Account Routes */}
                     <Route path="/account" element={<AccountLayout />}>
                       <Route index element={<AccountProfile />} />
@@ -152,7 +152,7 @@ const App = () => {
                       <Route path="wishlist" element={<AccountWishlist />} />
                       <Route path="addresses" element={<AccountAddresses />} />
                     </Route>
-                    
+
                     <Route path="/help" element={<Help />} />
                     <Route path="/deals" element={<TodaysDeals />} />
                     <Route path="/new-arrivals" element={<NewArrivals />} />
@@ -175,7 +175,7 @@ const App = () => {
                   <Route path="*" element={<NotFound />} />
                 </Routes>
                 <MobileBottomNav />
-                
+
                 {/* Coupon Notification Popup */}
                 <CouponNotificationPopup />
 

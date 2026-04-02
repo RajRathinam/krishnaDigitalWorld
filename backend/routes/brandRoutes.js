@@ -20,7 +20,7 @@ router.post(
   '/',
   authenticate,
   requireAdmin,
-  uploadSingleImage('logo'),
+  uploadSingleImage('logo', 'brands'),
   processUploadedFiles,
   createBrand
 );
@@ -28,7 +28,7 @@ router.put(
   '/:id',
   authenticate,
   requireAdmin,
-  uploadSingleImage('logo'),
+  uploadSingleImage('logo', 'brands'),
   processUploadedFiles,
   updateBrand
 );

@@ -13,6 +13,7 @@ import { useState, useEffect } from "react";
 import api from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { getImageUrl } from "@/lib/utils";
 
 // Page size options
 const PAGE_SIZE_OPTIONS = [15, 30, 45, 100];
@@ -68,6 +69,7 @@ export const CustomerAnalytics = () => {
                 .split("T")[0],
             isVerified: customer.isVerified || false,
             isActive: customer.isActive !== undefined ? customer.isActive : true,
+            profileImage: customer.profileImage || null,
           })),
         };
 
@@ -423,10 +425,25 @@ export const CustomerAnalytics = () => {
                     {paginatedCustomers.map((customer) => (
                       <TableRow key={customer.id} className="hover:bg-muted/50 text-sm">
 
-                        {/* Customer name + code */}
+                        {/* Customer name + code + Avatar */}
                         <TableCell className="align-middle py-3">
-                          <p className="font-medium truncate max-w-[160px]" title={customer.name}>{customer.name}</p>
-                          <p className="text-[11px] text-muted-foreground font-mono mt-0.5">{customer.customerCode}</p>
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
+                              {customer.profileImage ? (
+                                <img 
+                                  src={getImageUrl(customer.profileImage)} 
+                                  alt={customer.name} 
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <Users className="h-4 w-4 text-muted-foreground" />
+                              )}
+                            </div>
+                            <div>
+                              <p className="font-medium truncate max-w-[120px]" title={customer.name}>{customer.name}</p>
+                              <p className="text-[11px] text-muted-foreground font-mono mt-0.5">{customer.customerCode}</p>
+                            </div>
+                          </div>
                         </TableCell>
 
                         {/* Email + Phone */}

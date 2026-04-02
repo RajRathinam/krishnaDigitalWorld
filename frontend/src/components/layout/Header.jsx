@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { productApi, categoryApi } from "@/services/api";
 import { toast } from "sonner";
+import { getImageUrl } from "@/lib/utils";
 import { 
   Search, 
   ShoppingCart, 
@@ -342,7 +343,17 @@ export function Header() {
                       : "hover:bg-accent/10 hover:text-accent"
                   )}
                 >
-                  <User className="w-5 h-5" />
+                    {user?.profileImage ? (
+                      <div className="w-5 h-5 rounded-full overflow-hidden">
+                        <img 
+                          src={getImageUrl(user.profileImage)} 
+                          alt="Profile" 
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <User className="w-5 h-5" />
+                    )}
                   <span className="text-sm font-medium hidden xl:inline">
                     {user ? user.name?.split(' ')[0] : 'Account'}
                   </span>
@@ -640,8 +651,16 @@ export function Header() {
             {user && (
               <div className="p-4 bg-secondary/30 border-b border-border">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
-                    <User className="w-5 h-5 text-accent" />
+                  <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center overflow-hidden">
+                    {user?.profileImage ? (
+                      <img 
+                        src={getImageUrl(user.profileImage)} 
+                        alt="Profile" 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User className="w-5 h-5 text-accent" />
+                    )}
                   </div>
                   <div>
                     <p className="font-semibold text-foreground">{user.name}</p>

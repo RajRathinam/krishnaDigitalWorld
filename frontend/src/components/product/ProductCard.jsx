@@ -624,6 +624,15 @@ export function ProductCard({ product, variant = "default", selectedColor }) {
             <img src={getImageUrl(displayImageUrl)} alt={name} className="w-full h-full object-contain transform group-hover:scale-105 transition-transform duration-500" onError={(e) => {
                 e.currentTarget.src = '/placeholder.svg';
             }} />
+            
+            {/* Discount Tag in Image Corner */}
+            {discount > 0 && (
+                <div className="absolute bottom-2 right-0 z-10">
+                    <span className="bg-green-600/80 text-white text-[9px] font-bold px-2 py-1 rounded shadow-md border border-green-500/20">
+                        {discount}% OFF
+                    </span>
+                </div>
+            )}
         </div>
 
         {/* Content Container */}
@@ -641,10 +650,22 @@ export function ProductCard({ product, variant = "default", selectedColor }) {
 
             {/* Price section - Push to bottom of flex container */}
             <div className="mt-auto">
-                <div className="flex items-baseline gap-2 flex-wrap mb-3">
-                    <span className="text-base md:text-lg font-bold text-foreground">{formatPrice(price)}</span>
-                    {originalPrice > price && (<span className="text-xs text-muted-foreground line-through hidden sm:inline">{formatPrice(originalPrice)}</span>)}
-                    {discount > 0 && (<span className="text-[10px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded ml-auto sm:ml-0">{discount}% OFF</span>)}
+                <div className="flex flex-col gap-1 mb-3">
+                    <div className="flex items-baseline gap-2 flex-wrap">
+                        <span className="text-base md:text-lg font-bold text-foreground">{formatPrice(price)}</span>
+                        {originalPrice > price && (
+                            <span className="text-xs text-red-500 line-through decoration-red-500/50">
+                                {formatPrice(originalPrice)}
+                            </span>
+                        )}
+                    </div>
+                    {originalPrice > price && (
+                        <div className="flex items-center">
+                            <span className="text-[10px] text-green-600 font-semibold bg-green-50/30 px-1.5 py-0.5 rounded-full border border-green-100/50">
+                                Save {formatPrice(originalPrice - price)}
+                            </span>
+                        </div>
+                    )}
                 </div>
 
                 {/* Add to Cart Button */}
