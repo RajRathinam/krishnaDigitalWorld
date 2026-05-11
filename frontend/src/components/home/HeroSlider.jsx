@@ -248,7 +248,7 @@ export function HeroSlider() {
 
       <div
         className="relative rounded-2xl w-full overflow-hidden mx-auto"
-        style={{ height: "clamp(240px, 48vw, 530px)" }}
+        style={{ height: "clamp(200px, 48vw, 530px)" }}
         onMouseEnter={() => setIsPlaying(false)}
         onMouseLeave={() => setIsPlaying(true)}
         aria-label="Hero banner carousel"
@@ -271,9 +271,6 @@ export function HeroSlider() {
               className="w-full h-full object-fill"
               loading={i === 0 ? "eager" : "lazy"}
             />
-            {/* Vignette */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-transparent" />
           </div>
         ))}
 
@@ -299,10 +296,7 @@ export function HeroSlider() {
         {/* ── Content card (glassmorphism) ── */}
         <div className="absolute bottom-0 left-0 right-0 z-20 p-4 sm:p-6 lg:p-8">
           <div key={textKey} className="max-w-lg">
-            {/* Tag */}
-           {!slide.cta && <div className="text-tag text-xs font-semibold font-heading tracking-widest uppercase text-yellow-400 mb-2 sm:mb-3 opacity-0">
-              {slide.tag || "Collection"}
-            </div>}
+       
 
             {/* Title */}
             <h2 className="text-title text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-white leading-tight mb-2 sm:mb-3 opacity-0"
