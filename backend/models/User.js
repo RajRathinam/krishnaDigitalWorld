@@ -166,6 +166,11 @@ const User = sequelize.define('User', {
     field: 'otp_send_count',
     comment: 'Number of times OTP sent today (max 3 per day)'
   },
+  profileImage: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+    field: 'profile_image'
+  },
   otpLastResetDate: {
     type: DataTypes.DATEONLY,
     allowNull: true,
