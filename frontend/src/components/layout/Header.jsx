@@ -224,14 +224,14 @@ export function Header() {
   return (
     <>
       <header className={cn(
-        "sticky top-0 left-0 right-0 z-40 transition-all duration-300",
+        "sticky top-0 left-0 right-0 z-40 transition-all duration-500",
         isScrolled 
-          ? "bg-card/95 backdrop-blur-md shadow-md border-b border-border" 
-          : "bg-card border-b border-border"
+          ? "bg-card/97 backdrop-blur-xl shadow-lg" 
+          : "bg-card"
       )}>
         {/* Top Bar - Enhanced with shop info */}
-        <div className="hidden lg:block bg-gradient-to-r from-primary/90 to-primary text-primary-foreground">
-          <div className="container flex items-center justify-between py-2 text-xs">
+        <div className="hidden lg:block bg-primary text-primary-foreground border-b border-accent/20">
+          <div className="container flex items-center justify-between py-1.5 text-[11px] font-body tracking-wider uppercase">
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-2">
                 <Phone className="w-3.5 h-3.5" />
@@ -288,14 +288,14 @@ export function Header() {
                   <img 
                     src="/SK_Logo.png" 
                     alt="Krishna Stores" 
-                    className="h-12 w-auto transition-transform" 
+                    className="h-11 w-auto transition-transform group-hover:scale-105 duration-300" 
                   />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-2xl font-bold text-foreground tracking-wide leading-tight">
+                  <span className="text-2xl font-display font-bold text-foreground tracking-tight leading-tight">
                     <span className="text-accent">Sri</span> Krishna
                   </span>
-                  <span className="text-xs font-medium text-muted-foreground tracking-wide">
+                  <span className="text-[10px] font-body font-medium text-muted-foreground tracking-[0.2em] uppercase">
                     Digital World
                   </span>
                 </div>
@@ -307,11 +307,11 @@ export function Header() {
               <SearchModal data={searchData}>
                 <button 
                   type="button" 
-                  className="w-full flex items-center gap-3 px-5 py-3 bg-secondary/50 border-2 border-border rounded-xl text-muted-foreground text-sm text-left hover:border-accent/50 hover:bg-secondary transition-all duration-300 group"
+                  className="w-full flex items-center gap-3 px-5 py-3 bg-secondary/40 border border-border/60 rounded-xl text-muted-foreground text-sm text-left hover:border-accent/40 hover:bg-secondary/60 hover:shadow-[0_0_20px_hsl(var(--accent)/0.08)] transition-all duration-400 group"
                 >
-                  <Search className="w-4 h-4 shrink-0 group-hover:text-accent transition-colors" />
-                  <span className="flex-1 truncate">Search for products, brands, and more...</span>
-                  <kbd className="hidden xl:inline-flex h-5 items-center gap-1 rounded bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground shrink-0 border border-border">
+                  <Search className="w-4 h-4 shrink-0 group-hover:text-accent transition-colors duration-300" />
+                  <span className="flex-1 truncate font-body">Search for products, brands, and more...</span>
+                  <kbd className="hidden xl:inline-flex h-5 items-center gap-1 rounded bg-muted px-1.5 font-mono-alt text-[10px] font-medium text-muted-foreground shrink-0 border border-border">
                     ⌘K
                   </kbd>
                 </button>
@@ -459,7 +459,7 @@ export function Header() {
           </div>
 
           {/* Navigation Bar */}
-          <div className="hidden lg:flex items-center justify-between py-2 border-t border-border">
+          <div className="hidden lg:flex items-center justify-between py-2 border-t border-border/50">
             {/* Categories - Show only first 4 categories from backend */}
             <div className="flex items-center gap-1">
               {categories.slice(0, 4).map((cat) => (
@@ -467,10 +467,11 @@ export function Header() {
                   <Link 
                     to={`/products?category=${cat.slug}`} 
                     className={cn(
-                      "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all",
+                      "flex items-center gap-2 px-4 py-2 text-sm font-medium font-body transition-all duration-300 relative",
                       isCategoryActive(cat.slug)
-                        ? "bg-accent/10 text-accent"
-                        : "text-foreground hover:bg-secondary hover:text-accent"
+                        ? "text-accent"
+                        : "text-foreground hover:text-accent",
+                      isCategoryActive(cat.slug) && "after:absolute after:bottom-0 after:left-2 after:right-2 after:h-[2px] after:bg-accent after:rounded-full"
                     )}
                   >
                     {cat.name}
@@ -533,10 +534,10 @@ export function Header() {
                     key={item.label}
                     to={item.href}
                     className={cn(
-                      "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all",
+                      "flex items-center gap-2 px-4 py-2 text-sm font-medium font-body transition-all duration-300 relative",
                       isQuickLinkActive(item.href)
-                        ? "bg-accent/10 text-accent"
-                        : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                        ? "text-accent after:absolute after:bottom-0 after:left-2 after:right-2 after:h-[2px] after:bg-accent after:rounded-full"
+                        : "text-muted-foreground hover:text-foreground"
                     )}
                   >
                     <Icon className="w-4 h-4" />
@@ -576,10 +577,10 @@ export function Header() {
             <Link to="/" className="flex items-center shrink-0">
               <img src="/SK_Logo.png" alt="Krishna Stores" className="h-8 w-auto" />
               <div className="ml-2 flex flex-col">
-                <span className="text-lg font-bold text-foreground tracking-wide leading-tight">
+                <span className="text-lg font-display font-bold text-foreground tracking-tight leading-tight">
                   <span className="text-accent">Sri</span> Krishna
                 </span>
-                <span className="text-[10px] font-medium text-muted-foreground tracking-wide leading-tight">
+                <span className="text-[9px] font-body font-medium text-muted-foreground tracking-[0.2em] uppercase leading-tight">
                   Digital World
                 </span>
               </div>
@@ -630,10 +631,10 @@ export function Header() {
               <div className="flex items-center gap-2">
                 <img src="/SK_Logo.png" alt="Krishna Stores" className="h-8 w-auto" />
                 <div className="flex flex-col">
-                  <span className="font-bold leading-tight">
+                  <span className="font-display font-bold leading-tight">
                     <span className="text-accent">Sri</span> Krishna
                   </span>
-                  <span className="text-[10px] font-medium text-muted-foreground tracking-wide leading-tight">
+                  <span className="text-[9px] font-body font-medium text-muted-foreground tracking-[0.2em] uppercase leading-tight">
                     Digital World
                   </span>
                 </div>

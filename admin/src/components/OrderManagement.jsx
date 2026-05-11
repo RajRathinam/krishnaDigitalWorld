@@ -846,31 +846,31 @@ export const OrderManagement = () => {
   return (
     <div className="space-y-6">
 
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Order Management</h1>
-          <p className="text-muted-foreground">Manage and track all customer orders</p>
-        </div>
-        <div className="flex items-center gap-2">
+    {/* Header */}
+    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Order Management</h1>
+        <p className="text-muted-foreground">Manage and track all customer orders</p>
+      </div>
+      <div className="flex items-center gap-2">
           <Button variant="outline" onClick={handleExportOrders} disabled={loading || !orders.length}>
             <Download className="h-4 w-4 mr-2" /> Export
-          </Button>
+        </Button>
           <Button variant="outline" onClick={() => fetchOrders(pagination.page, pageSize)} disabled={loading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Refresh
-          </Button>
-        </div>
+        </Button>
       </div>
+    </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {loading
           ? Array.from({length:8}).map((_,i) => (
               <Card key={i}><CardContent className="p-4">
-                <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3">
                   <Skeleton className="w-10 h-10 rounded-lg" />
                   <div className="space-y-2 flex-1"><Skeleton className="h-3 w-20"/><Skeleton className="h-6 w-16"/></div>
-                </div>
+          </div>
               </CardContent></Card>
             ))
           : statCards.map((s, i) => (
@@ -889,15 +889,15 @@ export const OrderManagement = () => {
                         {fmt(s.cancelledAmt)} cancelled
                       </p>
                     )}
-                  </div>
-                </div>
+          </div>
+        </div>
               </CardContent></Card>
             ))
         }
-      </div>
+</div>
 
       {/* Filters */}
-      <Card>
+    <Card>
         <CardContent className="p-4 space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             {[{key:"all",label:"All Orders"},{key:"cod",label:"COD"},{key:"online",label:"Online"}].map(tab => (
@@ -936,14 +936,14 @@ export const OrderManagement = () => {
               <span className="ml-2">{loading ? "Loading..." : "Search"}</span>
             </Button>
           </div>
-        </CardContent>
-      </Card>
+      </CardContent>
+    </Card>
 
       {/* Table */}
-      <Card>
+    <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle>Orders</CardTitle>
+        <CardTitle>Orders</CardTitle>
             <CardDescription>Showing {orders.length} of {pagination.total} orders</CardDescription>
           </div>
           <div className="flex items-center gap-2">
@@ -953,19 +953,19 @@ export const OrderManagement = () => {
               <SelectContent>{PAGE_SIZE_OPTIONS.map(s => <SelectItem key={s} value={s.toString()}>{s}</SelectItem>)}</SelectContent>
             </Select>
           </div>
-        </CardHeader>
+      </CardHeader>
         <CardContent className="p-0">
           {loading ? <TableSkeleton rowCount={10} columnCount={9} /> : orders.length === 0 ? (
             <div className="text-center py-12">
-              <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium">No orders found</h3>
-              <p className="text-sm text-muted-foreground mt-2">
+          <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          <h3 className="text-lg font-medium">No orders found</h3>
+          <p className="text-sm text-muted-foreground mt-2">
                 {searchTerm || filterStatus !== "all" ? "Try adjusting your search or filter" : "No orders yet"}
               </p>
               {(searchTerm || filterStatus !== "all") && (
                 <Button variant="outline" className="mt-4"
                   onClick={() => { setSearchTerm(""); setFilterStatus("all"); fetchOrders(1, pageSize); }}>
-                  Clear filters
+            Clear filters
                 </Button>
               )}
             </div>
@@ -973,7 +973,7 @@ export const OrderManagement = () => {
             <>
               <div className="overflow-x-auto w-full">
                 <Table className="min-w-[1100px]">
-                  <TableHeader>
+              <TableHeader>
                     <TableRow className="bg-muted/40">
                       <TableHead className="w-[170px] text-xs font-semibold">Order ID</TableHead>
                       <TableHead className="w-[180px] text-xs font-semibold">Customer</TableHead>
@@ -984,9 +984,9 @@ export const OrderManagement = () => {
                       <TableHead className="w-[140px] text-xs font-semibold">Payment</TableHead>
                       <TableHead className="w-[110px] text-xs font-semibold">Coupon</TableHead>
                       <TableHead className="w-[80px]  text-xs font-semibold text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                     {orders.map((order) => {
                       const isCod = order.paymentMethod === "cod";
                       const disc  = parseFloat(order.discountAmount || 0);
@@ -999,15 +999,15 @@ export const OrderManagement = () => {
                                 <Truck className="h-2.5 w-2.5" /><span className="truncate max-w-[130px]">{order.trackingId}</span>
                               </p>
                             )}
-                          </TableCell>
+                  </TableCell>
                           <TableCell className="align-middle py-3">
                             <p className="font-medium truncate max-w-[160px] text-sm">{getCustomerName(order)}</p>
                             <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5"><Phone className="h-2.5 w-2.5" />{getCustomerPhone(order)}</p>
-                          </TableCell>
+                  </TableCell>
                           <TableCell className="align-middle py-3">
                             <span className="font-semibold">{countItems(order.orderItems)}</span>
                             <span className="text-muted-foreground text-[11px]"> items</span>
-                          </TableCell>
+                  </TableCell>
                           <TableCell className="align-middle py-3">
                             <p className={`font-semibold text-sm ${order.orderStatus === "cancelled" ? "line-through text-muted-foreground" : ""}`}>
                               {fmt(order.finalAmount || order.totalPrice || 0)}
@@ -1022,17 +1022,17 @@ export const OrderManagement = () => {
                                 <BadgePercent className="w-2.5 h-2.5" />−{fmt(disc)}
                               </p>
                             )}
-                          </TableCell>
+                  </TableCell>
                           <TableCell className="align-middle py-3">
                             <p className="text-xs text-muted-foreground whitespace-nowrap">{fmtDate(order.createdAt)}</p>
-                          </TableCell>
+                  </TableCell>
                           <TableCell className="align-middle py-3"><StatusBadge status={order.orderStatus} /></TableCell>
                           <TableCell className="align-middle py-3">
                             <div className="flex flex-col gap-1">
                               <div className="flex items-center gap-1.5">
                                 <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide ${isCod ? "bg-orange-100 text-orange-700" : "bg-blue-100 text-blue-700"}`}>
                                   {isCod ? "COD" : (order.paymentMethod || "").toUpperCase()}
-                                </span>
+                      </span>
                                 <PaymentBadge status={order.paymentStatus} />
                               </div>
                               {(order.phonePeTransactionId || order.merchantOrderId) && (
@@ -1040,28 +1040,28 @@ export const OrderManagement = () => {
                                   {order.phonePeTransactionId || order.merchantOrderId}
                                 </p>
                               )}
-                            </div>
-                          </TableCell>
+                    </div>
+                  </TableCell>
                           <TableCell className="align-middle py-3">
                             <StatusBadge status={order.isCouponProvided ? "provided" : "notprovided"} />
                           </TableCell>
                           <TableCell className="text-right align-middle py-3">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
                                 <DropdownMenuItem onClick={() => setSelectedOrderId(order.id)}>
                                   <Eye className="h-4 w-4 mr-2" /> View Details
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => {
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => {
                                   setOrderToUpdate(order);
-                                  setUpdateStatus(order.orderStatus);
-                                  setTrackingId(order.trackingId || "");
-                                  setIsUpdateDialogOpen(true);
-                                }}>
+                            setUpdateStatus(order.orderStatus);
+                            setTrackingId(order.trackingId || "");
+                            setIsUpdateDialogOpen(true);
+                          }}>
                                   <RefreshCw className="h-4 w-4 mr-2" /> Update Delivery Status
-                                </DropdownMenuItem>
+                          </DropdownMenuItem>
                                 {order.paymentMethod === "cod" && (
                                   order.paymentStatus !== "paid" ? (
                                     <DropdownMenuItem onClick={() => updateCodPaymentStatus(order.id, "paid")} className="text-green-600 focus:text-green-700">
@@ -1083,27 +1083,27 @@ export const OrderManagement = () => {
                                     <Ticket className="h-4 w-4 mr-2" /> Provide Coupon
                                   </DropdownMenuItem>
                                 )}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                  </TableCell>
                         </TableRow>
                       );
                     })}
-                  </TableBody>
-                </Table>
-              </div>
+              </TableBody>
+            </Table>
+          </div>
 
               {pagination.totalPages > 1 && (
                 <div className="flex items-center justify-between mt-6 px-6 pb-6">
-                  <div className="text-sm text-muted-foreground">
+            <div className="text-sm text-muted-foreground">
                     Showing {(pagination.page-1)*pagination.limit+1} to{" "}
                     {Math.min(pagination.page*pagination.limit, pagination.total)} of {pagination.total} orders
-                  </div>
-                  <div className="flex items-center space-x-2">
+            </div>
+            <div className="flex items-center space-x-2">
                     <Button variant="outline" size="sm" onClick={() => fetchOrders(pagination.page-1, pageSize)} disabled={pagination.page===1||loading}>
                       <ChevronLeft className="h-4 w-4 mr-1" /> Previous
-                    </Button>
-                    <div className="flex items-center gap-1">
+              </Button>
+              <div className="flex items-center gap-1">
                       {Array.from({length: Math.min(5, pagination.totalPages)}, (_, i) => {
                         let p;
                         if      (pagination.totalPages <= 5)                 p = i + 1;
@@ -1114,18 +1114,18 @@ export const OrderManagement = () => {
                           <Button key={p} variant={pagination.page===p?"default":"outline"} size="sm"
                             className="h-8 w-8" onClick={() => fetchOrders(p, pageSize)} disabled={loading}>{p}</Button>
                         );
-                      })}
-                    </div>
+                })}
+              </div>
                     <Button variant="outline" size="sm" onClick={() => fetchOrders(pagination.page+1, pageSize)} disabled={pagination.page===pagination.totalPages||loading}>
                       Next <ChevronRight className="h-4 w-4 ml-1" />
-                    </Button>
-                  </div>
-                </div>
+              </Button>
+            </div>
+                    </div>
               )}
             </>
           )}
-        </CardContent>
-      </Card>
+                </CardContent>
+              </Card>
 
       {selectedOrderId && (
         <OrderDetailModal
@@ -1137,7 +1137,7 @@ export const OrderManagement = () => {
             setUpdateStatus(order.orderStatus);
             setTrackingId(order.trackingId || "");
             setSelectedOrderId(null);
-            setIsUpdateDialogOpen(true);
+              setIsUpdateDialogOpen(true);
           }}
         />
       )}
@@ -1151,45 +1151,45 @@ export const OrderManagement = () => {
         />
       )}
 
-      <Dialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Update Order Status</DialogTitle>
-            <DialogDescription>
+    <Dialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Update Order Status</DialogTitle>
+          <DialogDescription>
               Update status for: <span className="font-mono font-semibold">{orderToUpdate?.orderNumber}</span>
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2">
               <Label>Order Status *</Label>
-              <Select value={updateStatus} onValueChange={setUpdateStatus}>
+            <Select value={updateStatus} onValueChange={setUpdateStatus}>
                 <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="processing">Processing</SelectItem>
-                  <SelectItem value="shipped">Shipped</SelectItem>
-                  <SelectItem value="delivered">Delivered</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+              <SelectContent>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="processing">Processing</SelectItem>
+                <SelectItem value="shipped">Shipped</SelectItem>
+                <SelectItem value="delivered">Delivered</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
             {updateStatus === "shipped" && (
               <div className="space-y-2">
-                <Label htmlFor="trackingId">Tracking ID</Label>
+            <Label htmlFor="trackingId">Tracking ID</Label>
                 <Input id="trackingId" placeholder="Enter tracking ID" value={trackingId} onChange={e => setTrackingId(e.target.value)} />
                 <p className="text-xs text-muted-foreground">Leave empty to auto-generate</p>
               </div>
             )}
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
+          <div className="space-y-2">
+            <Label htmlFor="notes">Notes</Label>
               <Textarea id="notes" placeholder="Add notes about this status update..." value={notes} onChange={e => setNotes(e.target.value)} rows={3} />
-            </div>
           </div>
-          <DialogFooter>
+        </div>
+        <DialogFooter>
             <Button variant="outline" onClick={() => { setIsUpdateDialogOpen(false); setUpdateStatus(""); setTrackingId(""); setNotes(""); }}>Cancel</Button>
             <Button onClick={handleUpdateStatus} disabled={!updateStatus}>Update Status</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     </div>
   );
 };

@@ -67,13 +67,13 @@ const rankMeta = [
 ];
 
 // ─── Single product card ───────────────────────────────────────────────────────
-const BestSellerCard = ({ item, rank }) => {
+const BestSellerCard = ({ item, rank, className = "" }) => {
   const meta = rankMeta[rank] ?? { bg: "from-gray-100 to-gray-200", label: `#${rank + 1}` };
 
   return (
     <Link
       to={item.href}
-      className="group relative flex flex-col rounded-2xl overflow-hidden bg-white border border-gray-100 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:border-yellow-200"
+      className={`group ${className} relative flex flex-col rounded-2xl overflow-hidden bg-white border border-gray-100 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:border-yellow-200`}
       style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}
     >
       {/* Rank badge */}
@@ -81,9 +81,9 @@ const BestSellerCard = ({ item, rank }) => {
         <span className="text-white text-xs font-black">{meta.label}</span>
       </div>
 
-      {/* Rating badge */}
+      {/* Rating badge (top-right) */}
       {item.rating && (
-        <div className="absolute bottom-3 right-3 z-20 flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 border border-amber-100">
+        <div className="absolute top-3 right-3 z-20 flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 border border-amber-100">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 text-amber-400">
             <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
           </svg>
@@ -91,8 +91,8 @@ const BestSellerCard = ({ item, rank }) => {
         </div>
       )}
 
-      {/* Image area */}
-      <div className="relative aspect-square overflow-hidden bg-white">
+      {/* Image area — reduced fixed heights so desktop cards are shorter */}
+      <div className="relative overflow-hidden bg-white h-36 sm:h-48 md:h-56 lg:h-60">
         <div className="absolute inset-0 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
           style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 60%)" }} />
         <img
@@ -109,18 +109,39 @@ const BestSellerCard = ({ item, rank }) => {
         className="absolute bottom-0 left-0 h-0.5 w-0 group-hover:w-full transition-all duration-500 rounded-full"
         style={{ background: "hsl(45,95%,50%)" }}
       />
+      {/* Title / footer */}
+      <div className="p-4">
+        <h4 className="font-semibold text-sm line-clamp-1 mb-1">{item.title}</h4>
+      </div>
     </Link>
   );
 };
 
-// ─── Skeleton — 3 cards only ──────────────────────────────────────────────────
+// ─── Skeleton — layout matching desktop split (1 large left, 4 small right) ──
 const BestSellerSkeleton = () => (
-  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
-    {Array.from({ length: 3 }).map((_, i) => (
-      <div key={i} className="rounded-2xl overflow-hidden bg-white border border-gray-100">
-        <div className="aspect-square bg-gray-100 animate-pulse" />
+  <div className="grid grid-cols-1 gap-3">
+    <div className="lg:grid lg:grid-cols-2 lg:gap-3">
+      <div className="lg:col-span-1">
+        <div className="relative rounded-2xl overflow-hidden bg-white border border-gray-100 h-36 sm:h-48 md:h-56 lg:h-full">
+          <div className="absolute top-3 right-3 w-8 h-6 rounded-full bg-amber-100" />
+          <div className="bg-gray-100 animate-pulse h-full" />
+          <div className="p-3">
+            <div className="h-3 bg-gray-200 rounded w-3/4 animate-pulse" />
+          </div>
+        </div>
       </div>
-    ))}
+      <div className="lg:col-span-1 grid grid-cols-2 gap-3 mt-3 lg:mt-0">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="relative rounded-2xl overflow-hidden bg-white border border-gray-100 h-28 sm:h-36 lg:h-36 flex flex-col">
+            <div className="absolute top-3 right-3 w-7 h-5 rounded-full bg-amber-100" />
+            <div className="bg-gray-100 animate-pulse h-full" />
+            <div className="p-2">
+              <div className="h-3 bg-gray-200 rounded w-3/4 animate-pulse" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   </div>
 );
 
@@ -133,8 +154,8 @@ export function BestSellers() {
     fetchBestSellers().then(setItems).finally(() => setLoading(false));
   }, []);
 
-  // Only top 3
-  const top3 = items.slice(0, 3);
+  // Only top 5
+  const top5 = items.slice(0, 5);
 
   return (
     <section className="py-6 md:py-16 relative overflow-hidden">
@@ -177,7 +198,7 @@ export function BestSellers() {
         {/* ── Grid ── */}
         {loading ? (
           <BestSellerSkeleton />
-        ) : top3.length === 0 ? (
+        ) : top5.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
               <TrendingUp className="w-8 h-8 text-gray-300" />
@@ -187,12 +208,29 @@ export function BestSellers() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4">
-              {top3.map((item, i) => (
-                <div key={item.id} className={i === 0 ? "col-span-2" : "col-span-1"}>
-                  <BestSellerCard item={item} rank={i} />
-                </div>
-              ))}
+            {/* Mobile / small screens: keep the compact grid */}
+            <div className="block lg:hidden">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4">
+                {top5.map((item, i) => (
+                  <div key={item.id} className={i === 0 ? "col-span-2" : "col-span-1"}>
+                    <BestSellerCard item={item} rank={i} />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Desktop: split layout — left and right equal width; right is 2x2 */}
+            <div className="hidden lg:grid lg:grid-cols-2 gap-3 md:gap-4">
+              <div className="lg:col-span-1 h-full">
+                {top5[0] && <BestSellerCard item={top5[0]} rank={0} className="h-full" />}
+              </div>
+              <div className="lg:col-span-1 grid grid-cols-2 gap-3">
+                {top5.slice(1, 5).map((item, idx) => (
+                  <div key={item.id} className="h-full">
+                    <BestSellerCard item={item} rank={idx + 1} className="h-full" />
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* Mobile view all */}

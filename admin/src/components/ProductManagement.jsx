@@ -345,6 +345,7 @@ export const ProductManagement = () => {
           return p;
         }));
         toast({ title: "Success", description: "Product updated successfully" });
+        window.location.reload();
       } else {
         const res = await api.post("/products", formData, {
           headers: { "Content-Type": "multipart/form-data" },
@@ -362,6 +363,7 @@ export const ProductManagement = () => {
         };
         setProducts(prev => [parsedProd, ...prev]);
         toast({ title: "Success", description: "Product created successfully" });
+        window.location.reload();
       }
       setIsDialogOpen(false);
     } catch (err) {

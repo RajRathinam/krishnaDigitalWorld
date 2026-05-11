@@ -26,9 +26,11 @@ export default {
         },
         extend: {
             fontFamily: {
-                sans: ["Inter", "system-ui", "sans-serif"],
-                display: ["Outfit", "system-ui", "sans-serif"],
-                heading: ["Cabinet Grotesk", "system-ui", "sans-serif"],
+                sans: ["DM Sans", "system-ui", "sans-serif"],
+                display: ["Playfair Display", "Georgia", "serif"],
+                heading: ["Playfair Display", "Georgia", "serif"],
+                body: ["DM Sans", "system-ui", "sans-serif"],
+                mono: ["DM Mono", "Courier New", "monospace"],
             },
             colors: {
                 border: "hsl(var(--border))",

@@ -562,10 +562,17 @@ export function ProductCard({ product, variant = "default", selectedColor }) {
             </button>
 
             {/* Image */}
-            <div className="aspect-square bg-white rounded-lg flex items-center justify-center mb-4 overflow-hidden">
+            <div className="aspect-square bg-white rounded-lg flex items-center justify-center mb-4 overflow-hidden relative">
                 <img src={getImageUrl(displayImageUrl)} alt={name} className="w-full h-full object-contain" onError={(e) => {
                     e.currentTarget.src = '/placeholder.svg';
                 }} />
+                {discount > 0 && (
+                    <div className="absolute bottom-2 right-0 z-10">
+                        <span className="bg-green-600/80 text-white text-[9px] font-bold px-2 py-1 rounded shadow-md border border-green-500/20">
+                            {discount}% OFF
+                        </span>
+                    </div>
+                )}
             </div>
 
             {/* Title */}
@@ -578,13 +585,22 @@ export function ProductCard({ product, variant = "default", selectedColor }) {
                 {renderStars(rating)}
             </div>
 
-            {/* Price */}
-            <div className="space-y-1 mb-3">
-                <div className="flex items-baseline gap-2">
-                    <span className="text-lg font-bold text-foreground">{formatPrice(price)}</span>
-                    {originalPrice > price && (<span className="text-xs text-muted-foreground line-through">{formatPrice(originalPrice)}</span>)}
+            {/* Price (styled to match default variant) */}
+            <div className="flex flex-col gap-1 mb-3">
+                <div className="flex items-baseline gap-2 flex-wrap">
+                    <span className="text-base md:text-lg font-bold text-foreground">{formatPrice(price)}</span>
+                    {originalPrice > price && (
+                        <span className="text-xs text-red-500 line-through decoration-red-500/50">{formatPrice(originalPrice)}</span>
+                    )}
                 </div>
-                {discount > 0 && (<span className="text-xs font-semibold text-accent">{discount}% off</span>)}
+                {originalPrice > price && (
+                    <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-green-600 font-semibold bg-green-50/30 px-1.5 py-0.5 rounded-full border border-green-100/50">
+                            Save {formatPrice(originalPrice - price)}
+                        </span>
+                        
+                    </div>
+                )}
             </div>
 
             {/* EMI */}

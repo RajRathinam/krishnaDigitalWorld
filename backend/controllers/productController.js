@@ -559,7 +559,8 @@ export const createProduct = async (req, res) => {
       metaTitle,
       metaDescription,
       keywords,
-      sellerId
+      sellerId,
+      rating
     } = req.body;
 
     console.log('Creating product with data:', {
@@ -696,20 +697,14 @@ export const createProduct = async (req, res) => {
         const file = req.uploadedFiles[i];
         const tempPath = path.join(__dirname, '..', file.url);
         const filename = `prod-${Date.now()}-${i}.webp`;
-        const finalUrl = `/uploads/products/${filename}`;
-        const finalPath = path.join(__dirname, '..', 'uploads', 'products', filename);
+        const finalUrl = `/uploads/${filename}`;
+        const finalPath = path.join(__dirname, '..', 'uploads', filename);
 
         try {
-          // Ensure products directory exists
-          const productsDir = path.dirname(finalPath);
-          if (!fs.existsSync(productsDir)) {
-            fs.mkdirSync(productsDir, { recursive: true });
-          }
-
           await processProductImage(tempPath, finalPath);
           deleteFile(tempPath);
           file.url = finalUrl;
-          file.publicId = `products/${filename}`;
+          file.publicId = filename;
         } catch (procErr) {
           console.error(`Failed to process image ${file.url}:`, procErr);
           // Continue with original file if processing fails, or throw if preferred
@@ -881,6 +876,7 @@ export const createProduct = async (req, res) => {
     const parsedPrice = parseFloat(price);
     const parsedDiscountPrice = discountPrice ? parseFloat(discountPrice) : null;
     const parsedTax = tax ? parseFloat(tax) : 0;
+    const parsedRating = rating ? parseFloat(rating) : 0;
 
     if (isNaN(parsedPrice) || parsedPrice < 0) {
       await transaction.rollback();
@@ -949,6 +945,7 @@ export const createProduct = async (req, res) => {
       price: parsedPrice,
       discountPrice: parsedDiscountPrice,
       tax: parsedTax,
+      rating: parsedRating,
       stock: parsedStock,
       sku: sku || `PROD-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       colorsAndImages: finalColorsAndImages,

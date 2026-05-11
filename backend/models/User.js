@@ -42,10 +42,6 @@ const User = sequelize.define('User', {
     type: DataTypes.ENUM('customer', 'subadmin', 'admin'),
     defaultValue: 'customer'
   },
-  profileImage: {
-    type: DataTypes.STRING,
-    allowNull: true
-  },
   dateOfBirth: {
     type: DataTypes.DATEONLY,
     allowNull: true
