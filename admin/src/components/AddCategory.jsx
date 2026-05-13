@@ -409,7 +409,7 @@ const handleSubmit = async () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[100px]">Category Image</TableHead>
+                  <TableHead className="w-[100px]">Image</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead>Subcategories</TableHead>
                   <TableHead className="w-[100px]">Status</TableHead>

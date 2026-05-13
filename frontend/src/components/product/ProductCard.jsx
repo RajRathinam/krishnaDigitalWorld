@@ -220,6 +220,8 @@ const addToWishlist = (product) => {
                 firstImage = typeof firstImg === 'string' ? firstImg : (firstImg.url || firstImg);
             }
         }
+        // Resolve to full URL so it works in production (not just local dev proxy)
+        firstImage = getImageUrl(firstImage);
         const productToSave = {
             id: productId,
             name: parsedProduct.name || parsedProduct.shortName || parsedProduct.productName,
@@ -582,7 +584,7 @@ export function ProductCard({ product, variant = "default", selectedColor }) {
             </div>
 
             {/* Price (styled to match default variant) */}
-            <div className="flex flex-col gap-1 mb-3">
+            <div className="flex items-center gap-1 mb-3">
                 <div className="flex items-baseline gap-2 flex-wrap">
                     <span className="text-base md:text-lg font-bold text-foreground">{formatPrice(price)}</span>
                     {originalPrice > price && (

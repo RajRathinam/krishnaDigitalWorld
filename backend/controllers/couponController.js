@@ -435,12 +435,20 @@ export const validateCouponForCart = async (req, res) => {
       });
     }
     
+    // Check for max discount cap
+    // Priority: UserCoupon.maxAmount > Coupon.maxDiscount
+    const userCouponRecord = await UserCoupon.findOne({
+      where: { userId: req.user.id, couponId: coupon.id }
+    });
+    const effectiveMaxDiscount = userCouponRecord?.maxAmount || coupon.maxDiscount;
+
     // Calculate discount
     let discount = 0;
     if (coupon.discountType === 'percentage') {
       discount = (cartTotal * coupon.discountValue) / 100;
-      if (coupon.maxDiscount && discount > coupon.maxDiscount) {
-        discount = coupon.maxDiscount;
+      
+      if (effectiveMaxDiscount && discount > effectiveMaxDiscount) {
+        discount = effectiveMaxDiscount;
       }
     } else {
       discount = coupon.discountValue;
@@ -457,9 +465,10 @@ export const validateCouponForCart = async (req, res) => {
           discountType: coupon.discountType,
           discountValue: coupon.discountValue,
           minOrderAmount: coupon.minOrderAmount,
-          maxDiscount: coupon.maxDiscount
+          maxDiscount: effectiveMaxDiscount
         },
         discount,
+        isCapped: effectiveMaxDiscount && discount >= effectiveMaxDiscount,
         finalAmount: cartTotal - discount
       }
     });
@@ -588,7 +597,8 @@ export const assignCouponToUser = async (req, res) => {
       validDays = 30,
       description = '',
       isSingleUse = true,
-      orderId = null
+      orderId = null,
+      maxAmount = null
     } = req.body;
 
     // Validate input
@@ -678,7 +688,8 @@ export const assignCouponToUser = async (req, res) => {
     const userCoupon = await UserCoupon.create({
       userId,
       couponId: coupon.id,
-      isUsed: false
+      isUsed: false,
+      maxAmount: maxAmount ? parseFloat(maxAmount) : null
     });
 
     // If orderId is provided, mark the order with isCouponProvided = true
@@ -707,7 +718,8 @@ export const assignCouponToUser = async (req, res) => {
           id: userCoupon.id,
           userId: userCoupon.userId,
           couponId: userCoupon.couponId,
-          isUsed: userCoupon.isUsed
+          isUsed: userCoupon.isUsed,
+          maxAmount: userCoupon.maxAmount
         }
       }
     });
@@ -754,6 +766,7 @@ export const getUserCoupons = async (req, res) => {
           attributes: ['id', 'code', 'description', 'discountType', 'discountValue', 'minOrderAmount', 'maxDiscount', 'validFrom', 'validUntil', 'isActive', 'isSingleUse']
         }
       ],
+      attributes: ['id', 'userId', 'couponId', 'isUsed', 'usedAt', 'orderId', 'isNotified', 'maxAmount', 'created_at'],
       limit: parseInt(limit),
       offset: parseInt(offset),
       order: [['created_at', 'DESC']] // Fixed: changed from 'createdAt' to 'created_at'

@@ -594,10 +594,13 @@ export const OrderManagement = () => {
   const navigate = useNavigate();
 
   const [orders, setOrders]                           = useState([]);
-  const [loading, setLoading]                         = useState(true);
+  const [filteredOrders, setFilteredOrders]         = useState([]);
+  const [loading, setLoading]                       = useState(true);
   const [searchTerm, setSearchTerm]                   = useState("");
+  const [debouncedSearch, setDebouncedSearch]         = useState("");
   const [filterStatus, setFilterStatus]               = useState("all");
   const [filterPaymentMethod, setFilterPaymentMethod] = useState("all");
+  const [isTodayOnly, setIsTodayOnly]                 = useState(false);
   const [selectedOrderId, setSelectedOrderId]         = useState(null);
   const [orderToUpdate, setOrderToUpdate]             = useState(null);
   const [isUpdateDialogOpen, setIsUpdateDialogOpen]   = useState(false);
@@ -626,7 +629,7 @@ export const OrderManagement = () => {
       });
       if (filterStatus !== "all")        params.append("status",        filterStatus);
       if (filterPaymentMethod !== "all") params.append("paymentMethod", filterPaymentMethod);
-      if (searchTerm)                    params.append("search",        searchTerm);
+      // Removed search param from backend call to handle it in frontend
 
       const response = await api.get(`/admin/orders?${params}`);
       if (!response.data.success) throw new Error(response.data.data?.message || "Failed to fetch orders");
@@ -698,7 +701,60 @@ export const OrderManagement = () => {
     }
   };
 
-  useEffect(() => { fetchOrders(1, pageSize); }, [filterStatus, filterPaymentMethod, searchTerm]);
+  // ── Debounce Search ──
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchTerm), 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // ── Local Filtering Logic ──
+  useEffect(() => {
+    if (!orders.length) {
+      setFilteredOrders([]);
+      return;
+    }
+
+    let result = [...orders];
+
+    // Status filter (already done by backend, but safe to repeat or keep if backend returns all)
+    if (filterStatus !== "all") {
+      result = result.filter(o => o.orderStatus === filterStatus);
+    }
+
+    // Payment method filter
+    if (filterPaymentMethod !== "all") {
+      if (filterPaymentMethod === "online") {
+        result = result.filter(o => o.paymentMethod !== "cod");
+      } else {
+        result = result.filter(o => o.paymentMethod === filterPaymentMethod);
+      }
+    }
+
+    // Search term (The main local operation)
+    if (debouncedSearch) {
+      const s = debouncedSearch.toLowerCase();
+      result = result.filter(o => 
+        (o.orderNumber || "").toLowerCase().includes(s) ||
+        (getCustomerName(o) || "").toLowerCase().includes(s) ||
+        (getCustomerPhone(o) || "").toLowerCase().includes(s)
+      );
+    }
+
+    // Date filter (Today Only)
+    if (isTodayOnly) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      result = result.filter(o => {
+        const orderDate = new Date(o.createdAt || o.created_at);
+        orderDate.setHours(0, 0, 0, 0);
+        return orderDate.getTime() === today.getTime();
+      });
+    }
+
+    setFilteredOrders(result);
+  }, [orders, filterStatus, filterPaymentMethod, debouncedSearch, isTodayOnly]);
+
+  useEffect(() => { fetchOrders(pagination.page, pageSize); }, [filterStatus, filterPaymentMethod]);
 
   const handlePageSizeChange = (newSize) => { setPageSize(newSize); fetchOrders(1, newSize); };
 
@@ -898,43 +954,64 @@ export const OrderManagement = () => {
 
       {/* Filters */}
     <Card>
-        <CardContent className="p-4 space-y-3">
-          <div className="flex flex-wrap items-center gap-2">
-            {[{key:"all",label:"All Orders"},{key:"cod",label:"COD"},{key:"online",label:"Online"}].map(tab => (
-              <button key={tab.key} onClick={() => setFilterPaymentMethod(tab.key)}
-                className={`px-4 py-1.5 rounded-md text-sm font-medium border transition-all ${
-                  filterPaymentMethod === tab.key
-                    ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                    : "bg-background text-muted-foreground border-border hover:bg-muted"
-                }`}>
-                {tab.label}
-              </button>
-            ))}
+        <CardContent className="p-4 space-y-4">
+          <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-border/50">
+            <Button 
+              variant={isTodayOnly ? "default" : "outline"} 
+              size="sm" 
+              onClick={() => setIsTodayOnly(!isTodayOnly)}
+              className={`rounded-full px-4 h-9 ${isTodayOnly ? "bg-primary shadow-md" : "hover:bg-muted"}`}
+            >
+              <Clock className="w-4 h-4 mr-2" />
+              Today's Orders
+              {isTodayOnly && <XCircle className="w-3.5 h-3.5 ml-2 opacity-70 hover:opacity-100" />}
+            </Button>
+            
+            {isTodayOnly && (
+              <Badge variant="secondary" className="h-6 px-2 text-[10px] bg-primary/10 text-primary border-primary/20">
+                Showing {filteredOrders.length} orders from today
+              </Badge>
+            )}
           </div>
-          <div className="flex flex-col md:flex-row gap-3">
-            <div className="flex-1 relative">
+
+          <div className="flex flex-col lg:flex-row items-center gap-3">
+            <div className="flex-1 relative w-full">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Search order ID, customer, phone..." className="pl-9"
-                value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && fetchOrders(1, pageSize)} />
+                value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
             </div>
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-[180px]">
-                <Filter className="h-4 w-4 mr-2" /><SelectValue placeholder="Delivery Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="processing">Processing</SelectItem>
-                <SelectItem value="shipped">Shipped</SelectItem>
-                <SelectItem value="delivered">Delivered</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button onClick={() => fetchOrders(1, pageSize)} disabled={loading} className="shrink-0">
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-              <span className="ml-2">{loading ? "Loading..." : "Search"}</span>
-            </Button>
+            
+            <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+              <Select value={filterPaymentMethod} onValueChange={setFilterPaymentMethod}>
+                <SelectTrigger className="w-[160px]">
+                  <CreditCard className="h-4 w-4 mr-2" /><SelectValue placeholder="Payment Method" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Payments</SelectItem>
+                  <SelectItem value="cod">COD</SelectItem>
+                  <SelectItem value="online">Online</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="w-[160px]">
+                  <Filter className="h-4 w-4 mr-2" /><SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="processing">Processing</SelectItem>
+                  <SelectItem value="shipped">Shipped</SelectItem>
+                  <SelectItem value="delivered">Delivered</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Button onClick={() => fetchOrders(1, pageSize)} disabled={loading} size="sm" className="shrink-0 h-10 px-4">
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                <span className="ml-2">{loading ? "Loading..." : "Refresh"}</span>
+              </Button>
+            </div>
           </div>
       </CardContent>
     </Card>
@@ -955,7 +1032,7 @@ export const OrderManagement = () => {
           </div>
       </CardHeader>
         <CardContent className="p-0">
-          {loading ? <TableSkeleton rowCount={10} columnCount={9} /> : orders.length === 0 ? (
+          {loading ? <TableSkeleton rowCount={10} columnCount={9} /> : filteredOrders.length === 0 ? (
             <div className="text-center py-12">
           <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
           <h3 className="text-lg font-medium">No orders found</h3>
@@ -987,7 +1064,7 @@ export const OrderManagement = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                    {orders.map((order) => {
+                    {filteredOrders.map((order) => {
                       const isCod = order.paymentMethod === "cod";
                       const disc  = parseFloat(order.discountAmount || 0);
                       return (

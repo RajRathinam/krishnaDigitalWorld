@@ -22,7 +22,7 @@ import { adminLimiter, exportLimiter } from '../middleware/rateLimiter.js';
 const router = express.Router();
 
 // Apply admin/subadmin authentication and rate limiting to all routes
-// router.use(authenticate, requireAdminOrSubadmin, adminLimiter);
+router.use(authenticate, requireAdminOrSubadmin, adminLimiter);
 
 // Dashboard routes
 router.get('/stats', getDashboardStats);

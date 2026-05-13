@@ -95,8 +95,18 @@ export const CustomerDetails = () => {
           createdAt:           d.created_at    || d.createdAt || new Date().toISOString(),
           updatedAt:           d.updated_at    || d.updatedAt || new Date().toISOString(),
           profileImage:        d.profileImage,
-          address:             d.address,
-          additionalAddresses: d.additionalAddresses || [],
+          address: (() => {
+            if (!d.address) return null;
+            if (typeof d.address === 'object') return d.address;
+            try { return JSON.parse(d.address); } catch { return null; }
+          })(),
+          additionalAddresses: (() => {
+            const raw = d.additionalAddresses;
+            if (!raw) return [];
+            if (Array.isArray(raw)) return raw;
+            if (typeof raw === 'string') { try { return JSON.parse(raw) || []; } catch { return []; } }
+            return [];
+          })(),
           orders,
           reviews:             d.reviews       || [],
           stats: {
@@ -282,13 +292,12 @@ export const CustomerDetails = () => {
 
       {/* ── Tabs ── */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="orders">Orders ({customer.orders.length})</TabsTrigger>
           <TabsTrigger value="addresses">
             Addresses ({1 + (customer.additionalAddresses?.length || 0)})
           </TabsTrigger>
-          <TabsTrigger value="reviews">Reviews ({customer.reviews.length})</TabsTrigger>
         </TabsList>
 
         {/* ─── Overview ─── */}
@@ -657,58 +666,6 @@ export const CustomerDetails = () => {
           </div>
         </TabsContent>
 
-        {/* ─── Reviews ─── */}
-        <TabsContent value="reviews" className="space-y-6 mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                Customer Reviews ({customer.reviews.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {customer.reviews.length > 0 ? (
-                <div className="space-y-4">
-                  {customer.reviews.map((review, i) => (
-                    <div key={i} className="p-4 border border-border rounded-lg space-y-2 hover:bg-muted/20 transition-colors">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <p className="font-medium text-sm">Review #{i + 1}</p>
-                          {review.rating && (
-                            <div className="flex items-center gap-0.5 mt-1">
-                              {[...Array(5)].map((_, j) => (
-                                <span key={j} className={`text-base ${j < review.rating ? "text-yellow-500" : "text-gray-200"}`}>★</span>
-                              ))}
-                              <span className="text-xs text-muted-foreground ml-1">({review.rating}/5)</span>
-                            </div>
-                          )}
-                        </div>
-                        {review.createdAt && (
-                          <span className="text-xs text-muted-foreground">{fmtDate(review.createdAt)}</span>
-                        )}
-                      </div>
-                      {review.comment && (
-                        <p className="text-sm text-muted-foreground leading-relaxed">"{review.comment}"</p>
-                      )}
-                      {review.productName && (
-                        <div className="p-2 bg-muted/40 rounded border border-border/50">
-                          <p className="text-xs font-medium">Product: {review.productName}</p>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mx-auto">
-                    <span className="text-2xl">⭐</span>
-                  </div>
-                  <h3 className="mt-4 text-base font-semibold">No Reviews</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">This customer hasn't left any reviews yet.</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
     </div>
   );

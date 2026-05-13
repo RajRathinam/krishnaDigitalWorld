@@ -277,18 +277,6 @@ export const addToCart = async (req, res) => {
       availableForColor = getTotalStock(stockData);
     }
 
-    if (requestedQuantity > availableForColor) {
-      await transaction.rollback();
-      const message = availableForColor === 0 
-        ? `Out of stock${finalColorName ? ` for color "${finalColorName}"` : ""}`
-        : `Only ${availableForColor} items available in stock${finalColorName ? ` for color "${finalColorName}"` : ""}`;
-        
-      return res.status(400).json({
-        success: false,
-        message
-      });
-    }
-
     // Get or create cart
     let cart = await Cart.findOne({
       where: { userId },
@@ -320,28 +308,41 @@ export const addToCart = async (req, res) => {
       }
     }
 
-    // Check if item already exists
+    // Check if item already exists to calculate total requested quantity
     const existingItemIndex = items.findIndex(item => {
       const itemProductId = String(item.productId);
       const reqProductId = String(productId);
-
       if (itemProductId !== reqProductId) return false;
-
-      // Compare color
       const itemColor = item.colorName || null;
       const reqColor = finalColorName || null;
-
       return itemColor === reqColor;
     });
+
+    const existingQuantity = existingItemIndex > -1 ? items[existingItemIndex].quantity : 0;
+    const totalRequestedQuantity = existingQuantity + requestedQuantity;
+
+    if (totalRequestedQuantity > availableForColor) {
+      await transaction.rollback();
+      const message = availableForColor === 0 
+        ? `Out of stock${finalColorName ? ` for color "${finalColorName}"` : ""}`
+        : existingQuantity > 0
+          ? `You already have ${existingQuantity} in cart. Only ${availableForColor} items total are available in stock${finalColorName ? ` for color "${finalColorName}"` : ""}.`
+          : `Only ${availableForColor} items available in stock${finalColorName ? ` for color "${finalColorName}"` : ""}.`;
+        
+      return res.status(400).json({
+        success: false,
+        message
+      });
+    }
 
     const itemPrice = parseFloat(product.discountPrice || product.price) || 0;
 
     if (existingItemIndex > -1) {
       // Update existing item
-      items[existingItemIndex].quantity += requestedQuantity;
+      items[existingItemIndex].quantity = totalRequestedQuantity;
       items[existingItemIndex].price = itemPrice;
       items[existingItemIndex].updatedAt = new Date();
-
+      
       // Update imageUrl if provided
       if (finalImageUrl && !items[existingItemIndex].imageUrl) {
         items[existingItemIndex].imageUrl = finalImageUrl;

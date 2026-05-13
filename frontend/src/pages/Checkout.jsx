@@ -16,6 +16,23 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import api from "@/lib/api";
 import { getImageUrl } from "@/lib/utils";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogDescription,
+  DialogFooter
+} from "@/components/ui/dialog";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────────────────────
+const ALLOWED_PINCODES = [
+  "611001", "611003", "611002", "611111", "611108", "611104", "611105", "611106", 
+  "611110", "614806", "614810", "614807", "614808", "614809", "614404", "610001", 
+  "609701", "609702", "609307", "609309", "609313", "609001", "609801", "609117", "609110"
+];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -317,10 +334,11 @@ export default function Checkout() {
   const [paymentMethod,  setPaymentMethod]  = useState("cod");
 
   // Coupon
-  const [couponCode,     setCouponCode]     = useState("");
-  const [appliedCoupon,  setAppliedCoupon]  = useState(null);
-  const [couponDiscount, setCouponDiscount] = useState(0);
-  const [applyingCoupon, setApplyingCoupon] = useState(false);
+  const [couponCode,         setCouponCode]         = useState("");
+  const [appliedCoupon,      setAppliedCoupon]      = useState(null);
+  const [couponDiscount,    setCouponDiscount]    = useState(0);
+  const [isCapped,           setIsCapped]           = useState(false);
+  const [applyingCoupon,     setApplyingCoupon]     = useState(false);
 
   // Order
   const [cart,            setCart]           = useState({ items: [], totalAmount: 0 });
@@ -328,6 +346,7 @@ export default function Checkout() {
   const [orderPlaced,     setOrderPlaced]    = useState(false);
   const [placedOrderData, setPlacedOrderData]= useState(null);
   const [showConfetti,    setShowConfetti]   = useState(false);
+  const [showPincodeError, setShowPincodeError] = useState(false);
 
   // Profile modal
   const [showProfileModal,     setShowProfileModal]     = useState(false);
@@ -367,16 +386,19 @@ export default function Checkout() {
       if (res.data.success) {
         setAppliedCoupon(res.data.data.coupon);
         setCouponDiscount(Number(res.data.data.discount) || 0);
+        setIsCapped(!!res.data.data.isCapped);
         toast.success(res.data.message || "Coupon applied!");
       } else {
         toast.error(res.data.message || "Invalid coupon code");
         setAppliedCoupon(null);
         setCouponDiscount(0);
+        setIsCapped(false);
       }
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to apply coupon");
       setAppliedCoupon(null);
       setCouponDiscount(0);
+      setIsCapped(false);
     } finally {
       setApplyingCoupon(false);
     }
@@ -385,6 +407,7 @@ export default function Checkout() {
   const removeCoupon = () => {
     setAppliedCoupon(null);
     setCouponDiscount(0);
+    setIsCapped(false);
     setCouponCode("");
     toast.success("Coupon removed");
   };
@@ -492,6 +515,13 @@ export default function Checkout() {
   // ── COD order ─────────────────────────────────────────────────────────────
   const handlePlaceOrder = async () => {
     if (isPlacingOrder || !selectedAddressData) return;
+    
+    // Final pincode check
+    if (!ALLOWED_PINCODES.includes(String(selectedAddressData.pincode).trim())) {
+      setShowPincodeError(true);
+      return;
+    }
+
     setIsPlacingOrder(true);
     try {
       const profileOk = await verifyProfileBeforeOrder();
@@ -537,6 +567,13 @@ export default function Checkout() {
   // ── PhonePe payment ───────────────────────────────────────────────────────
   const handlePhonePePayment = async () => {
     if (isPlacingOrder || !selectedAddressData) return;
+
+    // Final pincode check
+    if (!ALLOWED_PINCODES.includes(String(selectedAddressData.pincode).trim())) {
+      setShowPincodeError(true);
+      return;
+    }
+
     setIsPlacingOrder(true);
     try {
       const profileOk = await verifyProfileBeforeOrder();
@@ -780,7 +817,13 @@ export default function Checkout() {
 
           {selectedAddressData && (
             <button
-              onClick={() => goToStep("delivery")}
+              onClick={() => {
+                if (ALLOWED_PINCODES.includes(String(selectedAddressData.pincode).trim())) {
+                  goToStep("delivery");
+                } else {
+                  setShowPincodeError(true);
+                }
+              }}
               className="w-full py-3 bg-accent hover:bg-krishna-orange-hover text-primary font-medium rounded-lg transition-colors"
             >
               Deliver to this Address →
@@ -1125,6 +1168,11 @@ export default function Checkout() {
                       {appliedCoupon.discountType === "percentage"
                         ? `${appliedCoupon.discountValue}% off`
                         : `${formatPrice(appliedCoupon.discountValue)} off`}
+                      {isCapped && (
+                        <span className="ml-1 text-[10px] bg-accent/20 px-1.5 py-0.5 rounded font-bold uppercase tracking-tighter">
+                          Capped at {formatPrice(appliedCoupon.maxDiscount)}
+                        </span>
+                      )}
                     </span>
                   </div>
                 )}
@@ -1210,6 +1258,34 @@ export default function Checkout() {
           </div>
         </div>
       </div>
+
+      {/* Pincode Error Dialog */}
+      <Dialog open={showPincodeError} onOpenChange={setShowPincodeError}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <div className="mx-auto w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center mb-4">
+              <MapPin className="h-6 w-6 text-amber-600" />
+            </div>
+            <DialogTitle className="text-center text-xl font-bold">Delivery Area Restricted</DialogTitle>
+            <DialogDescription className="text-center pt-2">
+              We currently only provide delivery services to <strong>Nagapattinam</strong> and its surrounding places.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-muted-foreground text-center">
+              The selected pincode is outside our current service zone. Please choose an address within our delivery area or contact support for assistance.
+            </p>
+          </div>
+          <DialogFooter>
+            <button
+              onClick={() => setShowPincodeError(false)}
+              className="w-full py-3 bg-accent hover:bg-krishna-orange-hover text-primary font-bold rounded-xl transition-colors"
+            >
+              Understand
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>

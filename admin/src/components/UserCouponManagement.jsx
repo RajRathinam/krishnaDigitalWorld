@@ -37,6 +37,7 @@ export const UserCouponManagement = () => {
   const [selectedUserData, setSelectedUserData] = useState(null);
   const [discountValue, setDiscountValue] = useState("");
   const [discountType, setDiscountType] = useState("percentage");
+  const [maxAmount, setMaxAmount] = useState("");
   const [assigning, setAssigning] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -196,6 +197,7 @@ export const UserCouponManagement = () => {
         {
           discountValue: parseFloat(discountValue),
           discountType,
+          maxAmount: maxAmount ? parseFloat(maxAmount) : null,
           orderId: orderIdFromParams ? parseInt(orderIdFromParams) : null
         }
       );
@@ -207,6 +209,7 @@ export const UserCouponManagement = () => {
         setSelectedUserData(null);
         setDiscountValue("");
         setDiscountType("percentage");
+        setMaxAmount("");
         fetchUserCoupons(1);
       } else {
         toast.error(response.data.message || "Failed to assign coupon");
@@ -482,6 +485,22 @@ export const UserCouponManagement = () => {
                 onChange={(e) => setDiscountValue(e.target.value)}
               />
             </div>
+            {discountType === "percentage" && (
+              <div>
+                <label className="text-sm font-medium mb-2 block">
+                  Maximum Discount Amount (₹)
+                </label>
+                <Input
+                  type="number"
+                  placeholder="Enter max discount cap (optional)"
+                  value={maxAmount}
+                  onChange={(e) => setMaxAmount(e.target.value)}
+                />
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  Limits the discount to this amount even if the percentage calculation is higher.
+                </p>
+              </div>
+            )}
           </div>
 
           <DialogFooter>
@@ -493,6 +512,7 @@ export const UserCouponManagement = () => {
                 setSelectedUserData(null);
                 setDiscountValue("");
                 setDiscountType("percentage");
+                setMaxAmount("");
               }}
               disabled={assigning}
             >
@@ -552,6 +572,11 @@ export const UserCouponManagement = () => {
                             ? `${uc.coupon.discountValue}%`
                             : formatPrice(uc.coupon.discountValue)}
                         </span>
+                        {(uc.maxAmount || uc.coupon.maxDiscount) && uc.coupon.discountType === "percentage" && (
+                          <p className="text-[10px] text-muted-foreground">
+                            Max: {formatPrice(uc.maxAmount || uc.coupon.maxDiscount)}
+                          </p>
+                        )}
                       </TableCell>
                       <TableCell>
                         {new Date(uc.coupon.validUntil) < new Date() && !uc.isUsed ? (

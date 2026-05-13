@@ -5,42 +5,7 @@ import { Calendar, MapPin, User, Camera } from "lucide-react";
 import { getImageUrl } from "@/lib/utils";
 import { baseUrl } from '@/config/baseUrl'; // If baseUrl is still needed elsewhere, keep it, but getImageUrl is better
 
-const API_BASE_URL = baseUrl;
-
-const getAuthToken = () => localStorage.getItem('authToken');
-
-const apiRequest = async (endpoint, options = {}) => {
-  const token = getAuthToken();
-  const headers = {
-    ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
-    ...(token && { 'Authorization': `Bearer ${token}` }),
-    ...options.headers,
-  };
-
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
-
-  const data = await response.json();
-
-  return {
-    success: data.success !== undefined ? data.success : response.ok,
-    data: data.data || data,
-    message: data.message || '',
-    errors: data.errors || [],
-    status: response.status,
-  };
-};
-
-const api = {
-  updateMe: async (data) => {
-    return apiRequest('/auth/me', {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  },
-};
+import api from "@/lib/api";
 
 export default function AccountProfile() {
   const { user, loading, refreshUser } = useAuth();
@@ -134,11 +99,9 @@ export default function AccountProfile() {
         formData.append('address', JSON.stringify(addressData));
       }
       
-      const response = await apiRequest('/auth/me', {
-        method: 'PUT',
-        body: formData,
-      });
-      if (response.success) {
+      const response = await api.put('/auth/me', formData);
+      
+      if (response.data.success) {
         toast({ title: 'Profile updated successfully' });
         await refreshUser();
       }

@@ -4,6 +4,7 @@ import { Heart, ShoppingBag, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import { baseUrl } from "@/config/baseUrl";
+import { getImageUrl } from "@/lib/utils";
 
 const API_BASE_URL = baseUrl;
 
@@ -188,7 +189,7 @@ export default function AccountWishlist() {
           <div key={item.id} className="bg-card rounded-lg border border-border p-4 flex flex-col hover:shadow-md transition-shadow">
             <div className="w-full h-48 bg-white rounded-lg flex items-center justify-center mb-3 overflow-hidden">
               <img
-                src={item.image || '/placeholder.svg'}
+                src={getImageUrl(item.image) || '/placeholder.svg'}
                 alt={item.name}
                 className="w-full h-full object-contain"
                 onError={(e) => {

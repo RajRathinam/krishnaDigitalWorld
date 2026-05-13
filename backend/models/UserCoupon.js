@@ -42,6 +42,12 @@ const UserCoupon = sequelize.define('UserCoupon', {
   isNotified: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
+  },
+  maxAmount: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: true,
+    comment: 'Maximum discount amount cap for percentage coupons',
+    field: 'maxAmount'
   }
 }, {
   tableName: 'user_coupons',

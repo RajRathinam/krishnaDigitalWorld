@@ -224,8 +224,18 @@ export const createOrder = async (req, res) => {
         let discount = 0;
         if (coupon.discountType === 'percentage') {
           discount = (totalPrice * coupon.discountValue) / 100;
-          if (coupon.maxDiscount && discount > coupon.maxDiscount) {
-            discount = coupon.maxDiscount;
+          
+          // Check for max discount cap
+          // Priority: UserCoupon.maxAmount > Coupon.maxDiscount
+          const userCouponRecord = await UserCoupon.findOne({
+            where: { userId: req.user.id, couponId: coupon.id },
+            transaction
+          });
+          
+          const effectiveMaxDiscount = userCouponRecord?.maxAmount || coupon.maxDiscount;
+          
+          if (effectiveMaxDiscount && discount > effectiveMaxDiscount) {
+            discount = effectiveMaxDiscount;
           }
         } else {
           discount = coupon.discountValue;

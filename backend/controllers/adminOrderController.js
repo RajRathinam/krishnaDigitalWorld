@@ -83,6 +83,7 @@ export const getAllOrders = async (req, res) => {
       limit: parseInt(limit),
       offset: parseInt(offset),
       order: [[validSortBy, validSortOrder]],
+      subQuery: false, // Required when searching on joined models with limit
       include: [
         {
           model: User,
@@ -94,21 +95,26 @@ export const getAllOrders = async (req, res) => {
 
     // Compute total revenue for the FULL filtered result (only PAID orders)
     const revenueWhere = { ...where, paymentStatus: 'paid' };
-    const totalRevenue = await Order.sum('finalAmount', { where: revenueWhere }) || 0;
+    const totalRevenue = await Order.sum('finalAmount', { 
+      where: revenueWhere,
+      include: search ? [{ model: User, as: 'user', attributes: [] }] : []
+    }) || 0;
 
     // Compute per-status counts for the full filtered set
     const statusCountRows = await Order.findAll({
       where,
       attributes: [
         'orderStatus',
-        [Sequelize.fn('COUNT', Sequelize.col('id')), 'count']
+        [Sequelize.fn('COUNT', Sequelize.col('Order.id')), 'count']
       ],
-      group: ['orderStatus'],
+      include: search ? [{ model: User, as: 'user', attributes: [] }] : [],
+      group: ['Order.order_status'],
       raw: true
     });
     const statusCounts = { pending: 0, processing: 0, shipped: 0, delivered: 0, cancelled: 0 };
     statusCountRows.forEach(r => {
-      if (statusCounts.hasOwnProperty(r.orderStatus)) statusCounts[r.orderStatus] = parseInt(r.count);
+      const statusKey = r.orderStatus || r.order_status;
+      if (statusCounts.hasOwnProperty(statusKey)) statusCounts[statusKey] = parseInt(r.count);
     });
 
     res.status(200).json({
