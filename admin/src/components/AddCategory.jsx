@@ -21,6 +21,7 @@ export const AddCategory = ({ onCreated }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
   
   // Category image state
   const [categoryImagePreview, setCategoryImagePreview] = useState(null);
@@ -375,17 +376,33 @@ const handleSubmit = async () => {
     }
   };
 
+  const filteredCategories = categories.filter(category => 
+    category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (category.description && category.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (category.subcategories && category.subcategories.some(s => s.toLowerCase().includes(searchTerm.toLowerCase())))
+  );
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <Card>
         <CardHeader className="flex flex-col sm:flex-row justify-between gap-4 space-y-0 pb-4">
-          <div>
-            <CardTitle>Category Management</CardTitle>
-            <CardDescription>Add and manage product categories and subcategories with images</CardDescription>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 w-full justify-between">
+            <div>
+              <CardTitle>Category Management</CardTitle>
+              <CardDescription>Add and manage product categories and subcategories with images</CardDescription>
+            </div>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Input
+                placeholder="Search categories..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full sm:w-[300px]"
+              />
+              <Button onClick={() => { resetForm(); setIsDialogOpen(true); }} className="shrink-0">
+                <Plus className="h-4 w-4 mr-2" /> Add Category
+              </Button>
+            </div>
           </div>
-          <Button onClick={() => { resetForm(); setIsDialogOpen(true); }}>
-            <Plus className="h-4 w-4 mr-2" /> Add Category
-          </Button>
         </CardHeader>
         <CardContent>
           <div className="rounded-md border">
@@ -408,14 +425,14 @@ const handleSubmit = async () => {
                       </div>
                     </TableCell>
                   </TableRow>
-                ) : categories.length === 0 ? (
+                ) : filteredCategories.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                      No categories found. Click "Add Category" to create one.
+                      {searchTerm ? "No categories match your search." : "No categories found. Click \"Add Category\" to create one."}
                     </TableCell>
                   </TableRow>
                 ) : (
-                  categories.map((category) => (
+                  filteredCategories.map((category) => (
                     <TableRow key={category.id}>
                       <TableCell>
                         {category.image ? (
@@ -482,28 +499,15 @@ const handleSubmit = async () => {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleEdit(category)}>
-                              <Edit className="h-4 w-4 mr-2" /> Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleUpdateStatus(category.id, category.isActive)}>
-                              {category.isActive ? "Deactivate" : "Activate"}
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem 
-                              className="text-destructive focus:text-destructive" 
-                              onClick={() => handleDelete(category.id)}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" /> Delete Permanently
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                          onClick={() => handleEdit(category)}
+                          title="Edit Category"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))

@@ -279,9 +279,13 @@ export const addToCart = async (req, res) => {
 
     if (requestedQuantity > availableForColor) {
       await transaction.rollback();
+      const message = availableForColor === 0 
+        ? `Out of stock${finalColorName ? ` for color "${finalColorName}"` : ""}`
+        : `Only ${availableForColor} items available in stock${finalColorName ? ` for color "${finalColorName}"` : ""}`;
+        
       return res.status(400).json({
         success: false,
-        message: `Only ${availableForColor} items available in stock${finalColorName ? ` for color "${finalColorName}"` : ''}`
+        message
       });
     }
 

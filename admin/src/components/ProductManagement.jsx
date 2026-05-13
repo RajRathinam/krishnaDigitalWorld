@@ -62,6 +62,8 @@ export const ProductManagement = () => {
     { name: "", files: [], existingImages: [], stock: 0 },
   ]);
   const [attributes, setAttributes] = useState("{}");
+  const [formErrors, setFormErrors] = useState({});
+  const [colorErrors, setColorErrors] = useState([]);
 
   // Metadata
   const [brands, setBrands] = useState([]);
@@ -98,6 +100,8 @@ export const ProductManagement = () => {
     setIsSubmitting(false);
     setUploadProgress(0);
     fileInputRefs.current = [];
+    setFormErrors({});
+    setColorErrors([]);
   };
 
   useEffect(() => {
@@ -251,12 +255,40 @@ export const ProductManagement = () => {
 
   const handleSubmit = async () => {
     // Validation
-    if (!form.code || !form.name || !form.brandId || !form.categoryId || !form.price || !form.modelCode || !form.modelName) {
-      toast({ title: "Missing Fields", description: "Please fill all required fields (including Model Info)", variant: "destructive" });
+    const errors = {};
+    if (!form.name) errors.name = "Product Name is required";
+    if (!form.code) errors.code = "Product Code is required";
+    if (!form.brandId) errors.brandId = "Brand is required";
+    if (!form.categoryId) errors.categoryId = "Category is required";
+    if (!form.subcategory) errors.subcategory = "Subcategory is required";
+    if (!form.modelCode) errors.modelCode = "Model Code is required";
+    if (!form.modelName) errors.modelName = "Model Name is required";
+    if (!form.description) errors.description = "Description is required";
+    if (!form.price) errors.price = "Base Price is required";
+    if (!form.discountPrice) errors.discountPrice = "Selling Price is required";
+
+    setFormErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      toast({ title: "Validation Error", description: "Please check the highlighted fields", variant: "destructive" });
       return;
     }
-    if (colorsList.every(c => !c.name)) {
-      toast({ title: "Incomplete", description: "At least one color variant is required", variant: "destructive" });
+
+    const cErrors = colorsList.map(c => ({
+      name: !c.name ? "Color Name is required" : "",
+      stock: (c.stock === undefined || c.stock === null || c.stock === "") ? "Stock is required" : ""
+    }));
+
+    setColorErrors(cErrors);
+
+    if (cErrors.some(e => e.name || e.stock)) {
+      toast({ title: "Color Variant Error", description: "Please check color variant details", variant: "destructive" });
+      return;
+    }
+
+    if (colorsList.every(c => (c.files?.length || 0) + (c.existingImages?.length || 0) === 0)) {
+      setFormErrors(prev => ({ ...prev, images: "At least one image is required for the product" }));
+      toast({ title: "Images Missing", description: "At least one image is required for the product", variant: "destructive" });
       return;
     }
 
@@ -439,7 +471,7 @@ export const ProductManagement = () => {
           ))
         )}
       </div>
-      
+
       {/* Main Content */}
       <Card>
         <CardHeader className="flex flex-col sm:flex-row justify-between gap-4 space-y-0 pb-4">
@@ -495,22 +527,33 @@ export const ProductManagement = () => {
           )}
         </CardHeader>
         <CardContent>
-        {/* Styles for sticky columns and scrollbar hiding */}
-<style jsx>{`
+          {/* Styles for sticky columns and scrollbar hiding */}
+          <style jsx>{`
   .product-table-container {
     position: relative;
     max-height: calc(100vh - 300px);
     overflow: auto;
     border: 1px solid hsl(var(--border));
     border-radius: var(--radius);
-    /* Hide scrollbar for Chrome, Safari and Opera */
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE and Edge */
   }
   
-  /* Hide scrollbar for Chrome, Safari and Opera */
+  /* Custom Scrollbar Styles */
   .product-table-container::-webkit-scrollbar {
-    display: none;
+    width: 8px;
+    height: 8px;
+  }
+  
+  .product-table-container::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .product-table-container::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 4px;
+  }
+  
+  .product-table-container::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.5);
   }
   
   .product-table {
@@ -575,7 +618,7 @@ export const ProductManagement = () => {
     background: hsl(var(--border));
   }
 `}</style>
-          
+
           <div className="product-table-container">
             <table className="product-table w-full">
               <thead className="sticky-header">
@@ -666,9 +709,8 @@ export const ProductManagement = () => {
                                 <div key={color} className="flex items-center gap-1">
                                   <Badge
                                     variant={Number(qty) > 0 ? "secondary" : "destructive"}
-                                    className={`text-[10px] px-1.5 py-0 h-4 whitespace-nowrap ${
-                                      Number(qty) > 0 ? "bg-green-100 text-green-800" : ""
-                                    }`}
+                                    className={`text-[10px] px-1.5 py-0 h-4 whitespace-nowrap ${Number(qty) > 0 ? "bg-green-100 text-green-800" : ""
+                                      }`}
                                   >
                                     {color}: {qty}
                                   </Badge>
@@ -677,8 +719,8 @@ export const ProductManagement = () => {
                               <span className="text-[10px] text-muted-foreground">Total: {stock}</span>
                             </div>
                           ) : (
-                            <Badge 
-                              variant={stock > 0 ? "secondary" : "destructive"} 
+                            <Badge
+                              variant={stock > 0 ? "secondary" : "destructive"}
                               className={stock > 0 ? "bg-green-100 text-green-800 hover:bg-green-200 whitespace-nowrap" : "whitespace-nowrap"}
                             >
                               {stock} in stock
@@ -723,34 +765,34 @@ export const ProductManagement = () => {
                             )}
                           </div>
                         </td>
-                      <td className="p-3 align-middle text-right">
-  <div className="flex items-center justify-end gap-2">
-    <Button
-      variant="ghost"
-      size="icon"
-      className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-      onClick={() => handleOpenEdit(product)}
-      title="Edit product"
-    >
-      <Edit className="h-4 w-4" />
-    </Button>
-    <Button
-      variant="ghost"
-      size="icon"
-      className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-      onClick={async () => {
-        if (confirm('Delete this product?')) {
-          await api.delete(`/products/${product.id}`);
-          setProducts(prev => prev.filter(p => p.id !== product.id));
-          toast({ title: "Deleted", description: "Product removed" });
-        }
-      }}
-      title="Delete product"
-    >
-      <Trash2 className="h-4 w-4" />
-    </Button>
-  </div>
-</td>
+                        <td className="p-3 align-middle text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              onClick={() => handleOpenEdit(product)}
+                              title="Edit product"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={async () => {
+                                if (confirm('Delete this product?')) {
+                                  await api.delete(`/products/${product.id}`);
+                                  setProducts(prev => prev.filter(p => p.id !== product.id));
+                                  toast({ title: "Deleted", description: "Product removed" });
+                                }
+                              }}
+                              title="Delete product"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </td>
                       </tr>
                     );
                   })
@@ -784,33 +826,37 @@ export const ProductManagement = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Product Name *</Label>
-                      <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. Cotton T-Shirt" />
+                      <Input required value={form.name} onChange={e => { setForm({ ...form, name: e.target.value }); setFormErrors({ ...formErrors, name: "" }); }} placeholder="e.g. Cotton T-Shirt" />
+                      {formErrors.name && <p className="text-[10px] font-medium text-destructive mt-1">{formErrors.name}</p>}
                     </div>
                     <div className="space-y-2">
                       <Label>Product Code *</Label>
-                      <Input value={form.code} onChange={e => setForm({ ...form, code: e.target.value })} placeholder="e.g. TSHIRT-001" />
+                      <Input required value={form.code} onChange={e => { setForm({ ...form, code: e.target.value }); setFormErrors({ ...formErrors, code: "" }); }} placeholder="e.g. TSHIRT-001" />
+                      {formErrors.code && <p className="text-[10px] font-medium text-destructive mt-1">{formErrors.code}</p>}
                     </div>
                     <div className="space-y-2">
                       <Label>Brand *</Label>
-                      <Select value={form.brandId} onValueChange={v => setForm({ ...form, brandId: v })}>
+                      <Select required value={form.brandId} onValueChange={v => { setForm({ ...form, brandId: v }); setFormErrors({ ...formErrors, brandId: "" }); }}>
                         <SelectTrigger><SelectValue placeholder="Select Brand" /></SelectTrigger>
                         <SelectContent>
                           {brands.map(b => <SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>)}
                         </SelectContent>
                       </Select>
+                      {formErrors.brandId && <p className="text-[10px] font-medium text-destructive mt-1">{formErrors.brandId}</p>}
                     </div>
                     <div className="space-y-2">
                       <Label>Category *</Label>
-                      <Select value={form.categoryId} onValueChange={v => setForm({ ...form, categoryId: v })}>
+                      <Select required value={form.categoryId} onValueChange={v => { setForm({ ...form, categoryId: v }); setFormErrors({ ...formErrors, categoryId: "" }); }}>
                         <SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger>
                         <SelectContent>
                           {categoriesList.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
                         </SelectContent>
                       </Select>
+                      {formErrors.categoryId && <p className="text-[10px] font-medium text-destructive mt-1">{formErrors.categoryId}</p>}
                     </div>
                     <div className="space-y-2">
-                      <Label>Subcategory</Label>
-                      <Select value={form.subcategory} onValueChange={v => setForm({ ...form, subcategory: v })}>
+                      <Label>Subcategory *</Label>
+                      <Select required value={form.subcategory} onValueChange={v => { setForm({ ...form, subcategory: v }); setFormErrors({ ...formErrors, subcategory: "" }); }}>
                         <SelectTrigger><SelectValue placeholder="Select Subcategory" /></SelectTrigger>
                         <SelectContent>
                           {categoriesList.find(c => String(c.id) === form.categoryId)?.subcategories.map(s => (
@@ -818,14 +864,17 @@ export const ProductManagement = () => {
                           ))}
                         </SelectContent>
                       </Select>
+                      {formErrors.subcategory && <p className="text-[10px] font-medium text-destructive mt-1">{formErrors.subcategory}</p>}
                     </div>
                     <div className="space-y-2">
                       <Label>Model Code *</Label>
-                      <Input value={form.modelCode} onChange={e => setForm({ ...form, modelCode: e.target.value })} placeholder="e.g. MOD-2024" />
+                      <Input required value={form.modelCode} onChange={e => { setForm({ ...form, modelCode: e.target.value }); setFormErrors({ ...formErrors, modelCode: "" }); }} placeholder="e.g. MOD-2024" />
+                      {formErrors.modelCode && <p className="text-[10px] font-medium text-destructive mt-1">{formErrors.modelCode}</p>}
                     </div>
                     <div className="space-y-2">
                       <Label>Model Name *</Label>
-                      <Input value={form.modelName} onChange={e => setForm({ ...form, modelName: e.target.value })} placeholder="e.g. Summer Edition" />
+                      <Input required value={form.modelName} onChange={e => { setForm({ ...form, modelName: e.target.value }); setFormErrors({ ...formErrors, modelName: "" }); }} placeholder="e.g. Summer Edition" />
+                      {formErrors.modelName && <p className="text-[10px] font-medium text-destructive mt-1">{formErrors.modelName}</p>}
                     </div>
                     <div className="space-y-2">
                       <Label>SKU (Auto-Generated)</Label>
@@ -833,13 +882,14 @@ export const ProductManagement = () => {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label>Description</Label>
-                    <Textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Product details..." rows={4} />
+                    <Label>Description *</Label>
+                    <Textarea required value={form.description} onChange={e => { setForm({ ...form, description: e.target.value }); setFormErrors({ ...formErrors, description: "" }); }} placeholder="Product details..." rows={4} />
+                    {formErrors.description && <p className="text-[10px] font-medium text-destructive mt-1">{formErrors.description}</p>}
                   </div>
 
                   {/* Rating Input */}
                   <div className="space-y-2">
-                    <Label htmlFor="rating">Product Rating (0-5)</Label>
+                    <Label htmlFor="rating">Product Rating (0-5) *</Label>
                     <div className="flex items-center gap-3">
                       <Input
                         id="rating"
@@ -907,11 +957,13 @@ export const ProductManagement = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Base Price (₹) *</Label>
-                      <Input type="number" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} placeholder="0.00" />
+                      <Input required type="number" value={form.price} onChange={e => { setForm({ ...form, price: e.target.value }); setFormErrors({ ...formErrors, price: "" }); }} placeholder="0.00" />
+                      {formErrors.price && <p className="text-[10px] font-medium text-destructive mt-1">{formErrors.price}</p>}
                     </div>
                     <div className="space-y-2">
-                      <Label>Discount Price (₹)</Label>
-                      <Input type="number" value={form.discountPrice} onChange={e => setForm({ ...form, discountPrice: e.target.value })} placeholder="0.00" />
+                      <Label>Selling Price (₹) *</Label>
+                      <Input required type="number" value={form.discountPrice} onChange={e => { setForm({ ...form, discountPrice: e.target.value }); setFormErrors({ ...formErrors, discountPrice: "" }); }} placeholder="0.00" />
+                      {formErrors.discountPrice && <p className="text-[10px] font-medium text-destructive mt-1">{formErrors.discountPrice}</p>}
                     </div>
                     <div className="space-y-2">
                       <Label>Tax Rate (%)</Label>
@@ -922,7 +974,7 @@ export const ProductManagement = () => {
                     <h4 className="font-semibold mb-2 flex items-center gap-2"><Tag className="h-4 w-4" /> Pricing Summary</h4>
                     <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
                       <div className="flex justify-between"><span>Base Price:</span> <span className="font-mono">₹{form.price || 0}</span></div>
-                      <div className="flex justify-between"><span>Discount Price:</span> <span className="font-mono text-green-600">₹{form.discountPrice || 0}</span></div>
+                      <div className="flex justify-between"><span>Selling Price:</span> <span className="font-mono text-green-600">₹{form.discountPrice || 0}</span></div>
                       <div className="flex justify-between border-t pt-1 font-bold"><span>Final Display:</span> <span>₹{form.discountPrice || form.price || 0}</span></div>
                     </div>
                   </div>
@@ -934,6 +986,7 @@ export const ProductManagement = () => {
                     <div>
                       <h4 className="font-semibold">Color Variants</h4>
                       <p className="text-xs text-muted-foreground">Manage colors, stock, and images</p>
+                      {formErrors.images && <p className="text-[10px] font-medium text-destructive mt-1">{formErrors.images}</p>}
                     </div>
                     <Button size="sm" onClick={() => setColorsList([...colorsList, { name: "", files: [], existingImages: [], stock: 0 }])}>
                       <Plus className="h-4 w-4 mr-1" /> Add Color
@@ -950,17 +1003,29 @@ export const ProductManagement = () => {
 
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label>Color Name</Label>
-                          <Input value={color.name} onChange={e => updatedColors(idx, 'name', e.target.value)} placeholder="e.g. Navy Blue" />
+                          <Label>Color Name *</Label>
+                          <Input required value={color.name} onChange={e => {
+                            updatedColors(idx, 'name', e.target.value);
+                            const newErrors = [...colorErrors];
+                            if (newErrors[idx]) newErrors[idx].name = "";
+                            setColorErrors(newErrors);
+                          }} placeholder="e.g. Navy Blue" />
+                          {colorErrors[idx]?.name && <p className="text-[10px] font-medium text-destructive mt-1">{colorErrors[idx].name}</p>}
                         </div>
                         <div className="space-y-2">
-                          <Label>Stock Quantity</Label>
-                          <Input type="number" value={color.stock} onChange={e => updatedColors(idx, 'stock', Number(e.target.value))} placeholder="0" />
+                          <Label>Stock Quantity *</Label>
+                          <Input required type="number" value={color.stock} onChange={e => {
+                            updatedColors(idx, 'stock', Number(e.target.value));
+                            const newErrors = [...colorErrors];
+                            if (newErrors[idx]) newErrors[idx].stock = "";
+                            setColorErrors(newErrors);
+                          }} placeholder="0" />
+                          {colorErrors[idx]?.stock && <p className="text-[10px] font-medium text-destructive mt-1">{colorErrors[idx].stock}</p>}
                         </div>
                       </div>
 
                       <div className="space-y-2">
-                        <Label className="text-xs font-semibold uppercase text-muted-foreground">Images</Label>
+                        <Label className="text-xs font-semibold uppercase text-muted-foreground">Images *</Label>
                         <div className="flex flex-wrap gap-2">
                           {color.existingImages?.map((img, iIdx) => (
                             <div key={`exist-${iIdx}`} className="relative h-20 w-20 rounded-md border overflow-hidden group">

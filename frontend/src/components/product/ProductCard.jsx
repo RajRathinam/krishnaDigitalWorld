@@ -267,9 +267,9 @@ const useCartContext = () => {
             }
             else {
                 toast({
-                    title: 'Error',
-                    description: result.message || 'Please sign in to add items to your cart.',
-                    variant: 'destructive',
+                    title: 'Info',
+                    description: result.message || 'Failed to add item to cart.',
+                    variant: 'default',
                 });
                 return false;
             }
@@ -285,9 +285,9 @@ const useCartContext = () => {
             }
             else {
                 toast({
-                    title: 'Error',
+                    title: 'Info',
                     description: err?.message || 'Please sign in to add items to your cart.',
-                    variant: 'destructive',
+                    variant: 'default',
                 });
             }
             return false;
@@ -497,11 +497,7 @@ export function ProductCard({ product, variant = "default", selectedColor }) {
             }
             else {
                 setIsAddingToCart(false);
-                toast({
-                    title: "Error",
-                    description: "Failed to add item to cart.",
-                    variant: "destructive",
-                });
+                // The error toast is handled by the addToCartContext
             }
         }
         catch (err) {

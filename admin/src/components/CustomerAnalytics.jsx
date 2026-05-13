@@ -418,7 +418,7 @@ export const CustomerAnalytics = () => {
                       <TableHead className="w-[110px] text-xs font-semibold">Status</TableHead>
                       <TableHead className="w-[110px] text-xs font-semibold">Joined</TableHead>
                       <TableHead className="w-[100px] text-xs font-semibold">Verified</TableHead>
-                      <TableHead className="w-[50px]"></TableHead>
+                      <TableHead className="w-[100px] text-xs font-semibold text-right">Action</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -498,25 +498,16 @@ export const CustomerAnalytics = () => {
                         </TableCell>
 
                         {/* Actions */}
-                        <TableCell className="align-middle py-3">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleViewCustomer(customer.id)}>
-                                <Eye className="h-4 w-4 mr-2" /> View Details
-                              </DropdownMenuItem>
-                              {/* <DropdownMenuItem
-                                onClick={() => handleSendEmail(customer.email)}
-                                disabled={!customer.email || customer.email === 'No email'}
-                              >
-                                <Mail className="h-4 w-4 mr-2" /> Send Email
-                              </DropdownMenuItem> */}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                        <TableCell className="align-middle py-3 text-right">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50 transition-colors"
+                            onClick={() => handleViewCustomer(customer.id)}
+                            title="View Details"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}

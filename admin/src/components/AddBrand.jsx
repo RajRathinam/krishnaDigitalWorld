@@ -20,6 +20,7 @@ export const AddBrand = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editingId, setEditingId] = useState(null);
+    const [searchTerm, setSearchTerm] = useState("");
     const { toast } = useToast();
 
     // Form State
@@ -177,17 +178,32 @@ export const AddBrand = () => {
         }
     };
 
+    const filteredBrands = brands.filter(brand => 
+        brand.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (brand.description && brand.description.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
             <Card>
                 <CardHeader className="flex flex-col sm:flex-row justify-between gap-4 space-y-0 pb-4">
-                    <div>
-                        <CardTitle>Brand Management</CardTitle>
-                        <CardDescription>Add and manage product brands</CardDescription>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-4 w-full justify-between">
+                        <div>
+                            <CardTitle>Brand Management</CardTitle>
+                            <CardDescription>Add and manage product brands</CardDescription>
+                        </div>
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                            <Input
+                                placeholder="Search brands..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full sm:w-[300px]"
+                            />
+                            <Button onClick={() => { resetForm(); setIsDialogOpen(true); }} className="shrink-0">
+                                <Plus className="h-4 w-4 mr-2" /> Add Brand
+                            </Button>
+                        </div>
                     </div>
-                    <Button onClick={() => { resetForm(); setIsDialogOpen(true); }}>
-                        <Plus className="h-4 w-4 mr-2" /> Add Brand
-                    </Button>
                 </CardHeader>
                 <CardContent>
                     <div className="rounded-md border">
@@ -209,14 +225,14 @@ export const AddBrand = () => {
                                             <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
                                         </TableCell>
                                     </TableRow>
-                                ) : brands.length === 0 ? (
+                                ) : filteredBrands.length === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                                            No brands found. Click "Add Brand" to create one.
+                                            {searchTerm ? "No brands match your search." : "No brands found. Click \"Add Brand\" to create one."}
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    brands.map((brand) => (
+                                    filteredBrands.map((brand) => (
                                         <TableRow key={brand.id}>
                                             <TableCell>
                                                 <div className="h-12 w-24 p-1 rounded-md border overflow-hidden bg-white">
@@ -262,30 +278,15 @@ export const AddBrand = () => {
                                                 </span>
                                             </TableCell>
                                             <TableCell className="text-right">
-                                                <div className="flex justify-end gap-2">
-                                                    <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
-                                                            <Button variant="ghost" size="icon">
-                                                                <MoreVertical className="h-4 w-4" />
-                                                            </Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="end">
-                                                            <DropdownMenuItem onClick={() => handleEdit(brand)}>
-                                                                <Edit className="h-4 w-4 mr-2" /> Edit
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem onClick={() => handleUpdateStatus(brand.id, brand.isActive)}>
-                                                                {brand.isActive ? "Deactivate" : "Activate"}
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuSeparator />
-                                                            <DropdownMenuItem 
-                                                                className="text-destructive" 
-                                                                onClick={() => handleDelete(brand.id)}
-                                                            >
-                                                                <Trash2 className="h-4 w-4 mr-2" /> Delete
-                                                            </DropdownMenuItem>
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
-                                                </div>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                                    onClick={() => handleEdit(brand)}
+                                                    title="Edit Brand"
+                                                >
+                                                    <Edit className="h-4 w-4" />
+                                                </Button>
                                             </TableCell>
                                         </TableRow>
                                     ))

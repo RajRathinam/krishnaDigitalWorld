@@ -740,20 +740,7 @@ export default function ProductDetail() {
               <p className="text-sm text-muted-foreground leading-relaxed">{product.description}</p>
             </div>
 
-            {/* Highlights */}
-            {highlights.length > 0 && (
-              <div className="mb-6">
-                <h2 className="font-bold text-foreground mb-3">Highlights</h2>
-                <ul className="space-y-2">
-                  {highlights.map((h, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-foreground">
-                      <Check className="w-4 h-4 text-accent shrink-0 mt-0.5" />
-                      {h}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+       
 
             {/* Specifications */}
             {specSections.length > 0 && (
