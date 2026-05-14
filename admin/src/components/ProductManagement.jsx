@@ -816,7 +816,7 @@ export const ProductManagement = () => {
               <Tabs defaultValue="basic" className="w-full">
                 <TabsList className="grid w-full grid-cols-4 mb-6">
                   <TabsTrigger value="basic">Basic Info</TabsTrigger>
-                  <TabsTrigger value="pricing">Pricing & Stock</TabsTrigger>
+                  <TabsTrigger value="pricing">Pricing</TabsTrigger>
                   <TabsTrigger value="images">Images & Colors</TabsTrigger>
                   <TabsTrigger value="attributes">Attributes</TabsTrigger>
                 </TabsList>
@@ -1025,7 +1025,7 @@ export const ProductManagement = () => {
                       </div>
 
                       <div className="space-y-2">
-                        <Label className="text-xs font-semibold uppercase text-muted-foreground">Images *</Label>
+                        <Label className="text-xs font-semibold uppercase text-black">Images *</Label>
                         <div className="flex flex-wrap gap-2">
                           {color.existingImages?.map((img, iIdx) => (
                             <div key={`exist-${iIdx}`} className="relative h-20 w-20 rounded-md border overflow-hidden group">
@@ -1050,13 +1050,18 @@ export const ProductManagement = () => {
                               <Badge className="absolute bottom-0 left-0 right-0 rounded-none text-[10px] h-4 px-1">New</Badge>
                             </div>
                           ))}
-                          <label className="h-20 w-20 flex flex-col items-center justify-center rounded-md border border-dashed hover:bg-muted cursor-pointer transition-colors">
-                            <Upload className="h-5 w-5 text-muted-foreground mb-1" />
-                            <span className="text-[10px] text-muted-foreground">Upload</span>
-                            <input type="file" multiple accept="image/*" className="hidden"
-                              onChange={e => handleFileSelect(idx, e.target.files)}
-                            />
-                          </label>
+                          <div className="relative h-20 w-20 rounded-md overflow-hidden p-[2px] group">
+                            {/* Rotating Yellow Ring Animation */}
+                            <div className="absolute inset-[-100%] bg-[conic-gradient(from_0deg,transparent_0deg,transparent_300deg,#eab308_300deg,#eab308_360deg)] animate-[spin_4s_linear_infinite]" />
+                            
+                            <label className="relative h-full w-full flex flex-col items-center justify-center rounded-md border border-dashed bg-background hover:bg-muted/80 cursor-pointer transition-colors z-10">
+                              <Upload className="h-5 w-5 text-muted-foreground mb-1 group-hover:text-yellow-600 transition-colors" />
+                              <span className="text-[10px] text-muted-foreground font-medium group-hover:text-yellow-700 transition-colors">Upload</span>
+                              <input type="file" multiple accept="image/*" className="hidden"
+                                onChange={e => handleFileSelect(idx, e.target.files)}
+                              />
+                            </label>
+                          </div>
                         </div>
                       </div>
                     </div>

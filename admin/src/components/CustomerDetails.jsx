@@ -76,7 +76,7 @@ export const CustomerDetails = () => {
 
         // Compute derived stats from orders
         const orders           = d.orders || [];
-        const activeOrders     = orders.filter(o => o.orderStatus !== "cancelled");
+        const activeOrders     = orders.filter(o => o.orderStatus !== "cancelled" && (o.paymentStatus === "paid" || o.payment_status === "paid"));
         const cancelledOrders  = orders.filter(o => o.orderStatus === "cancelled");
         const activeTotal      = activeOrders.reduce((s, o) => s + parseFloat(o.totalValue || o.finalAmount || o.totalPrice || 0), 0);
         const cancelledCount   = cancelledOrders.length;
@@ -110,9 +110,10 @@ export const CustomerDetails = () => {
           orders,
           reviews:             d.reviews       || [],
           stats: {
-            orderCount:      d.stats?.orderCount    ?? orders.length,
-            totalSpent:      activeTotal,            // non-cancelled only
-            cancelledCount,
+            orderCount:      d.stats?.orderCount      ?? orders.length,
+            totalSpent:      d.stats?.totalSpent      ?? activeTotal,
+            cancelledCount:  d.stats?.cancelledCount   ?? cancelledCount,
+            cancelledAmount: d.stats?.cancelledAmount  ?? 0,
           },
         });
       } else {
@@ -247,7 +248,7 @@ export const CustomerDetails = () => {
               <div className="min-w-0">
                 <p className="text-xs text-muted-foreground">Total Spent</p>
                 <p className="text-xl font-bold leading-tight">{fmt(customer.stats.totalSpent)}</p>
-                <p className="text-[11px] text-muted-foreground">excl. cancelled</p>
+                <p className="text-[11px] text-muted-foreground">paid & non-cancelled</p>
               </div>
             </div>
           </CardContent>
@@ -264,8 +265,8 @@ export const CustomerDetails = () => {
                 <p className="text-xs text-muted-foreground">Cancelled Orders</p>
                 <p className="text-2xl font-bold">{customer.stats.cancelledCount}</p>
                 {customer.stats.cancelledCount > 0 && (
-                  <p className="text-[11px] text-red-500">
-                    {Math.round((customer.stats.cancelledCount / customer.stats.orderCount) * 100)}% of total
+                  <p className="text-[11px] text-red-500 font-medium">
+                    {fmt(customer.stats.cancelledAmount)}
                   </p>
                 )}
               </div>
@@ -360,7 +361,7 @@ export const CustomerDetails = () => {
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Spend Summary</p>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground flex items-center gap-1.5">
-                      <CheckCircle className="w-3.5 h-3.5 text-green-500" /> Active orders
+                      <CheckCircle className="w-3.5 h-3.5 text-green-500" /> Paid orders
                     </span>
                     <span className="font-semibold text-green-700">{fmt(customer.stats.totalSpent)}</span>
                   </div>
@@ -368,7 +369,9 @@ export const CustomerDetails = () => {
                     <span className="text-muted-foreground flex items-center gap-1.5">
                       <XCircle className="w-3.5 h-3.5 text-red-400" /> Cancelled
                     </span>
-                    <span className="font-medium text-red-600">{customer.stats.cancelledCount} order{customer.stats.cancelledCount !== 1 ? "s" : ""}</span>
+                    <span className="font-medium text-red-600">
+                      {fmt(customer.stats.cancelledAmount)} ({customer.stats.cancelledCount})
+                    </span>
                   </div>
                 </div>
               </CardContent>
@@ -481,7 +484,7 @@ export const CustomerDetails = () => {
               {customer.stats.cancelledCount > 0 && (
                 <CardDescription className="flex items-center gap-1.5">
                   <XCircle className="w-3.5 h-3.5 text-red-400" />
-                  {customer.stats.cancelledCount} cancelled order{customer.stats.cancelledCount !== 1 ? "s" : ""} excluded from spend total
+                  {fmt(customer.stats.cancelledAmount)} ({customer.stats.cancelledCount} orders) excluded from spend total
                 </CardDescription>
               )}
             </CardHeader>
@@ -497,7 +500,6 @@ export const CustomerDetails = () => {
                         <TableHead className="text-xs font-semibold">Products</TableHead>
                         <TableHead className="text-xs font-semibold">Total</TableHead>
                         <TableHead className="text-xs font-semibold">Status</TableHead>
-                        <TableHead className="text-xs font-semibold">Tracking</TableHead>
                         <TableHead className="text-xs font-semibold text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -529,16 +531,6 @@ export const CustomerDetails = () => {
                           </TableCell>
                           <TableCell className="py-3">
                             <OrderStatusBadge status={order.orderStatus || "pending"} />
-                          </TableCell>
-                          <TableCell className="py-3">
-                            {order.trackingId ? (
-                              <Badge variant="outline" className="text-[11px] flex items-center gap-1 w-fit">
-                                <Truck className="h-3 w-3" />
-                                <span className="truncate max-w-[80px]">{order.trackingId}</span>
-                              </Badge>
-                            ) : (
-                              <span className="text-xs text-muted-foreground">—</span>
-                            )}
                           </TableCell>
                           <TableCell className="text-right py-3">
                             <div className="flex items-center justify-end gap-1">

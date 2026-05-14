@@ -131,7 +131,7 @@ export const AdminOverview = () => {
     {
       title:   "Total Revenue",
       value:   fmt(totalRevenue),
-      note:    "Cancelled orders excluded",
+      note:    "Cancelled & Pending orders excluded",
       noteIcon: XCircle,
       noteColor:"text-red-400",
       icon:    IndianRupee,

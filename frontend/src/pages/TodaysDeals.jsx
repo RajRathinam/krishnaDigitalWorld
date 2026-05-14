@@ -186,6 +186,19 @@ export default function TodaysDeals() {
     }, [fetchDealProducts]);
 
     /**
+     * Refresh AOS when products are loaded to ensure animations work
+     */
+    useEffect(() => {
+        if (!loading && dealProducts.length > 0) {
+            // Give the DOM a moment to update before refreshing AOS
+            const timer = setTimeout(() => {
+                AOS.refresh();
+            }, 100);
+            return () => clearTimeout(timer);
+        }
+    }, [loading, dealProducts]);
+
+    /**
      * Countdown timer effect
      */
     useEffect(() => {

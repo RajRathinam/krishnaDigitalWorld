@@ -547,11 +547,11 @@ export const getUserDetails = async (req, res) => {
     }
 
     // Get orders separately (simpler query)
+    // Removed limit to ensure all orders are listed in customer details
     let orders = [];
     try {
       orders = await Order.findAll({
         where: { userId: user.id },
-        limit: 10,
         order: [['created_at', 'DESC']]
       });
     } catch (orderError) {
@@ -563,17 +563,32 @@ export const getUserDetails = async (req, res) => {
     try {
       reviews = await Review.findAll({
         where: { userId: user.id },
-        limit: 10,
+        limit: 50,
         order: [['created_at', 'DESC']]
       });
     } catch (reviewError) {
       console.error('Error fetching reviews:', reviewError.message);
     }
 
-    // Calculate stats
-    const orderCount = await Order.count({ where: { userId: user.id } });
-    const totalSpent = await Order.sum('final_amount', {
-      where: { userId: user.id }
+    // Calculate comprehensive stats
+    const orderCount     = await Order.count({ where: { userId: user.id } });
+    const cancelledCount = await Order.count({ where: { userId: user.id, orderStatus: 'cancelled' } });
+    
+    // Total cancelled amount
+    const cancelledAmount = await Order.sum('finalAmount', {
+      where: { 
+        userId: user.id,
+        orderStatus: 'cancelled'
+      }
+    }) || 0;
+
+    // Exclude cancelled orders AND only include paid status
+    const totalSpent = await Order.sum('finalAmount', {
+      where: { 
+        userId: user.id,
+        orderStatus: { [Op.ne]: 'cancelled' },
+        paymentStatus: 'paid'
+      }
     }) || 0;
 
     const userData = user.toJSON();
@@ -603,8 +618,10 @@ export const getUserDetails = async (req, res) => {
 
     userData.stats = {
       orderCount,
+      cancelledCount,
+      cancelledAmount: parseFloat(cancelledAmount),
       totalSpent: parseFloat(totalSpent),
-      avgOrderValue: orderCount > 0 ? parseFloat(totalSpent) / orderCount : 0
+      avgOrderValue: (orderCount - cancelledCount) > 0 ? parseFloat(totalSpent) / (orderCount - cancelledCount) : 0
     };
 
     res.status(200).json({
@@ -933,6 +950,7 @@ export const getCustomerAnalytics = async (req, res) => {
         'isVerified',
         'isActive',
         'profileImage',
+        'createdAt',
         // Use literal with correct column names (snake_case)
         [
           sequelize.literal(`(
@@ -988,8 +1006,8 @@ export const getCustomerAnalytics = async (req, res) => {
         orders: userData.orderCount || 0,
         totalSpent: parseFloat(userData.totalSpent || 0).toFixed(2),
         status: (userData.orderCount || 0) > 0 ? 'ordered' : 'signup-only',
-        joinDate: userData.createdAt
-          ? new Date(userData.createdAt).toISOString().split('T')[0]
+        joinDate: (userData.createdAt || userData.created_at)
+          ? new Date(userData.createdAt || userData.created_at).toISOString().split('T')[0]
           : new Date().toISOString().split('T')[0],
         isVerified: userData.isVerified || false,
         isActive: userData.isActive || true,

@@ -584,19 +584,20 @@ export function ProductCard({ product, variant = "default", selectedColor }) {
             </div>
 
             {/* Price (styled to match default variant) */}
-            <div className="flex items-center gap-1 mb-3">
-                <div className="flex items-baseline gap-2 flex-wrap">
-                    <span className="text-base md:text-lg font-bold text-foreground">{formatPrice(price)}</span>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-1.5 mb-3">
+                <div className="flex items-center justify-between md:justify-start md:gap-2 w-full md:w-auto">
+                    <span className="text-base md:text-lg font-bold text-foreground leading-none">{formatPrice(price)}</span>
                     {originalPrice > price && (
-                        <span className="text-xs text-red-500 line-through decoration-red-500/50">{formatPrice(originalPrice)}</span>
+                        <span className="text-xs text-red-500 line-through decoration-red-500/60 font-medium">
+                            {formatPrice(originalPrice)}
+                        </span>
                     )}
                 </div>
                 {originalPrice > price && (
-                    <div className="flex items-center gap-2">
-                        <span className="text-[10px] text-green-600 font-semibold bg-green-50/30 px-1.5 py-0.5 rounded-full border border-green-100/50">
-                            Save {formatPrice(originalPrice - price)}
+                    <div className="flex items-center mt-0.5 md:mt-0">
+                        <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100/50 shadow-sm whitespace-nowrap">
+                            SAVE {formatPrice(originalPrice - price)}
                         </span>
-                        
                     </div>
                 )}
             </div>
@@ -638,7 +639,7 @@ export function ProductCard({ product, variant = "default", selectedColor }) {
             <img src={getImageUrl(displayImageUrl)} alt={name} className="w-full h-full object-contain transform group-hover:scale-105 transition-transform duration-500" onError={(e) => {
                 e.currentTarget.src = '/placeholder.svg';
             }} />
-            
+
             {/* Discount Tag in Image Corner */}
             {discount > 0 && (
                 <div className="absolute bottom-2 right-0 z-10">
@@ -664,19 +665,19 @@ export function ProductCard({ product, variant = "default", selectedColor }) {
 
             {/* Price section - Push to bottom of flex container */}
             <div className="mt-auto">
-                <div className="flex flex-col gap-1 mb-3">
-                    <div className="flex items-baseline gap-2 flex-wrap">
-                        <span className="text-base md:text-lg font-bold text-foreground">{formatPrice(price)}</span>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-4">
+                    <div className="flex items-center justify-between md:justify-start md:gap-2.5 w-full md:w-auto">
+                        <span className="text-base md:text-lg font-bold text-foreground leading-none">{formatPrice(price)}</span>
                         {originalPrice > price && (
-                            <span className="text-xs text-red-500 line-through decoration-red-500/50">
+                            <span className="text-xs md:text-sm text-red-500 line-through decoration-red-500/60 font-medium">
                                 {formatPrice(originalPrice)}
                             </span>
                         )}
                     </div>
                     {originalPrice > price && (
-                        <div className="flex items-center">
-                            <span className="text-[10px] text-green-600 font-semibold bg-green-50/30 px-1.5 py-0.5 rounded-full border border-green-100/50">
-                                Save {formatPrice(originalPrice - price)}
+                        <div className="flex items-center mt-0.5 md:mt-0">
+                            <span className="text-[10px] md:text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-100/50 shadow-sm whitespace-nowrap">
+                                SAVE {formatPrice(originalPrice - price)}
                             </span>
                         </div>
                     )}

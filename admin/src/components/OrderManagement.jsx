@@ -605,8 +605,6 @@ export const OrderManagement = () => {
   const [orderToUpdate, setOrderToUpdate]             = useState(null);
   const [isUpdateDialogOpen, setIsUpdateDialogOpen]   = useState(false);
   const [updateStatus, setUpdateStatus]               = useState("");
-  const [trackingId, setTrackingId]                   = useState("");
-  const [notes, setNotes]                             = useState("");
   const [pageSize, setPageSize]                       = useState(15);
   const [pagination, setPagination]                   = useState({ page: 1, limit: 15, total: 0, totalPages: 1 });
   const [stats, setStats]                             = useState({
@@ -817,20 +815,18 @@ export const OrderManagement = () => {
     try {
       const result = await updateOrderStatusApi(orderToUpdate.id, {
         status: updateStatus,
-        trackingId: trackingId || undefined,
-        notes: notes || undefined,
       });
       if (result.success) {
         toast({ title: "Success", description: "Order status updated successfully" });
         const updated = orders.map(o =>
           o.id === orderToUpdate.id
-            ? { ...o, orderStatus: updateStatus, trackingId: trackingId || o.trackingId }
+            ? { ...o, orderStatus: updateStatus }
             : o
         );
         setOrders(updated);
         recalcStats(updated, pagination.total);
         setIsUpdateDialogOpen(false);
-        setUpdateStatus(""); setTrackingId(""); setNotes("");
+        setUpdateStatus("");
         setOrderToUpdate(null);
       }
     } catch (error) {
@@ -1134,7 +1130,6 @@ export const OrderManagement = () => {
                           <DropdownMenuItem onClick={() => {
                                   setOrderToUpdate(order);
                             setUpdateStatus(order.orderStatus);
-                            setTrackingId(order.trackingId || "");
                             setIsUpdateDialogOpen(true);
                           }}>
                                   <RefreshCw className="h-4 w-4 mr-2" /> Update Delivery Status
@@ -1212,7 +1207,6 @@ export const OrderManagement = () => {
           onUpdateStatus={(order) => {
             setOrderToUpdate(order);
             setUpdateStatus(order.orderStatus);
-            setTrackingId(order.trackingId || "");
             setSelectedOrderId(null);
               setIsUpdateDialogOpen(true);
           }}
@@ -1249,20 +1243,9 @@ export const OrderManagement = () => {
               </SelectContent>
             </Select>
           </div>
-            {updateStatus === "shipped" && (
-              <div className="space-y-2">
-            <Label htmlFor="trackingId">Tracking ID</Label>
-                <Input id="trackingId" placeholder="Enter tracking ID" value={trackingId} onChange={e => setTrackingId(e.target.value)} />
-                <p className="text-xs text-muted-foreground">Leave empty to auto-generate</p>
-              </div>
-            )}
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes</Label>
-              <Textarea id="notes" placeholder="Add notes about this status update..." value={notes} onChange={e => setNotes(e.target.value)} rows={3} />
-          </div>
         </div>
         <DialogFooter>
-            <Button variant="outline" onClick={() => { setIsUpdateDialogOpen(false); setUpdateStatus(""); setTrackingId(""); setNotes(""); }}>Cancel</Button>
+            <Button variant="outline" onClick={() => { setIsUpdateDialogOpen(false); setUpdateStatus(""); }}>Cancel</Button>
             <Button onClick={handleUpdateStatus} disabled={!updateStatus}>Update Status</Button>
         </DialogFooter>
       </DialogContent>

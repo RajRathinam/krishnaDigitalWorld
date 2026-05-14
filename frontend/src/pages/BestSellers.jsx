@@ -182,6 +182,19 @@ export default function BestSellers() {
     }, [fetchBestSellers]);
 
     /**
+     * Refresh AOS when products are loaded to ensure animations work
+     */
+    useEffect(() => {
+        if (!loading && bestSellerProducts.length > 0) {
+            // Give the DOM a moment to update before refreshing AOS
+            const timer = setTimeout(() => {
+                AOS.refresh();
+            }, 100);
+            return () => clearTimeout(timer);
+        }
+    }, [loading, bestSellerProducts]);
+
+    /**
      * Render loading skeletons
      */
     const renderSkeletons = () => (

@@ -28,8 +28,10 @@ export const UserCouponManagement = () => {
   
   const [userCoupons, setUserCoupons] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [filterUsed, setFilterUsed] = useState("all");
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [deleting, setDeleting] = useState(null);
   const [error, setError] = useState(null);
   const [assignDialogOpen, setAssignDialogOpen] = useState(!!userIdFromParams);
@@ -50,9 +52,13 @@ export const UserCouponManagement = () => {
     expired: 0
   });
 
-  const fetchUserCoupons = async (pageNum = 1) => {
+  const fetchUserCoupons = async (pageNum = 1, showInitialLoading = false) => {
     try {
-      setLoading(true);
+      if (showInitialLoading) {
+        setLoading(true);
+      } else {
+        setIsRefreshing(true);
+      }
       setError(null);
       
       const params = {
@@ -64,8 +70,8 @@ export const UserCouponManagement = () => {
         params.isUsed = filterUsed === "used";
       }
       
-      if (searchTerm.trim()) {
-        params.couponCode = searchTerm;
+      if (debouncedSearchTerm.trim()) {
+        params.couponCode = debouncedSearchTerm;
       }
       
       const response = await api.get("/coupons/admin/user-coupons", { params });
@@ -99,6 +105,7 @@ export const UserCouponManagement = () => {
       setError(errorMessage);
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -119,9 +126,17 @@ export const UserCouponManagement = () => {
     }
   };
 
+  // Debounce search term
   useEffect(() => {
-    fetchUserCoupons();
-  }, [filterUsed, searchTerm]);
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    fetchUserCoupons(1, userCoupons.length === 0);
+  }, [filterUsed, debouncedSearchTerm]);
 
   // Handle userId from query params - open dialog and pre-select user
   useEffect(() => {
@@ -535,7 +550,12 @@ export const UserCouponManagement = () => {
         <CardHeader>
           <CardTitle>User Coupons</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="relative">
+          {isRefreshing && (
+            <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] z-10 flex items-center justify-center rounded-lg">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          )}
           {userCoupons.length === 0 ? (
             <div className="text-center py-8">
               <Gift className="w-12 h-12 text-muted-foreground mx-auto mb-3" />

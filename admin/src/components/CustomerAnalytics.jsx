@@ -64,7 +64,7 @@ export const CustomerAnalytics = () => {
             totalSpent: customer.totalSpent || "0.00",
             status: customer.status || "signup-only",
             joinDate: customer.joinDate ||
-              new Date(customer.createdAt || Date.now())
+              new Date(customer.createdAt || customer.created_at || Date.now())
                 .toISOString()
                 .split("T")[0],
             isVerified: customer.isVerified || false,
