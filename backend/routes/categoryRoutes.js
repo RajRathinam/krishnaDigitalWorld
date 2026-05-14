@@ -11,7 +11,7 @@ import {
   deleteCategory,
   updateCategoryStatus
 } from '../controllers/categoryController.js';
-import { authenticate, requireAdmin } from '../middleware/auth.js';
+import { authenticate, requireAdminOrSubadmin } from '../middleware/auth.js';
 import { 
   fileFilter,
   handleCategoryUploadError 
@@ -75,7 +75,7 @@ router.get('/:id', getCategory);
 router.post(
   '/', 
   authenticate, 
-  requireAdmin,
+  requireAdminOrSubadmin,
   (req, res, next) => {
     upload.fields([
       { name: 'categoryImage', maxCount: 1 },
@@ -94,7 +94,7 @@ router.post(
 router.put(
   '/:id', 
   authenticate, 
-  requireAdmin,
+  requireAdminOrSubadmin,
   (req, res, next) => {
     upload.fields([
       { name: 'categoryImage', maxCount: 1 },
@@ -110,7 +110,7 @@ router.put(
   updateCategory
 );
 
-router.delete('/:id', authenticate, requireAdmin, deleteCategory);
-router.patch('/:id/status', authenticate, requireAdmin, updateCategoryStatus);
+router.delete('/:id', authenticate, requireAdminOrSubadmin, deleteCategory);
+router.patch('/:id/status', authenticate, requireAdminOrSubadmin, updateCategoryStatus);
 
 export default router;

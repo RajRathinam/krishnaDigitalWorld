@@ -8,7 +8,7 @@ import {
     updateHeroSlider,
     deleteHeroSlider
 } from '../controllers/heroSliderController.js';
-import { authenticate, requireAdmin } from '../middleware/auth.js';
+import { authenticate, requireAdminOrSubadmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -48,8 +48,8 @@ if (!fs.existsSync(dir)) {
 router.get('/', getAllHeroSliders);
 
 // Admin routes
-router.post('/', authenticate, requireAdmin, upload.single('image'), createHeroSlider);
-router.put('/:id', authenticate, requireAdmin, upload.single('image'), updateHeroSlider);
-router.delete('/:id', authenticate, requireAdmin, deleteHeroSlider);
+router.post('/', authenticate, requireAdminOrSubadmin, upload.single('image'), createHeroSlider);
+router.put('/:id', authenticate, requireAdminOrSubadmin, upload.single('image'), updateHeroSlider);
+router.delete('/:id', authenticate, requireAdminOrSubadmin, deleteHeroSlider);
 
 export default router;

@@ -297,7 +297,7 @@ export const CustomerDetails = () => {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="orders">Orders ({customer.orders.length})</TabsTrigger>
           <TabsTrigger value="addresses">
-            Addresses ({1 + (customer.additionalAddresses?.length || 0)})
+            Addresses ({0 + (customer.additionalAddresses?.length || 0)})
           </TabsTrigger>
         </TabsList>
 

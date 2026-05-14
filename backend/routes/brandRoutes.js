@@ -6,7 +6,7 @@ import {
   updateBrand,
   deleteBrand
 } from '../controllers/brandController.js';
-import { authenticate, requireAdmin } from '../middleware/auth.js';
+import { authenticate, requireAdminOrSubadmin } from '../middleware/auth.js';
 import { uploadSingleImage, processUploadedFiles } from '../middleware/upload.js';
 
 const router = express.Router();
@@ -19,7 +19,7 @@ router.get('/:id', getBrand);
 router.post(
   '/',
   authenticate,
-  requireAdmin,
+  requireAdminOrSubadmin,
   uploadSingleImage('logo', 'brands'),
   processUploadedFiles,
   createBrand
@@ -27,11 +27,11 @@ router.post(
 router.put(
   '/:id',
   authenticate,
-  requireAdmin,
+  requireAdminOrSubadmin,
   uploadSingleImage('logo', 'brands'),
   processUploadedFiles,
   updateBrand
 );
-router.delete('/:id', authenticate, requireAdmin, deleteBrand);
+router.delete('/:id', authenticate, requireAdminOrSubadmin, deleteBrand);
 
 export default router;
