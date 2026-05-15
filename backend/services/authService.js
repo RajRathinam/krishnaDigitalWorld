@@ -154,7 +154,7 @@ const createWelcomeGiftCoupon = async (userId) => {
       discountType: 'percentage',
       discountValue: 10, // 10% discount
       minOrderAmount: 0,
-      maxDiscount: 500,
+      maxDiscount: 100,
       validFrom: new Date(),
       validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Valid for 30 days
       usageLimit: 1,

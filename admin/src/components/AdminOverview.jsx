@@ -314,22 +314,19 @@ export const AdminOverview = () => {
             </CardContent>
           </Card>
 
-          <Card className="flex-1">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <Card className="flex-1 cursor-pointer hover:shadow-md transition-shadow" onClick={() => window.location.href = "http://localhost:3001/birthdays"}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2 mb-7">
               <CardTitle className="text-lg flex items-center gap-2">
                 <Gift className="h-5 w-5 text-pink-500" /> Today's Birthdays
               </CardTitle>
-              {todayBirthdays.length > 0 && (
-                <Button variant="ghost" size="sm" className="h-8 text-xs hidden"
-                  onClick={handleSendAllBirthdayWishes} disabled={sendingWishes.length > 0}>
-                  Send All
-                </Button>
+              {todayBirthdays.length > 5 && (
+                <span className="text-xs text-primary font-medium">View All</span>
               )}
             </CardHeader>
             <CardContent>
               {todayBirthdays.length > 0 ? (
                 <div className="space-y-3">
-                  {todayBirthdays.map((user) => (
+                  {todayBirthdays.slice(0, 5).map((user) => (
                     <div key={user.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border">
                       <div className="flex items-center gap-3">
                         <div className="h-8 w-8 rounded-full bg-pink-100 flex items-center justify-center text-pink-600 font-bold text-xs flex-shrink-0">
@@ -340,13 +337,6 @@ export const AdminOverview = () => {
                           <p className="text-[10px] text-muted-foreground">{user.email}</p>
                         </div>
                       </div>
-                      {/* <Button size="sm"
-                        variant={user.giftReceived ? "secondary" : "default"}
-                        className={user.giftReceived ? "text-green-600 bg-green-50 hover:bg-green-100" : "bg-pink-600 hover:bg-pink-700"}
-                        onClick={() => handleSendBirthdayWish(user.id)}
-                        disabled={sendingWishes.includes(user.id) || user.giftReceived}>
-                        {sendingWishes.includes(user.id) ? "..." : user.giftReceived ? "Sent" : "Wish"}
-                      </Button> */}
                     </div>
                   ))}
                 </div>
