@@ -548,7 +548,7 @@ export function ProductCard({ product, variant = "default", selectedColor }) {
     // Get current image for display
     const { imageUrl: displayImageUrl } = getProductImageAndColor();
     if (variant === "compact") {
-        return (<article role="link" tabIndex={0} onClick={goToProduct} onKeyDown={onCardKeyDown} className="group flex flex-col bg-card rounded-xl border border-border/60 p-4 hover:shadow-card-hover transition-all relative cursor-pointer h-full w-full" aria-label={`View ${name}`}>
+        return (<article role="link" tabIndex={0} onClick={goToProduct} onKeyDown={onCardKeyDown} className="group flex flex-col bg-card rounded-xl border border-border/60 p-4 hover:shadow-card-hover transition-all relative cursor-pointer h-full w-full font-poppins" aria-label={`View ${name}`}>
             {/* Badge */}
             {badge && (<span className="absolute top-3 left-3 z-10 bg-accent text-accent-foreground text-[10px] font-semibold px-2.5 py-1 rounded-md">
                 {badge}
@@ -625,7 +625,7 @@ export function ProductCard({ product, variant = "default", selectedColor }) {
         </article>);
     }
     // Default variant
-    return (<article role="link" tabIndex={0} onClick={goToProduct} onKeyDown={onCardKeyDown} className="group block bg-card rounded-xl border border-border/60 p-3 md:p-4 hover:shadow-lg hover:shadow-accent/5 transition-all duration-300 relative cursor-pointer h-full flex flex-col" aria-label={`View ${name}`}>
+    return (<article role="link" tabIndex={0} onClick={goToProduct} onKeyDown={onCardKeyDown} className="group block bg-card rounded-xl border border-border/60 p-3 md:p-4 hover:shadow-lg hover:shadow-accent/5 transition-all duration-300 relative cursor-pointer h-full flex flex-col font-poppins" aria-label={`View ${name}`}>
         {/* Wishlist Button */}
         <button type="button" onClick={handleAddToWishlist} className="absolute top-2 right-2 z-10 p-2 bg-background/80 backdrop-blur-sm rounded-full shadow-sm md:opacity-0 md:group-hover:opacity-100 transition-all hover:bg-background" aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}>
             <Heart className={`w-3.5 h-3.5 md:w-4 md:h-4 transition-colors ${isWishlisted ? "text-red-500 fill-red-500" : "text-muted-foreground hover:text-destructive"}`} />
