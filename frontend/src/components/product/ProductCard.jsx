@@ -550,7 +550,7 @@ export function ProductCard({ product, variant = "default", selectedColor }) {
     if (variant === "compact") {
         return (<article role="link" tabIndex={0} onClick={goToProduct} onKeyDown={onCardKeyDown} className="group flex flex-col bg-card rounded-xl border border-border/60 p-4 hover:shadow-card-hover transition-all relative cursor-pointer h-full w-full font-poppins" aria-label={`View ${name}`}>
             {/* Badge */}
-            {badge && (<span className="absolute top-3 left-3 z-10 bg-accent text-accent-foreground text-[10px] font-semibold px-2.5 py-1 rounded-md">
+            {badge && (<span className="absolute top-3 left-3 z-10 bg-accent text-accent-foreground text-[10px] font-semibold font-poppins px-2.5 py-1 rounded-md">
                 {badge}
             </span>)}
 
@@ -566,7 +566,7 @@ export function ProductCard({ product, variant = "default", selectedColor }) {
                 }} />
                 {discount > 0 && (
                     <div className="absolute bottom-2 right-0 z-10">
-                        <span className="bg-green-600/80 text-white text-[9px] font-bold px-2 py-1 rounded shadow-md border border-green-500/20">
+                        <span className="bg-green-600/80 text-white text-[9px] font-bold font-poppins px-2 py-1 rounded shadow-md border border-green-500/20">
                             {discount}% OFF
                         </span>
                     </div>
@@ -574,7 +574,7 @@ export function ProductCard({ product, variant = "default", selectedColor }) {
             </div>
 
             {/* Title */}
-            <h3 className="text-sm text-foreground line-clamp-2 mb-3 min-h-[42px] font-medium leading-relaxed group-hover:text-accent transition-colors">
+            <h3 className="text-sm text-foreground line-clamp-2 mb-3 min-h-[42px] font-medium font-poppins leading-relaxed group-hover:text-accent transition-colors">
                 {name}
             </h3>
 
@@ -607,7 +607,7 @@ export function ProductCard({ product, variant = "default", selectedColor }) {
                 {/* REMOVED EMI */}
 
                 {/* Add to Cart */}
-                <button type="button" onClick={handleAddToCart} disabled={isAddingToCart} className={`w-full text-sm font-medium py-3 rounded-lg flex items-center justify-center gap-2 transition-all duration-300 active:scale-95 overflow-hidden mt-auto ${showSuccess
+                <button type="button" onClick={handleAddToCart} disabled={isAddingToCart} className={`w-full text-sm font-medium font-poppins py-3 rounded-lg flex items-center justify-center gap-2 transition-all duration-300 active:scale-95 overflow-hidden mt-auto ${showSuccess
                     ? 'bg-emerald-500 text-white'
                     : 'bg-accent text-accent-foreground hover:bg-accent/90 hover:shadow-md hover:shadow-accent/20'}`}>
                     {showSuccess ? (<span className="inline-flex items-center gap-2 animate-in zoom-in duration-300">
@@ -633,7 +633,7 @@ export function ProductCard({ product, variant = "default", selectedColor }) {
 
         {/* Badge */}
         {badge && (<div className="absolute top-2 left-2 z-10">
-            <span className="bg-accent/90 backdrop-blur-sm text-accent-foreground text-[10px] font-bold px-2 py-1 rounded shadow-sm">{badge}</span>
+            <span className="bg-accent/90 backdrop-blur-sm text-accent-foreground text-[10px] font-bold font-poppins px-2 py-1 rounded shadow-sm">{badge}</span>
         </div>)}
 
         {/* Image */}
@@ -645,7 +645,7 @@ export function ProductCard({ product, variant = "default", selectedColor }) {
             {/* Discount Tag in Image Corner */}
             {discount > 0 && (
                 <div className="absolute bottom-2 right-0 z-10">
-                    <span className="bg-green-600/80 text-white text-[9px] font-bold px-2 py-1 rounded shadow-md border border-green-500/20">
+                    <span className="bg-green-600/80 text-white text-[9px] font-bold font-poppins px-2 py-1 rounded shadow-md border border-green-500/20">
                         {discount}% OFF
                     </span>
                 </div>
@@ -655,7 +655,7 @@ export function ProductCard({ product, variant = "default", selectedColor }) {
         {/* Content Container */}
         <div className="flex flex-col flex-1">
             {/* Title */}
-            <h3 className="text-sm text-foreground line-clamp-2 mb-2 font-medium leading-snug group-hover:text-accent transition-colors min-h-[2.5em]">
+            <h3 className="text-sm text-foreground line-clamp-2 mb-2 font-medium font-poppins leading-snug group-hover:text-accent transition-colors min-h-[2.5em]">
                 {name}
             </h3>
 
@@ -686,7 +686,7 @@ export function ProductCard({ product, variant = "default", selectedColor }) {
                 </div>
 
                 {/* Add to Cart Button */}
-                <button type="button" onClick={handleAddToCart} disabled={isAddingToCart} className={`w-full flex items-center justify-center gap-2 py-2.5 text-sm md:text-sm text-xs font-medium rounded-lg transition-all duration-300 active:scale-95 touch-manipulation ${showSuccess
+                <button type="button" onClick={handleAddToCart} disabled={isAddingToCart} className={`w-full flex items-center justify-center gap-2 py-2.5 text-sm md:text-sm text-xs font-medium font-poppins rounded-lg transition-all duration-300 active:scale-95 touch-manipulation ${showSuccess
                     ? 'bg-emerald-500 text-white shadow-emerald-500/20'
                     : 'bg-primary text-primary-foreground hover:bg-accent hover:text-accent-foreground shadow-sm hover:shadow-accent/20'}`}>
                     {showSuccess ? (<span className="inline-flex items-center gap-1.5 animate-in zoom-in duration-300">
