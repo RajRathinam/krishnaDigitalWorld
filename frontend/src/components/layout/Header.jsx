@@ -226,7 +226,7 @@ export function Header() {
       <header className={cn(
         "sticky top-0 left-0 right-0 z-40 transition-all duration-500",
         isScrolled 
-          ? "bg-card/97 backdrop-blur-xl shadow-lg" 
+          ? "bg-card/95 backdrop-blur-xl shadow-lg" 
           : "bg-card"
       )}>
         {/* Top Bar - Enhanced with shop info */}

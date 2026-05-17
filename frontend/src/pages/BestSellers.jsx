@@ -26,7 +26,9 @@ export default function BestSellers() {
     const [error, setError] = useState(null);
 
     useEffect(() => {
+        window.scrollTo(0, 0);
         AOS.init({ duration: 600, easing: "ease-out-cubic", once: true, offset: 50 });
+        AOS.refresh();
     }, []);
 
     /**

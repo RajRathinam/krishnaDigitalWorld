@@ -19,7 +19,7 @@ import api from "@/lib/api";
 // White          : #ffffff
 // ─────────────────────────────────────────────────────────────────────────────
 
-const Y  = "#ffc107";   // honey yellow
+const Y = "#ffc107";   // honey yellow
 const YL = "#fff9e6";   // soft butter
 const YD = "#e6a800";   // dark honey
 
@@ -355,7 +355,7 @@ function WelcomeSuccessStep({ username, authMode, onClose }) {
       ))}
 
       {/* Orbit rings */}
-      <OrbitRing radius={82}  speed={8}  delay={0.3} dotColor={Y} />
+      <OrbitRing radius={82} speed={8} delay={0.3} dotColor={Y} />
       <OrbitRing radius={112} speed={13} delay={0.5} dotColor={YD} />
       <OrbitRing radius={144} speed={19} delay={0.7} dotColor="#d1d5db" />
 
@@ -912,7 +912,7 @@ export function SignupDialog({ open, onOpenChange }) {
                 <div style={{ display: "flex", justifyContent: "center" }}>
                   <InputOTP maxLength={6} value={otp} onChange={setOtp}>
                     <InputOTPGroup>
-                      {[0,1,2,3,4,5].map((i) => (
+                      {[0, 1, 2, 3, 4, 5].map((i) => (
                         <InputOTPSlot
                           key={i}
                           index={i}

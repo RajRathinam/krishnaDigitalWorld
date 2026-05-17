@@ -168,7 +168,7 @@ export function ProductShowcase() {
                                 {displayProducts.map((product) => (
                                     <div 
                                         key={product.id} 
-                                        className="flex-shrink-0 w-[240px] snap-center first:pl-2 last:pr-2"
+                                        className="flex-shrink-0 w-[240px] snap-center first:pl-2 last:pr-2 flex"
                                     >
                                         <ProductCard product={product} variant="compact" />
                                     </div>

@@ -57,7 +57,9 @@ export default function TodaysDeals() {
     const [timeRemaining, setTimeRemaining] = useState(() => calculateTimeUntilMidnight());
 
     useEffect(() => {
+        window.scrollTo(0, 0);
         AOS.init({ duration: 600, easing: "ease-out-cubic", once: true, offset: 50 });
+        AOS.refresh();
     }, []);
 
     /**

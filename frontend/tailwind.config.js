@@ -31,6 +31,7 @@ export default {
                 heading: ["Playfair Display", "Georgia", "serif"],
                 body: ["DM Sans", "system-ui", "sans-serif"],
                 mono: ["DM Mono", "Courier New", "monospace"],
+                poppins: ["Poppins", "sans-serif"],
             },
             colors: {
                 border: "hsl(var(--border))",

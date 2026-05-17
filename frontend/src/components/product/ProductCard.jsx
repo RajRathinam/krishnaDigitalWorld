@@ -548,7 +548,7 @@ export function ProductCard({ product, variant = "default", selectedColor }) {
     // Get current image for display
     const { imageUrl: displayImageUrl } = getProductImageAndColor();
     if (variant === "compact") {
-        return (<article role="link" tabIndex={0} onClick={goToProduct} onKeyDown={onCardKeyDown} className="group block bg-card rounded-xl border border-border/60 p-4 hover:shadow-card-hover transition-all relative cursor-pointer" aria-label={`View ${name}`}>
+        return (<article role="link" tabIndex={0} onClick={goToProduct} onKeyDown={onCardKeyDown} className="group flex flex-col bg-card rounded-xl border border-border/60 p-4 hover:shadow-card-hover transition-all relative cursor-pointer h-full w-full" aria-label={`View ${name}`}>
             {/* Badge */}
             {badge && (<span className="absolute top-3 left-3 z-10 bg-accent text-accent-foreground text-[10px] font-semibold px-2.5 py-1 rounded-md">
                 {badge}
@@ -560,7 +560,7 @@ export function ProductCard({ product, variant = "default", selectedColor }) {
             </button>
 
             {/* Image */}
-            <div className="aspect-square bg-white rounded-lg flex items-center justify-center mb-4 overflow-hidden relative">
+            <div className="aspect-square bg-white rounded-lg flex items-center justify-center mb-4 overflow-hidden relative shrink-0">
                 <img src={getImageUrl(displayImageUrl)} alt={name} className="w-full h-full object-contain" onError={(e) => {
                     e.currentTarget.src = '/placeholder.svg';
                 }} />
@@ -583,43 +583,45 @@ export function ProductCard({ product, variant = "default", selectedColor }) {
                 {renderStars(rating)}
             </div>
 
-            {/* Price (styled to match default variant) */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-1.5 mb-3">
-                <div className="flex items-center justify-between md:justify-start md:gap-2 w-full md:w-auto">
-                    <span className="text-base md:text-lg font-bold text-foreground leading-none">{formatPrice(price)}</span>
+            <div className="mt-auto flex flex-col">
+                {/* Price (styled to match default variant) */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-1.5 mb-3">
+                    <div className="flex items-center justify-start gap-5 md:justify-start md:gap-2 w-full md:w-auto">
+                        <span className="text-base md:text-lg font-bold font-poppins text-foreground leading-none">{formatPrice(price)}</span>
+                        {originalPrice > price && (
+                            <span className="text-xs text-red-500 line-through decoration-red-500/60 font-medium font-poppins">
+                                {formatPrice(originalPrice)}
+                            </span>
+                        )}
+                    </div>
                     {originalPrice > price && (
-                        <span className="text-xs text-red-500 line-through decoration-red-500/60 font-medium">
-                            {formatPrice(originalPrice)}
-                        </span>
+                        <div className="flex items-center mt-0.5 md:mt-0">
+                            <span className="text-[10px] font-bold font-poppins text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100/50 shadow-sm whitespace-nowrap">
+                                SAVE {formatPrice(originalPrice - price)}
+                            </span>
+                        </div>
                     )}
                 </div>
-                {originalPrice > price && (
-                    <div className="flex items-center mt-0.5 md:mt-0">
-                        <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100/50 shadow-sm whitespace-nowrap">
-                            SAVE {formatPrice(originalPrice - price)}
-                        </span>
-                    </div>
-                )}
+
+                {/* EMI */}
+                {/* REMOVED EMI */}
+
+                {/* Add to Cart */}
+                <button type="button" onClick={handleAddToCart} disabled={isAddingToCart} className={`w-full text-sm font-medium py-3 rounded-lg flex items-center justify-center gap-2 transition-all duration-300 active:scale-95 overflow-hidden mt-auto ${showSuccess
+                    ? 'bg-emerald-500 text-white'
+                    : 'bg-accent text-accent-foreground hover:bg-accent/90 hover:shadow-md hover:shadow-accent/20'}`}>
+                    {showSuccess ? (<span className="inline-flex items-center gap-2 animate-in zoom-in duration-300">
+                        <Check className="w-4 h-4" />
+                        <span>Added!</span>
+                    </span>) : isAddingToCart ? (<span className="inline-flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        <span>Adding...</span>
+                    </span>) : (<>
+                        <ShoppingCart className="w-4 h-4" />
+                        <span>Add to Cart</span>
+                    </>)}
+                </button>
             </div>
-
-            {/* EMI */}
-            {/* REMOVED EMI */}
-
-            {/* Add to Cart */}
-            <button type="button" onClick={handleAddToCart} disabled={isAddingToCart} className={`w-full text-sm font-medium py-3 rounded-lg flex items-center justify-center gap-2 transition-all duration-300 active:scale-95 overflow-hidden ${showSuccess
-                ? 'bg-emerald-500 text-white'
-                : 'bg-accent text-accent-foreground hover:bg-accent/90 hover:shadow-md hover:shadow-accent/20'}`}>
-                {showSuccess ? (<span className="inline-flex items-center gap-2 animate-in zoom-in duration-300">
-                    <Check className="w-4 h-4" />
-                    <span>Added!</span>
-                </span>) : isAddingToCart ? (<span className="inline-flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                    <span>Adding...</span>
-                </span>) : (<>
-                    <ShoppingCart className="w-4 h-4" />
-                    <span>Add to Cart</span>
-                </>)}
-            </button>
         </article>);
     }
     // Default variant
@@ -667,16 +669,16 @@ export function ProductCard({ product, variant = "default", selectedColor }) {
             <div className="mt-auto">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-4">
                     <div className="flex items-center justify-between md:justify-start md:gap-2.5 w-full md:w-auto">
-                        <span className="text-base md:text-lg font-bold text-foreground leading-none">{formatPrice(price)}</span>
+                        <span className="text-base md:text-lg font-bold font-poppins text-foreground leading-none">{formatPrice(price)}</span>
                         {originalPrice > price && (
-                            <span className="text-xs md:text-sm text-red-500 line-through decoration-red-500/60 font-medium">
+                            <span className="text-xs md:text-sm text-red-500 line-through decoration-red-500/60 font-medium font-poppins">
                                 {formatPrice(originalPrice)}
                             </span>
                         )}
                     </div>
                     {originalPrice > price && (
                         <div className="flex items-center mt-0.5 md:mt-0">
-                            <span className="text-[10px] md:text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-100/50 shadow-sm whitespace-nowrap">
+                            <span className="text-[10px] md:text-[11px] font-bold font-poppins text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-100/50 shadow-sm whitespace-nowrap">
                                 SAVE {formatPrice(originalPrice - price)}
                             </span>
                         </div>
