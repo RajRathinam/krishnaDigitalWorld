@@ -665,11 +665,11 @@ export default function ProductDetail() {
             <div className="bg-card rounded-lg border border-border p-4 mb-4">
               <div className="flex items-baseline gap-2 flex-wrap">
                 {discount > 0 && <span className="text-xs text-muted-foreground">-{discount}%</span>}
-                <span className="text-2xl md:text-3xl font-bold text-foreground">{formatPrice(price)}</span>
+                <span className="text-2xl md:text-3xl font-bold text-foreground font-poppins">{formatPrice(price)}</span>
                 {originalPrice > price && (
                   <>
-                    <span className="text-lg text-muted-foreground line-through">{formatPrice(originalPrice)}</span>
-                    <span className="text-sm text-accent font-medium">Save {formatPrice(originalPrice - price)}</span>
+                    <span className="text-lg text-muted-foreground line-through font-poppins">{formatPrice(originalPrice)}</span>
+                    <span className="text-sm text-accent font-medium font-poppins">Save {formatPrice(originalPrice - price)}</span>
                   </>
                 )}
               </div>
