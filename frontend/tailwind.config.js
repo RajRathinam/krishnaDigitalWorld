@@ -26,12 +26,13 @@ export default {
         },
         extend: {
             fontFamily: {
-                sans: ["DM Sans", "system-ui", "sans-serif"],
-                display: ["Playfair Display", "Georgia", "serif"],
-                heading: ["Playfair Display", "Georgia", "serif"],
-                body: ["DM Sans", "system-ui", "sans-serif"],
-                mono: ["DM Mono", "Courier New", "monospace"],
+                sans: ["Poppins", "system-ui", "sans-serif"],
+                display: ["Outfit", "system-ui", "sans-serif"],
+                heading: ["Outfit", "system-ui", "sans-serif"],
+                body: ["Poppins", "system-ui", "sans-serif"],
+                mono: ["Poppins", "system-ui", "sans-serif"],
                 poppins: ["Poppins", "sans-serif"],
+                outfit: ["Outfit", "sans-serif"],
             },
             colors: {
                 border: "hsl(var(--border))",

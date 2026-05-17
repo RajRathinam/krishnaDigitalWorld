@@ -30,13 +30,15 @@ export const getProducts = async (req, res) => {
       availability,
       isFeatured,
       isBestSeller,
-      isDealOfTheDay
+      isDealOfTheDay,
+      includeInactive
     } = req.query;
 
     const offset = (page - 1) * limit;
 
     // Build where clause
-    const where = { isActive: true };
+    // includeInactive=true is used by the admin to fetch all products regardless of active status
+    const where = includeInactive === 'true' ? {} : { isActive: true };
 
     // Allow filtering by category by id or slug
     if (categoryId) where.categoryId = categoryId;

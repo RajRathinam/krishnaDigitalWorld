@@ -1,7 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
 /* ═══════════════════════════════════════════════════════════════════════════
    SRI KRISHNA DIGITAL WORLD — Dark Luxury Editorial Design System
@@ -145,13 +145,13 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'DM Sans', system-ui, sans-serif;
+    font-family: 'Poppins', system-ui, sans-serif;
     letter-spacing: -0.01em;
     line-height: 1.6;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Playfair Display', Georgia, serif;
+    font-family: 'Outfit', system-ui, sans-serif;
     @apply font-semibold;
     letter-spacing: -0.02em;
     line-height: 1.15;
@@ -183,7 +183,7 @@
   /* ── Buttons — editorial style ─────────────────────────────────────── */
   .btn-primary {
     @apply font-medium py-3 px-7 rounded-lg transition-all duration-300 active:scale-[0.97];
-    font-family: 'DM Sans', system-ui, sans-serif;
+    font-family: 'Poppins', system-ui, sans-serif;
     background: hsl(var(--accent));
     color: hsl(var(--accent-foreground));
     letter-spacing: 0.04em;
@@ -200,7 +200,7 @@
 
   .btn-secondary {
     @apply bg-muted/50 text-foreground font-medium py-3 px-7 rounded-lg hover:bg-muted transition-all duration-300 border border-border/50 active:scale-[0.97];
-    font-family: 'DM Sans', system-ui, sans-serif;
+    font-family: 'Poppins', system-ui, sans-serif;
     letter-spacing: 0.02em;
     font-size: 0.85rem;
   }
@@ -208,7 +208,7 @@
   /* ── Section Title — Playfair editorial ─────────────────────────────── */
   .section-title {
     @apply text-xl md:text-3xl text-foreground;
-    font-family: 'Playfair Display', Georgia, serif;
+    font-family: 'Outfit', system-ui, sans-serif;
     letter-spacing: -0.02em;
     font-weight: 700;
   }
@@ -216,13 +216,13 @@
   /* ── Price & badges ─────────────────────────────────────────────────── */
   .price-tag {
     @apply text-foreground font-bold;
-    font-family: 'DM Sans', system-ui, sans-serif;
+    font-family: 'Poppins', system-ui, sans-serif;
     letter-spacing: -0.02em;
   }
 
   .discount-badge {
     @apply text-[10px] uppercase font-bold px-2 py-0.5;
-    font-family: 'DM Sans', system-ui, sans-serif;
+    font-family: 'Poppins', system-ui, sans-serif;
     background: hsl(var(--accent));
     color: hsl(var(--accent-foreground));
     letter-spacing: 0.08em;
@@ -230,7 +230,7 @@
 
   .deal-badge {
     @apply text-[10px] uppercase font-bold px-2.5 py-1 rounded shadow-sm;
-    font-family: 'DM Sans', system-ui, sans-serif;
+    font-family: 'Poppins', system-ui, sans-serif;
     background: hsl(var(--accent));
     color: hsl(var(--accent-foreground));
     letter-spacing: 0.08em;
@@ -238,7 +238,7 @@
 
   /* ── Editorial Heading — oversized Playfair ─────────────────────────── */
   .editorial-heading {
-    font-family: 'Playfair Display', Georgia, serif;
+    font-family: 'Outfit', system-ui, sans-serif;
     font-weight: 800;
     letter-spacing: -0.03em;
     line-height: 1.05;
@@ -246,7 +246,7 @@
 
   /* ── Label Caps — DM Sans micro labels ──────────────────────────────── */
   .label-caps {
-    font-family: 'DM Sans', system-ui, sans-serif;
+    font-family: 'Poppins', system-ui, sans-serif;
     font-weight: 600;
     font-size: 0.65rem;
     letter-spacing: 0.12em;
@@ -332,15 +332,15 @@
 
   /* ── Font utility shorthand ─────────────────────────────────────────── */
   .font-serif-display {
-    font-family: 'Playfair Display', Georgia, serif;
+    font-family: 'Outfit', system-ui, sans-serif;
   }
 
   .font-body {
-    font-family: 'DM Sans', system-ui, sans-serif;
+    font-family: 'Poppins', system-ui, sans-serif;
   }
 
   .font-mono-alt {
-    font-family: 'DM Mono', 'Courier New', monospace;
+    font-family: 'Poppins', system-ui, sans-serif;
   }
 
   /* ═════════════════════════════════════════════════════════════════════

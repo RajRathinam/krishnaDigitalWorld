@@ -112,7 +112,7 @@ export const ProductManagement = () => {
     try {
       setLoading(true);
       const [prodRes, brandRes, catRes] = await Promise.all([
-        api.get("/products", { params: { page: 1, limit: 200 } }),
+        api.get("/products", { params: { page: 1, limit: 1000, includeInactive: true } }),
         api.get("/brands"),
         api.get("/categories")
       ]);
