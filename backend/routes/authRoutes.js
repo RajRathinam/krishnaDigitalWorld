@@ -21,6 +21,7 @@ import {
   validateResendOTPData
 } from '../middleware/validation.js';
 import { authenticate } from '../middleware/auth.js';
+import { uploadSingleImage, processUploadedFiles, handleUploadError } from '../middleware/upload.js';
 import { authLimiter, otpLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
@@ -35,7 +36,7 @@ router.post('/resend-otp', otpLimiter, validateResendOTPData, resendOTPControlle
 // Protected routes
 router.post('/logout', authenticate, logout);
 router.get('/me', authenticate, getMe);
-router.put('/me', authenticate, updateMe);
+router.put('/me', authenticate, uploadSingleImage('profileImage', 'profiles'), handleUploadError, processUploadedFiles, updateMe);
 router.post('/complete-profile', authenticate, completeProfile);
 
 // Address management routes

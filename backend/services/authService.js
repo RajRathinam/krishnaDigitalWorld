@@ -638,6 +638,10 @@ export const updateUserProfile = async (userId, updateData, uploadedFiles = null
       delete updateData.phone;
     }
 
+    // Remove profileImage from body data — it arrives as {} from multipart form parsing
+    // and must only be set from the processed uploadedFiles URL
+    delete updateData.profileImage;
+
     // Handle profile image update
     if (uploadedFiles && uploadedFiles.length > 0) {
       const oldImage = user.profileImage;

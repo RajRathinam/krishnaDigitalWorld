@@ -13,6 +13,12 @@ api.interceptors.request.use((config) => {
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    // Let browser automatically set Content-Type with boundary for FormData
+    if (config.data instanceof FormData) {
+        delete config.headers['Content-Type'];
+    }
+    
     return config;
 });
 
