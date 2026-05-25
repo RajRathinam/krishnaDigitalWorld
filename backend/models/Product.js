@@ -225,6 +225,8 @@ isDealOfTheDay: {
       if (product.discountPrice && product.price) {
         const discount = ((product.price - product.discountPrice) / product.price) * 100;
         product.discountPercentage = parseFloat(discount.toFixed(2));
+      } else {
+        product.discountPercentage = null;
       }
       
       // Set availability based on stock (handle JSON stock structure)
@@ -252,6 +254,14 @@ isDealOfTheDay: {
       }
     },
     beforeUpdate: async (product) => {
+      // Calculate discount percentage if discount price is provided
+      if (product.discountPrice && product.price) {
+        const discount = ((product.price - product.discountPrice) / product.price) * 100;
+        product.discountPercentage = parseFloat(discount.toFixed(2));
+      } else {
+        product.discountPercentage = null;
+      }
+
       // Validate subcategory against category's allowed subcategories on update
       if (product.subcategory && product.categoryId) {
         const category = await sequelize.models.Category.findByPk(product.categoryId);

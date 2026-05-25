@@ -1178,6 +1178,19 @@ export const updateProduct = async (req, res) => {
       }
     }
 
+    // Calculate discountPercentage before saving
+    let newPrice = updateData.price !== undefined ? parseFloat(updateData.price) : parseFloat(product.price);
+    let newDiscountPrice = updateData.discountPrice !== undefined ? 
+      (updateData.discountPrice && updateData.discountPrice !== '' ? parseFloat(updateData.discountPrice) : null) : 
+      (product.discountPrice ? parseFloat(product.discountPrice) : null);
+      
+    if (newDiscountPrice && newPrice && newDiscountPrice > 0) {
+      const discount = ((newPrice - newDiscountPrice) / newPrice) * 100;
+      updateData.discountPercentage = parseFloat(discount.toFixed(2));
+    } else {
+      updateData.discountPercentage = null;
+    }
+
     // Update product WITHOUT sellerId
     await product.update(updateData, { transaction });
 

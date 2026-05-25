@@ -467,14 +467,14 @@ export function Header() {
                   <Link 
                     to={`/products?category=${cat.slug}`} 
                     className={cn(
-                      "flex items-center gap-2 px-4 py-2 text-sm font-medium font-body transition-all duration-300 relative",
+                      "flex items-center gap-2 px-4 py-2 text-sm font-medium font-body transition-all duration-300 relative capitalize",
                       isCategoryActive(cat.slug)
                         ? "text-accent"
                         : "text-foreground hover:text-accent",
                       isCategoryActive(cat.slug) && "after:absolute after:bottom-0 after:left-2 after:right-2 after:h-[2px] after:bg-accent after:rounded-full"
                     )}
                   >
-                    {cat.name}
+                    {cat.name.toLowerCase()}
                     {cat.subcategories.length > 0 && (
                       <ChevronDown className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 group-hover:rotate-180 transition-all" />
                     )}
@@ -489,13 +489,13 @@ export function Header() {
                             key={`${cat.id}-sub-${index}`}
                             to={`/products?category=${cat.slug}&subcategory=${encodeURIComponent(sub)}`}
                             className={cn(
-                              "block px-3 py-2 text-sm rounded-md transition-colors",
+                              "block px-3 py-2 text-sm rounded-md transition-colors capitalize",
                               isSubcategoryActive(cat.slug, sub)
                                 ? "text-accent font-semibold bg-accent/5"
                                 : "text-muted-foreground hover:text-accent hover:bg-accent/5"
                             )}
                           >
-                            {sub}
+                            {sub.toLowerCase()}
                           </Link>
                         ))}
                         
@@ -517,7 +517,7 @@ export function Header() {
               {/* More Categories Link - If there are more than 4 categories */}
               {categories.length > 4 && (
                 <Link
-                  to="/categories"
+                  to="/products"
                   className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-accent transition-colors"
                 >
                   +{categories.length - 4} more
@@ -697,7 +697,7 @@ export function Header() {
                         )}
                       >
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium">{cat.name}</span>
+                          <span className="text-sm font-medium capitalize">{cat.name.toLowerCase()}</span>
                         </div>
                         <ChevronRight className={cn(
                           "w-4 h-4 transition-transform",
@@ -713,14 +713,14 @@ export function Header() {
                               key={`${cat.id}-mobile-sub-${index}`} 
                               to={`/products?category=${cat.slug}&subcategory=${encodeURIComponent(sub)}`} 
                               className={cn(
-                                "block px-3 pt-2 text-xs transition-colors",
+                                "block px-3 pt-2 text-xs transition-colors capitalize",
                                 isSubcategoryActive(cat.slug, sub)
                                   ? "text-accent font-semibold"
                                   : "text-muted-foreground hover:text-foreground"
                               )} 
                               onClick={handleCloseMenu}
                             >
-                              {sub}
+                              {sub.toLowerCase()}
                             </Link>
                           ))}
                           

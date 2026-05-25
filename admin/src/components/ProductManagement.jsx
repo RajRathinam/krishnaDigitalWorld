@@ -36,6 +36,11 @@ export const ProductManagement = () => {
   const fileInputRefs = useRef([]);
   const { toast } = useToast();
 
+  // Delete confirmation state
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   // Form State
   const [form, setForm] = useState({
     code: "",
@@ -406,6 +411,27 @@ export const ProductManagement = () => {
     }
   };
 
+  // Delete Handler
+  const handleDeleteProduct = async () => {
+    if (!productToDelete) return;
+    setIsDeleting(true);
+    try {
+      await api.delete(`/products/${productToDelete.id}?hardDelete=true`);
+      setProducts(prev => prev.filter(p => p.id !== productToDelete.id));
+      toast({ title: "Product Deleted", description: `"${productToDelete.name}" has been permanently deleted.` });
+      setDeleteConfirmOpen(false);
+      setProductToDelete(null);
+    } catch (err) {
+      toast({
+        title: "Delete Failed",
+        description: err.response?.data?.message || "Failed to delete product. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   // Color & File Handlers
   const updatedColors = (idx, field, val) => {
     const newColors = [...colorsList];
@@ -626,6 +652,7 @@ export const ProductManagement = () => {
                   <th className="sticky-col p-3 text-left font-medium w-[80px]">Image</th>
                   <th className="sticky-col-2 p-3 text-left font-medium">Product Info</th>
                   <th className="p-3 text-left font-medium">Category</th>
+                  <th className="p-3 text-left font-medium">Product Code</th>
                   <th className="p-3 text-left font-medium">Colors</th>
                   <th className="p-3 text-left font-medium">Price</th>
                   <th className="p-3 text-left font-medium">Stock</th>
@@ -639,13 +666,13 @@ export const ProductManagement = () => {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={11} className="p-0 border-0">
-                      <TableSkeleton rowCount={10} columnCount={11} showHeader={false} />
+                    <td colSpan={12} className="p-0 border-0">
+                      <TableSkeleton rowCount={10} columnCount={12} showHeader={false} />
                     </td>
                   </tr>
                 ) : filteredProducts.length === 0 ? (
                   <tr>
-                    <td colSpan={11} className="h-24 text-center text-muted-foreground p-4">
+                    <td colSpan={12} className="h-24 text-center text-muted-foreground p-4">
                       No products found matching your criteria.
                     </td>
                   </tr>
@@ -680,6 +707,9 @@ export const ProductManagement = () => {
                           <Badge variant="outline" className="font-normal whitespace-nowrap">
                             {product.category?.name || "Uncategorized"}
                           </Badge>
+                        </td>
+                        <td className="p-3 align-middle">
+                          <span className="font-mono text-sm whitespace-nowrap">{product.code}</span>
                         </td>
                         <td className="p-3 align-middle">
                           <div className="flex flex-wrap gap-1 max-w-[150px]">
@@ -780,12 +810,9 @@ export const ProductManagement = () => {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                              onClick={async () => {
-                                if (confirm('Delete this product?')) {
-                                  await api.delete(`/products/${product.id}`);
-                                  setProducts(prev => prev.filter(p => p.id !== product.id));
-                                  toast({ title: "Deleted", description: "Product removed" });
-                                }
+                              onClick={() => {
+                                setProductToDelete(product);
+                                setDeleteConfirmOpen(true);
                               }}
                               title="Delete product"
                             >
@@ -1110,6 +1137,74 @@ export const ProductManagement = () => {
             <Button onClick={handleSubmit} disabled={isSubmitting}>
               {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               {isEditing ? "Save Changes" : "Create Product"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Delete Confirmation Dialog ──────────────────────────────────────── */}
+      <Dialog open={deleteConfirmOpen} onOpenChange={(open) => {
+        if (!isDeleting) {
+          setDeleteConfirmOpen(open);
+          if (!open) setProductToDelete(null);
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-11 h-11 rounded-full bg-destructive/10 flex items-center justify-center flex-shrink-0">
+                <Trash2 className="w-5 h-5 text-destructive" />
+              </div>
+              <div>
+                <DialogTitle className="text-lg">Delete Product</DialogTitle>
+                <DialogDescription className="text-sm mt-0.5">
+                  This action cannot be undone.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="bg-muted/50 border border-border rounded-lg p-4 my-2">
+            <p className="text-sm text-muted-foreground">
+              You are about to permanently delete:
+            </p>
+            <p className="font-semibold text-foreground mt-1 truncate">
+              {productToDelete?.name}
+            </p>
+            {productToDelete?.sku && (
+              <p className="text-xs text-muted-foreground font-mono mt-0.5">
+                SKU: {productToDelete.sku}
+              </p>
+            )}
+          </div>
+
+          <p className="text-sm text-muted-foreground">
+            All product images, stock information, and associated data will be permanently removed from the system.
+          </p>
+
+          <DialogFooter className="gap-2 mt-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeleteConfirmOpen(false);
+                setProductToDelete(null);
+              }}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteProduct}
+              disabled={isDeleting}
+              className="gap-2"
+            >
+              {isDeleting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="h-4 w-4" />
+              )}
+              {isDeleting ? "Deleting..." : "Yes, Delete Product"}
             </Button>
           </DialogFooter>
         </DialogContent>
