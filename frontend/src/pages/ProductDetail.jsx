@@ -27,7 +27,7 @@ const parseJSONSafe = (data, defaultValue = null) => {
   return defaultValue;
 };
 
-// ─── Spec table helpers ────────────────────────────────────────────────────────
+// ─── Spec helpers ──────────────────────────────────────────────────────────────
 const formatKey = (key) =>
   String(key)
     .replace(/_/g, " ")
@@ -88,16 +88,18 @@ const buildSpecSections = (attributes) => {
     .filter((s) => s.rows.length > 0);
 };
 
+// Returns true when value text is long enough to warrant a full-width cell
+const isLongValue = (val) => String(val).length > 20;
+
 // ─── Image Slider ──────────────────────────────────────────────────────────────
 function ImageSlider({ images, productName, colorName, discount }) {
-  const [current, setCurrent]     = useState(0);
+  const [current, setCurrent] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStartX, setDragStartX] = useState(0);
   const [dragOffset, setDragOffset] = useState(0);
   const containerRef = useRef(null);
   const total = images.length;
 
-  // Reset to first slide whenever the image list changes (color swap)
   useEffect(() => { setCurrent(0); setDragOffset(0); }, [images]);
 
   const goTo = useCallback((idx) => {
@@ -108,7 +110,6 @@ function ImageSlider({ images, productName, colorName, discount }) {
   const prev = useCallback(() => goTo(current - 1), [current, goTo]);
   const next = useCallback(() => goTo(current + 1), [current, goTo]);
 
-  // ── Pointer / touch drag ───────────────────────────────────────────────────
   const onPointerDown = (e) => {
     setIsDragging(true);
     setDragStartX(e.touches ? e.touches[0].clientX : e.clientX);
@@ -126,7 +127,6 @@ function ImageSlider({ images, productName, colorName, discount }) {
     else setDragOffset(0);
   };
 
-  // ── Keyboard ──────────────────────────────────────────────────────────────
   useEffect(() => {
     const handler = (e) => {
       if (e.key === "ArrowLeft") prev();
@@ -145,15 +145,10 @@ function ImageSlider({ images, productName, colorName, discount }) {
     );
   }
 
-  // ── The key fix ───────────────────────────────────────────────────────────
-  // translateX % is relative to the TRACK element (which is `total * 100%` wide).
-  // To shift by exactly 1 container-width we must use (100 / total)% per step,
-  // not 100% per step.  dragOffset is in pixels so it needs no correction.
-  const trackShift = current * (100 / total); // % of track width == 1 container width per step
+  const trackShift = current * (100 / total);
 
   return (
     <div className="select-none">
-      {/* Main viewport */}
       <div
         ref={containerRef}
         className="relative bg-white rounded-xl border border-border overflow-hidden aspect-square cursor-grab active:cursor-grabbing"
@@ -165,7 +160,6 @@ function ImageSlider({ images, productName, colorName, discount }) {
         onTouchMove={onPointerMove}
         onTouchEnd={onPointerUp}
       >
-        {/* Track — holds all slides side-by-side */}
         <div
           className="flex h-full"
           style={{
@@ -195,14 +189,12 @@ function ImageSlider({ images, productName, colorName, discount }) {
           ))}
         </div>
 
-        {/* Discount badge */}
         {discount > 0 && (
           <div className="absolute top-3 left-3 z-10 pointer-events-none">
             <span className="deal-badge">{discount}% OFF</span>
           </div>
         )}
 
-        {/* Prev / Next arrows */}
         {total > 1 && (
           <>
             <button
@@ -222,7 +214,6 @@ function ImageSlider({ images, productName, colorName, discount }) {
           </>
         )}
 
-        {/* Counter badge */}
         {total > 1 && (
           <div className="absolute bottom-3 right-3 z-10 pointer-events-none bg-black/50 text-white text-xs px-2 py-0.5 rounded-full">
             {current + 1} / {total}
@@ -230,34 +221,30 @@ function ImageSlider({ images, productName, colorName, discount }) {
         )}
       </div>
 
-      {/* Dot indicators */}
       {total > 1 && (
         <div className="flex items-center justify-center gap-1.5 mt-3">
           {images.map((_, i) => (
             <button
               key={i}
               onClick={() => goTo(i)}
-              className={`rounded-full transition-all duration-200 ${
-                i === current ? "w-5 h-2 bg-accent" : "w-2 h-2 bg-border hover:bg-muted-foreground"
-              }`}
+              className={`rounded-full transition-all duration-200 ${i === current ? "w-5 h-2 bg-accent" : "w-2 h-2 bg-border hover:bg-muted-foreground"
+                }`}
               aria-label={`Go to image ${i + 1}`}
             />
           ))}
         </div>
       )}
 
-      {/* Thumbnail strip */}
       {total > 1 && (
         <div className="flex gap-2 mt-3 overflow-x-auto scrollbar-hide p-1">
           {images.map((image, i) => (
             <button
               key={i}
               onClick={() => goTo(i)}
-              className={`shrink-0 w-16 h-16 flex items-center justify-center rounded-lg border-2 transition-all bg-white overflow-hidden ${
-                current === i
+              className={`shrink-0 w-16 h-16 flex items-center justify-center rounded-lg border-2 transition-all bg-white overflow-hidden ${current === i
                   ? "border-accent shadow-sm scale-105"
                   : "border-border hover:border-accent/50 opacity-70 hover:opacity-100"
-              }`}
+                }`}
             >
               {image?.url ? (
                 <img
@@ -278,22 +265,55 @@ function ImageSlider({ images, productName, colorName, discount }) {
   );
 }
 
+// ─── Spec Cell ─────────────────────────────────────────────────────────────────
+// Handles col-span, border-right, border-bottom logic in one place
+function SpecCell({ row, index, total, isLastInSection }) {
+  const long = isLongValue(row.value);
+
+  // A long cell always spans both columns
+  // An odd-indexed last cell (unpaired) also spans both columns
+  const spanFull = long || (isLastInSection && total % 2 !== 0 && index === total - 1);
+
+  // right border: only on even-indexed cells that don't span full width
+  const borderR = !spanFull && index % 2 === 0 ? "border-r" : "";
+
+  // bottom border: not on the last row (or last two cells of an even-total section)
+  let borderB = "";
+  if (spanFull) {
+    // full-span cell: show bottom border unless it's the very last item
+    borderB = !isLastInSection || index < total - 1 ? "border-b" : "";
+  } else {
+    // determine if this cell is in the last rendered row
+    const lastRowStart = total % 2 === 0 ? total - 2 : total - 1;
+    borderB = index < lastRowStart ? "border-b" : "";
+  }
+
+  return (
+    <div
+      className={`p-3 border-border min-w-0 ${spanFull ? "col-span-2" : ""} ${borderR} ${borderB}`}
+    >
+      <p className="text-[11px] text-muted-foreground mb-1 truncate">{row.label}</p>
+      <p className="text-[13px] font-medium text-foreground leading-snug break-words">{row.value}</p>
+    </div>
+  );
+}
+
 // ─── Main ProductDetail ────────────────────────────────────────────────────────
 export default function ProductDetail() {
   const { slug, id } = useParams();
   const identifier = slug || id || "";
   const navigate = useNavigate();
 
-  const [product,          setProduct]          = useState(null);
-  const [loading,          setLoading]          = useState(false);
-  const [selectedColor,    setSelectedColor]    = useState(0);
-  const [showAllSpecs,     setShowAllSpecs]     = useState(false);
-  const [openSections,     setOpenSections]     = useState({});
-  const [showAllReviews,   setShowAllReviews]   = useState(false);
-  const [relatedProducts,  setRelatedProducts]  = useState([]);
-  const [relatedLoading,   setRelatedLoading]   = useState(false);
-  const [showQRModal,      setShowQRModal]      = useState(false);
-  const [userRating,       setUserRating]       = useState(0);
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [selectedColor, setSelectedColor] = useState(0);
+  const [showAllSpecs, setShowAllSpecs] = useState(false);
+  const [openSections, setOpenSections] = useState({});
+  const [showAllReviews, setShowAllReviews] = useState(false);
+  const [relatedProducts, setRelatedProducts] = useState([]);
+  const [relatedLoading, setRelatedLoading] = useState(false);
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [userRating, setUserRating] = useState(0);
 
   const handleRateProduct = async (rating) => {
     const token = localStorage.getItem("authToken");
@@ -311,15 +331,15 @@ export default function ProductDetail() {
 
   const parseProductData = (d) => {
     if (!d) return d;
-    if (typeof d.attributes      === "string") d.attributes      = parseJSONSafe(d.attributes, {});
-    if (typeof d.colorsAndImages  === "string") d.colorsAndImages  = parseJSONSafe(d.colorsAndImages, {});
-    if (typeof d.stock            === "string") d.stock            = parseJSONSafe(d.stock, {});
-    if (d.price)              d.price              = parseFloat(d.price)              || 0;
-    if (d.discountPrice)      d.discountPrice      = parseFloat(d.discountPrice)      || 0;
+    if (typeof d.attributes === "string") d.attributes = parseJSONSafe(d.attributes, {});
+    if (typeof d.colorsAndImages === "string") d.colorsAndImages = parseJSONSafe(d.colorsAndImages, {});
+    if (typeof d.stock === "string") d.stock = parseJSONSafe(d.stock, {});
+    if (d.price) d.price = parseFloat(d.price) || 0;
+    if (d.discountPrice) d.discountPrice = parseFloat(d.discountPrice) || 0;
     if (d.discountPercentage) d.discountPercentage = parseFloat(d.discountPercentage) || 0;
-    if (d.rating)             d.rating             = parseFloat(d.rating)             || 0;
-    if (d.totalReviews)       d.totalReviews       = parseInt(d.totalReviews)         || 0;
-    if (!d.colorsAndImages)   d.colorsAndImages    = {};
+    if (d.rating) d.rating = parseFloat(d.rating) || 0;
+    if (d.totalReviews) d.totalReviews = parseInt(d.totalReviews) || 0;
+    if (!d.colorsAndImages) d.colorsAndImages = {};
     return d;
   };
 
@@ -413,9 +433,9 @@ export default function ProductDetail() {
     const token = localStorage.getItem("authToken");
     if (!token) { window.dispatchEvent(new Event("openSignup")); return false; }
     try {
-      const colorNames        = getColorNames();
+      const colorNames = getColorNames();
       const selectedColorName = colorNames[selectedColor];
-      const payload           = { productId: String(product.id), quantity: 1 };
+      const payload = { productId: String(product.id), quantity: 1 };
       if (selectedColorName) {
         payload.colorName = selectedColorName;
         if (getStockForColor(product.stock, selectedColorName) <= 0) {
@@ -441,11 +461,13 @@ export default function ProductDetail() {
   const handleBuyNow = async () => { const ok = await handleAddToCart(); if (ok) navigate("/checkout"); };
 
   const generateQRCodeUrl = () =>
-    product ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`${FRONTEND_URL}/product/${product.slug || product.id}`)}` : "";
+    product
+      ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`${FRONTEND_URL}/product/${product.slug || product.id}`)}`
+      : "";
 
   const handleWhatsAppShare = () => {
     if (!product) return;
-    const url   = `${FRONTEND_URL}/product/${product.slug || product.id}`;
+    const url = `${FRONTEND_URL}/product/${product.slug || product.id}`;
     const price = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(product.discountPrice || product.price);
     window.open(`https://wa.me/?text=${encodeURIComponent(`Check out this product on Krishna Stores:\n\n${product.name}\nPrice: ${price}\n\nView details: ${url}`)}`, "_blank");
     setShowQRModal(false);
@@ -478,30 +500,29 @@ export default function ProductDetail() {
     for (const [key, val] of Object.entries(map)) { if (lower.includes(key)) return val; }
     let hash = 0;
     for (let i = 0; i < colorName.length; i++) hash = colorName.charCodeAt(i) + ((hash << 5) - hash);
-    return `rgb(${Math.min(220,Math.max(30,(hash&0xff0000)>>16))},${Math.min(220,Math.max(30,(hash&0x00ff00)>>8))},${Math.min(220,Math.max(30,hash&0x0000ff))})`;
+    return `rgb(${Math.min(220, Math.max(30, (hash & 0xff0000) >> 16))},${Math.min(220, Math.max(30, (hash & 0x00ff00) >> 8))},${Math.min(220, Math.max(30, hash & 0x0000ff))})`;
   };
 
   const formatPrice = (p) =>
     (!p && p !== 0) ? "₹0"
-    : new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(p);
+      : new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(p);
 
   const renderStars = (r, size = "w-4 h-4") => (
     <div className="flex items-center gap-0.5">
-      {[1,2,3,4,5].map((s) => (
+      {[1, 2, 3, 4, 5].map((s) => (
         <Star key={s} className={`${size} ${s <= Math.floor(r) ? "text-accent fill-accent" : s <= r ? "text-accent fill-accent/50" : "text-muted-foreground"}`} />
       ))}
     </div>
   );
 
-  const price         = product?.discountPrice ?? product?.price ?? 0;
+  const price = product?.discountPrice ?? product?.price ?? 0;
   const originalPrice = product?.price ?? price;
-  const discount      = product?.discountPercentage ?? (originalPrice > price ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0);
-  const rating        = product?.rating ?? 0;
-  const reviewsCount  = product?.totalReviews ?? 0;
-  const getRatingPct  = (s) => ({ 5: 65, 4: 20, 3: 10, 2: 3, 1: 2 }[s] || 0);
+  const discount = product?.discountPercentage ?? (originalPrice > price ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0);
+  const rating = product?.rating ?? 0;
+  const reviewsCount = product?.totalReviews ?? 0;
+  const getRatingPct = (s) => ({ 5: 65, 4: 20, 3: 10, 2: 3, 1: 2 }[s] || 0);
 
   const specSections = buildSpecSections(getParsedAttributes());
-  const INITIAL_ROWS = 8;
   const toggleSection = (title) => setOpenSections((p) => ({ ...p, [title]: !p[title] }));
 
   useEffect(() => {
@@ -510,11 +531,10 @@ export default function ProductDetail() {
       specSections.forEach((s) => { if (s.title) init[s.title] = true; });
       setOpenSections(init);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product]);
 
-  const highlights = product?.description ? [product.description] : [];
-  const reviews     = Array.isArray(product?.reviews) ? product.reviews : [];
+  const reviews = Array.isArray(product?.reviews) ? product.reviews : [];
 
   // ── Loading skeleton ───────────────────────────────────────────────────────
   if (loading) {
@@ -528,7 +548,7 @@ export default function ProductDetail() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-8">
             <div className="lg:col-span-5">
               <Skeleton className="aspect-square rounded-xl w-full" />
-              <div className="flex gap-2 mt-3">{[0,1,2].map(i => <Skeleton key={i} className="w-16 h-16 rounded-lg" />)}</div>
+              <div className="flex gap-2 mt-3">{[0, 1, 2].map(i => <Skeleton key={i} className="w-16 h-16 rounded-lg" />)}</div>
             </div>
             <div className="lg:col-span-7 space-y-4">
               <Skeleton className="h-4 w-24" /><Skeleton className="h-8 w-3/4" />
@@ -557,8 +577,8 @@ export default function ProductDetail() {
     );
   }
 
-  const colorNames          = getColorNames();
-  const selectedColorName   = colorNames[selectedColor] || "";
+  const colorNames = getColorNames();
+  const selectedColorName = colorNames[selectedColor] || "";
   const selectedColorImages = getSelectedColorImages();
 
   return (
@@ -623,7 +643,6 @@ export default function ProductDetail() {
           {/* ── Image column ── */}
           <div className="lg:col-span-5">
             <div className="lg:sticky lg:top-24">
-              {/* Brand + action row */}
               <div className="flex items-center justify-between gap-2 mb-2">
                 <p className="text-sm text-accent font-medium">{product.brand?.name || "Unknown Brand"}</p>
                 <div className="flex gap-1">
@@ -664,7 +683,6 @@ export default function ProductDetail() {
             {/* Price */}
             <div className="bg-card rounded-lg border border-border p-4 mb-4">
               <div className="flex items-baseline gap-2 flex-wrap">
-                {/* {discount > 0 && <span className="text-xs text-muted-foreground">-{discount}%</span>} */}
                 <span className="text-2xl md:text-3xl font-bold text-foreground font-poppins">{formatPrice(price)}</span>
                 {originalPrice > price && (
                   <>
@@ -690,9 +708,8 @@ export default function ProductDetail() {
                         onClick={() => setSelectedColor(i)}
                         title={colorName}
                         style={{ backgroundColor: getColorFromName(colorName) }}
-                        className={`relative w-10 h-10 rounded-full border-2 transition-all group ${
-                          isSelected ? "border-accent ring-2 ring-accent/30" : "border-border hover:border-accent/50"
-                        }`}
+                        className={`relative w-10 h-10 rounded-full border-2 transition-all group ${isSelected ? "border-accent ring-2 ring-accent/30" : "border-border hover:border-accent/50"
+                          }`}
                       >
                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
                           {colorName}
@@ -740,56 +757,77 @@ export default function ProductDetail() {
               <p className="text-sm text-muted-foreground leading-relaxed">{product.description}</p>
             </div>
 
-       
-
-            {/* Specifications */}
+            {/* ── Specifications ── */}
             {specSections.length > 0 && (
               <div className="mb-6">
                 <h2 className="font-bold text-foreground mb-3">Specifications</h2>
 
                 {specSections.length === 1 && !specSections[0].title ? (
-                  <div className="bg-card rounded-lg border border-border overflow-hidden">
-                    <table className="w-full text-sm">
-                      <tbody>
-                        {(showAllSpecs ? specSections[0].rows : specSections[0].rows.slice(0, INITIAL_ROWS)).map((row, i) => (
-                          <tr key={i} className={i % 2 === 0 ? "bg-muted/30" : ""}>
-                            <td className="px-4 py-2.5 text-muted-foreground w-2/5 align-top font-medium">{row.label}</td>
-                            <td className="px-4 py-2.5 text-foreground break-words">{row.value}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                    {specSections[0].rows.length > INITIAL_ROWS && (
-                      <button onClick={() => setShowAllSpecs(!showAllSpecs)} className="w-full py-3 text-sm text-accent font-medium flex items-center justify-center gap-1 border-t border-border hover:bg-muted/50">
-                        {showAllSpecs ? "Show Less" : `Show All (${specSections[0].rows.length})`}
-                        {showAllSpecs ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  // ── Flat grid (no section grouping) ──────────────────────
+                  <div className="rounded-xl border border-border overflow-hidden bg-card">
+                    <div className="grid grid-cols-2">
+                      {(showAllSpecs
+                        ? specSections[0].rows
+                        : specSections[0].rows.slice(0, 6)
+                      ).map((row, i, arr) => (
+                        <SpecCell
+                          key={i}
+                          row={row}
+                          index={i}
+                          total={arr.length}
+                          isLastInSection={i === arr.length - 1}
+                        />
+                      ))}
+                    </div>
+                    {specSections[0].rows.length > 6 && (
+                      <button
+                        onClick={() => setShowAllSpecs(!showAllSpecs)}
+                        className="w-full py-2.5 flex items-center justify-center gap-1.5 text-[13px] text-muted-foreground border-t border-border bg-muted/40 hover:bg-muted/60 transition-colors"
+                      >
+                        <ChevronDown className={`w-4 h-4 transition-transform ${showAllSpecs ? "rotate-180" : ""}`} />
+                        {showAllSpecs ? "Show less" : `Show all specs (${specSections[0].rows.length})`}
                       </button>
                     )}
                   </div>
                 ) : (
+                  // ── Grouped / collapsible sections ────────────────────────
                   <div className="space-y-2">
                     {specSections.map((section, si) => {
                       const isOpen = openSections[section.title] !== false;
                       return (
-                        <div key={si} className="bg-card rounded-lg border border-border overflow-hidden">
-                          <button onClick={() => toggleSection(section.title)} className="w-full flex items-center justify-between px-4 py-3 bg-muted/40 hover:bg-muted/70 transition-colors">
-                            <span className="font-semibold text-sm text-foreground">{section.title}</span>
-                            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                              <span>{section.rows.length} specs</span>
-                              {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                            </span>
+                        <div key={si} className="rounded-xl border border-border overflow-hidden bg-card">
+                          {/* Section header */}
+                          <button
+                            onClick={() => toggleSection(section.title)}
+                            className="w-full flex items-center justify-between px-3.5 py-3 bg-muted/40 hover:bg-muted/60 transition-colors"
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
+                                <span className="text-accent text-sm font-bold">{si + 1}</span>
+                              </div>
+                              <div className="text-left">
+                                <p className="text-sm font-medium text-foreground">{section.title}</p>
+                                <p className="text-[11px] text-muted-foreground">{section.rows.length} specs</p>
+                              </div>
+                            </div>
+                            <ChevronDown
+                              className={`w-4 h-4 text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`}
+                            />
                           </button>
+
+                          {/* Section body */}
                           {isOpen && (
-                            <table className="w-full text-sm">
-                              <tbody>
-                                {section.rows.map((row, i) => (
-                                  <tr key={i} className={i % 2 === 0 ? "bg-muted/20" : ""}>
-                                    <td className="px-4 py-2.5 text-muted-foreground w-11/20 align-top font-medium leading-snug">{row.label}</td>
-                                    <td className="px-4 py-2.5 text-foreground break-words leading-snug">{row.value}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
+                            <div className="grid grid-cols-2">
+                              {section.rows.map((row, i) => (
+                                <SpecCell
+                                  key={i}
+                                  row={row}
+                                  index={i}
+                                  total={section.rows.length}
+                                  isLastInSection={i === section.rows.length - 1}
+                                />
+                              ))}
+                            </div>
                           )}
                         </div>
                       );
@@ -852,7 +890,10 @@ export default function ProductDetail() {
                     ))}
                   </div>
                   {reviews.length > 2 && (
-                    <button onClick={() => setShowAllReviews(!showAllReviews)} className="w-full py-3 mt-3 text-sm text-accent font-medium border border-border rounded-lg hover:bg-muted/50">
+                    <button
+                      onClick={() => setShowAllReviews(!showAllReviews)}
+                      className="w-full py-3 mt-3 text-sm text-accent font-medium border border-border rounded-lg hover:bg-muted/50"
+                    >
                       {showAllReviews ? "Show Less" : "See All Reviews"}
                     </button>
                   )}
@@ -862,7 +903,7 @@ export default function ProductDetail() {
           </div>
         </div>
 
-        {/* Related */}
+        {/* Related products */}
         {relatedLoading ? (
           <div className="mt-12 text-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto mb-4" />
