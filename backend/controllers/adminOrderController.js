@@ -2,6 +2,7 @@ import { Order, User, Product, Coupon, sequelize } from '../models/index.js';
 import { Op, Sequelize } from 'sequelize'; // Add Sequelize import
 // import { sendOrderConfirmationEmail, sendOrderConfirmationSMS } from '../services/emailService.js';
 import { sendOrderShippedSMS, sendOrderDeliveredSMS } from '../services/smsService.js';
+import { sendPushNotification } from '../services/notificationService.js';
 
 /**
  * @desc    Get all orders (Admin)
@@ -483,8 +484,33 @@ export const updateOrderStatus = async (req, res) => {
 
     if (status === 'shipped' && user) {
       await sendOrderShippedSMS(user.phone, order.orderNumber, order.trackingId);
+      if (user.expoPushToken) {
+        await sendPushNotification(
+          user.expoPushToken, 
+          'Order Shipped! 🚚', 
+          `Your order #${order.orderNumber} has been shipped. Track it with ID: ${order.trackingId}`,
+          { orderId: order.id }
+        );
+      }
     } else if (status === 'delivered' && user) {
       await sendOrderDeliveredSMS(user.phone, order.orderNumber);
+      if (user.expoPushToken) {
+        await sendPushNotification(
+          user.expoPushToken, 
+          'Order Delivered! 🎉', 
+          `Your order #${order.orderNumber} has been delivered. Thank you for shopping with us!`,
+          { orderId: order.id }
+        );
+      }
+    } else if (user && user.expoPushToken) {
+       // Send general status update for other statuses (optional, but good for processing, etc)
+       const statusFormatted = status.charAt(0).toUpperCase() + status.slice(1);
+       await sendPushNotification(
+          user.expoPushToken, 
+          `Order ${statusFormatted}`, 
+          `The status of your order #${order.orderNumber} is now ${statusFormatted}.`,
+          { orderId: order.id }
+       );
     }
 
     res.status(200).json({

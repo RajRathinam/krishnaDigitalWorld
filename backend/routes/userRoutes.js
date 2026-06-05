@@ -6,7 +6,8 @@ import {
   completeProfile,
   getUserCart,
   getUserOrders,
-  getUserReviews
+  getUserReviews,
+  savePushToken
 } from '../controllers/userController.js';
 import { authenticate, requireCustomer } from '../middleware/auth.js';
 import { validateUserUpdateData } from '../middleware/validation.js';
@@ -32,5 +33,6 @@ router.post('/complete-profile', authenticate, requireCustomer, completeProfile)
 router.get('/cart', authenticate, requireCustomer, getUserCart);
 router.get('/orders', authenticate, requireCustomer, getUserOrders);
 router.get('/reviews', authenticate, requireCustomer, getUserReviews);
+router.post('/push-token', authenticate, savePushToken);
 
 export default router;

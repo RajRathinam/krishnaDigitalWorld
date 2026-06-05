@@ -171,6 +171,12 @@ const User = sequelize.define('User', {
     allowNull: true,
     field: 'profile_image'
   },
+  expoPushToken: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+    field: 'expo_push_token',
+    comment: 'Push notification token for mobile app'
+  },
   otpLastResetDate: {
     type: DataTypes.DATEONLY,
     allowNull: true,

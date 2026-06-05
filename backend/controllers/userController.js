@@ -329,3 +329,43 @@ export const getUserReviews = async (req, res) => {
     });
   }
 };
+
+/**
+ * @desc    Save user's Expo Push Token
+ * @route   POST /api/users/push-token
+ * @access  Private (Customer)
+ */
+export const savePushToken = async (req, res) => {
+  try {
+    const { pushToken } = req.body;
+    
+    if (!pushToken) {
+      return res.status(400).json({
+        success: false,
+        message: 'Push token is required'
+      });
+    }
+    
+    const user = await User.findByPk(req.user.id);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+    
+    await user.update({ expoPushToken: pushToken });
+    
+    res.status(200).json({
+      success: true,
+      message: 'Push token saved successfully'
+    });
+  } catch (error) {
+    console.error('Save push token error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while saving push token'
+    });
+  }
+};
