@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Modal, ScrollView, Animated, Dimensions, Linking, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
-import { ShoppingCart, Menu, X, ChevronRight, Home, LayoutGrid, Gift, Star, TrendingUp, User, Package, Ticket, Heart, LogOut, MapPin, Phone, ExternalLink, ChevronDown, Truck, Clock, Shield } from 'lucide-react-native';
+import { ShoppingCart, Menu, X, ChevronRight, Home, LayoutGrid, Gift, Star, TrendingUp, User, Package, Ticket, Heart, LogOut, MapPin, Phone, ExternalLink, ChevronDown, Truck, Clock, Shield, QrCode } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { authApi, categoryApi, API_BASE_URL } from '@/services/api';
@@ -185,6 +185,10 @@ const Header = () => {
             </View>
 
             <View className="flex-row items-center">
+                <TouchableOpacity onPress={() => router.push('/offline-scan')} className="p-2 mr-2">
+                    <QrCode size={22} color="#111827" />
+                </TouchableOpacity>
+
                 <TouchableOpacity onPress={() => router.push('/cart')} className="p-2 relative">
                     <ShoppingCart size={22} color="#111827" />
                     <View className="absolute top-1 right-1 bg-[#FFC107] w-4 h-4 rounded-full items-center justify-center border-2 border-white">

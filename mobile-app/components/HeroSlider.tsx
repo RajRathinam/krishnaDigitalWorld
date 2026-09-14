@@ -21,6 +21,7 @@ import {
 } from 'react-native';
 import { ArrowRight } from 'lucide-react-native';
 import { Image } from 'expo-image';
+import { useQuery } from '@tanstack/react-query';
 import { heroSliderApi, API_BASE_URL } from '@/services/api';
 import { HeroSliderSkeleton } from './SkeletonLoader';
 
@@ -103,7 +104,6 @@ const SlideDot = ({
 
 export default function HeroSlider() {
     const [slides, setSlides] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
     const [current, setCurrent] = useState(0);
     const progressAnim = useRef(new Animated.Value(0)).current;
     const progressAnimation = useRef<Animated.CompositeAnimation | null>(null);
@@ -127,19 +127,16 @@ export default function HeroSlider() {
         );
     }, [slides.length]);
 
-    // Fetch slides
+    const { data: queryData, isLoading: loading } = useQuery({
+        queryKey: ['hero-sliders'],
+        queryFn: heroSliderApi.getSliders,
+    });
+
     useEffect(() => {
-        (async () => {
-            try {
-                const res = await heroSliderApi.getSliders();
-                setSlides(res.success && res.data?.length > 0 ? res.data : DEFAULT_SLIDES);
-            } catch {
-                setSlides(DEFAULT_SLIDES);
-            } finally {
-                setLoading(false);
-            }
-        })();
-    }, []);
+        if (!loading) {
+            setSlides(queryData?.success && queryData?.data?.length > 0 ? queryData.data : DEFAULT_SLIDES);
+        }
+    }, [queryData, loading]);
 
     const animateTextIn = useCallback(() => {
         [tagAnim, titleAnim, subAnim, ctaAnim].forEach(a => a.setValue(0));

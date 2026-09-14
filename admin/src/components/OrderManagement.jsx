@@ -408,33 +408,25 @@ function OrderDetailModal({ orderId, onClose, onUpdateStatus, onRequestCancel })
                           <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Eligible {">"} ₹5000</Badge>
                         </div>
                         <div className="flex justify-between items-center text-sm">
-                          <span className="text-muted-foreground">Scanned Status</span>
-                          {order.giftScanned ? (
-                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Scanned</Badge>
+                          <span className="text-muted-foreground">Gift Result</span>
+                          {order.giftStatus === 'won' ? (
+                            <div className="text-right flex items-center gap-3">
+                              {order.gift?.image && (
+                                <img 
+                                  src={getImageUrl(order.gift.image)} 
+                                  alt={order.gift.productName} 
+                                  className="w-8 h-8 object-contain rounded bg-white shadow-sm border border-border/50" 
+                                />
+                              )}
+                              {order.gift?.productName && <span className="text-sm font-medium text-foreground">{order.gift.productName}</span>}
+                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">🎁 Won</Badge>
+                            </div>
+                          ) : order.giftStatus === 'lost' ? (
+                            <Badge variant="outline" className="bg-gray-100 text-gray-500 border-gray-200">No Gift</Badge>
                           ) : (
-                            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Not Scanned</Badge>
+                            <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Pending</Badge>
                           )}
                         </div>
-                        {order.giftScanned && (
-                          <div className="flex justify-between items-center text-sm pt-2 border-t border-border/40 mt-2">
-                            <span className="text-muted-foreground">Result</span>
-                            {order.giftStatus === 'won' ? (
-                              <div className="text-right flex items-center gap-3">
-                                {order.gift?.image && (
-                                  <img 
-                                    src={getImageUrl(order.gift.image)} 
-                                    alt={order.gift.productName} 
-                                    className="w-8 h-8 object-contain rounded bg-white shadow-sm border border-border/50" 
-                                  />
-                                )}
-                                {order.gift?.productName && <span className="text-sm font-medium text-foreground">{order.gift.productName}</span>}
-                                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Won</Badge>
-                              </div>
-                            ) : (
-                              <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Lost</Badge>
-                            )}
-                          </div>
-                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -1169,9 +1161,15 @@ export const OrderManagement = () => {
                           </TableCell>
                           <TableCell className="align-middle py-3">
                             {parseFloat(order.finalAmount) <= 5000 ? (
-                              <Badge variant="outline" className="bg-gray-100 text-gray-600 border-gray-200">Not Eligible</Badge>
+                              <Badge variant="outline" className="bg-gray-100 text-gray-400 border-gray-200 text-[10px]">Below ₹5K</Badge>
+                            ) : order.giftStatus === 'won' ? (
+                              <div className="flex flex-col gap-0.5">
+                                <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px]">🎁 Gift Won</Badge>
+                              </div>
+                            ) : order.giftStatus === 'lost' ? (
+                              <Badge variant="outline" className="bg-gray-100 text-gray-500 border-gray-200 text-[10px]">No Gift</Badge>
                             ) : (
-                              <StatusBadge status={order.giftStatus || "pending"} />
+                              <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 text-[10px]">Pending</Badge>
                             )}
                           </TableCell>
                           <TableCell className="text-right align-middle py-3">

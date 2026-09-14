@@ -528,7 +528,7 @@ export default function CheckoutScreen() {
                     {/* CTA Buttons */}
                     <Animated.View entering={FadeInDown.delay(900)} className="z-10 w-full flex-col gap-3" style={{ maxWidth: 300 }}>
                         <TouchableOpacity
-                            onPress={() => router.replace('/account/orders')}
+                            onPress={() => router.replace(`/account/orders/${placedOrderData.orderNumber}`)}
                             className="bg-gray-900 py-4 rounded-2xl items-center flex-row justify-center gap-2 shadow-lg active:scale-95"
                             style={{
                                 shadowColor: '#111827', shadowOffset: { width: 0, height: 4 },

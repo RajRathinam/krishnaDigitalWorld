@@ -287,4 +287,11 @@ export const brandApi = {
   },
 };
 
+export const giftApi = {
+  scanOfflineGift: async (qrData) => {
+    const response = await api.post('/gifts/scan-offline', { secretKey: qrData });
+    return response.data;
+  },
+};
+
 export default api;

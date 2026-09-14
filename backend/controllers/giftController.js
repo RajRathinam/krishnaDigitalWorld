@@ -1,5 +1,91 @@
-import { Gift } from '../models/index.js';
+import { Gift, OfflineGiftClaim, User } from '../models/index.js';
 import { deleteImage } from '../middleware/upload.js';
+import { Op } from 'sequelize';
+
+/**
+ * @desc    Scan offline shop QR code for gift
+ * @route   POST /api/gifts/scan-offline
+ * @access  Private
+ */
+export const scanOfflineGift = async (req, res) => {
+  try {
+    const { secretKey } = req.body;
+
+    if (!secretKey) {
+      return res.status(400).json({ success: false, message: 'Invalid QR code.' });
+    }
+
+    if (secretKey !== process.env.GIFT_QR_SECRET) {
+      return res.status(400).json({ success: false, message: 'Invalid QR code. This is not the correct store QR.' });
+    }
+
+    // Check if user already scanned today
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const existingClaim = await OfflineGiftClaim.findOne({
+      where: {
+        userId: req.user.id,
+        created_at: {
+          [Op.between]: [startOfDay, endOfDay]
+        },
+        status: {
+          [Op.ne]: 'rejected'
+        }
+      }
+    });
+
+    if (existingClaim) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'You have already scanned the shop QR code today. Come back tomorrow!' 
+      });
+    }
+
+    // Determine win (e.g., 100% chance for testing, change as needed)
+    // 90% chance to win
+    const isWin = Math.random() > 0.1;
+    
+    if (isWin) {
+      const gifts = await Gift.findAll({ where: { status: true } });
+      if (gifts.length > 0) {
+        const randomGift = gifts[Math.floor(Math.random() * gifts.length)];
+        
+        await OfflineGiftClaim.create({
+          userId: req.user.id,
+          giftId: randomGift.id,
+          status: 'won'
+        });
+
+        return res.status(200).json({
+          success: true,
+          status: 'won',
+          gift: randomGift,
+          message: 'Congratulations! You won a gift.'
+        });
+      }
+    }
+
+    // Lost
+    await OfflineGiftClaim.create({
+      userId: req.user.id,
+      status: 'lost'
+    });
+
+    return res.status(200).json({
+      success: true,
+      status: 'lost',
+      message: 'Better luck next time!'
+    });
+
+  } catch (error) {
+    console.error('Offline scan error:', error);
+    res.status(500).json({ success: false, message: 'Server error during scan' });
+  }
+};
 
 /**
  * @desc    Get all gifts
@@ -199,6 +285,67 @@ export const deleteGift = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error while deleting gift'
+    });
+  }
+};
+
+/**
+ * @desc    Get all offline gift claims
+ * @route   GET /api/gifts/claims
+ * @access  Private (Admin)
+ */
+export const getOfflineClaims = async (req, res) => {
+  try {
+    const claims = await OfflineGiftClaim.findAll({
+      include: [
+        { model: User, as: 'user', attributes: ['id', 'name', 'phone', 'email'] },
+        { model: Gift, as: 'gift' }
+      ],
+      order: [['created_at', 'DESC']]
+    });
+
+    res.status(200).json({
+      success: true,
+      data: claims
+    });
+  } catch (error) {
+    console.error('Get offline claims error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching claims'
+    });
+  }
+};
+
+/**
+ * @desc    Update offline gift claim status
+ * @route   PUT /api/gifts/claims/:id
+ * @access  Private (Admin)
+ */
+export const updateClaimStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    const claim = await OfflineGiftClaim.findByPk(req.params.id);
+
+    if (!claim) {
+      return res.status(404).json({
+        success: false,
+        message: 'Claim not found'
+      });
+    }
+
+    await claim.update({ status });
+
+    res.status(200).json({
+      success: true,
+      message: 'Claim status updated',
+      data: claim
+    });
+  } catch (error) {
+    console.error('Update claim status error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while updating claim'
     });
   }
 };

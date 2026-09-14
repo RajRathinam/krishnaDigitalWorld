@@ -23,6 +23,7 @@ import AddBrand from "@/components/AddBrand";
 import AddCategory from "@/components/AddCategory";
 import AddAdvertisement from "@/components/AddAdvertisement"; // Import Advertisement component
 import GiftManagement from "@/components/GiftManagement";
+import OfflineGiftClaims from "@/components/OfflineGiftClaims";
 
 import "./index.css";
 
@@ -54,6 +55,7 @@ function App() {
                   <Route path="categories" element={<AddCategory />} />
                   <Route path="advertisements" element={<AddAdvertisement />} /> {/* New Advertisement route */}
                   <Route path="gifts" element={<GiftManagement />} />
+                  <Route path="offline-claims" element={<OfflineGiftClaims />} />
                 </Route>
               </Route>
               <Route path="*" element={<NotFound />} />

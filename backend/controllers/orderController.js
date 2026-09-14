@@ -271,6 +271,29 @@ export const createOrder = async (req, res) => {
     // Ensure accurate float math
     const finalAmount = Math.max(0, totalPrice + shippingCost + taxAmount - discountAmount);
 
+    // Auto-assign Gift logic for online orders > ₹5000
+    let giftScanned = false;
+    let giftStatus = 'pending';
+    let giftId = null;
+
+    if (finalAmount > 5000) {
+      giftScanned = true;
+      // 70% chance to win
+      const isWin = Math.random() > 0.3;
+      if (isWin) {
+        const gifts = await Gift.findAll({ where: { status: true }, transaction });
+        if (gifts.length > 0) {
+          const randomGift = gifts[Math.floor(Math.random() * gifts.length)];
+          giftStatus = 'won';
+          giftId = randomGift.id;
+        } else {
+          giftStatus = 'lost';
+        }
+      } else {
+        giftStatus = 'lost';
+      }
+    }
+
     // Generate order number
     const orderNumber = generateOrderNumber();
 
@@ -290,7 +313,10 @@ export const createOrder = async (req, res) => {
       discountAmount,
       finalAmount,
       notes,
-      couponId
+      couponId,
+      giftScanned,
+      giftStatus,
+      giftId
     }, { transaction });
 
     // Deduct stock per color for all ordered items

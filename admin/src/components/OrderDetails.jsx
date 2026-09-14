@@ -571,15 +571,15 @@ export const OrderDetails = () => {
                         <CardContent className="space-y-3">
                             <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border/50">
                                 <div>
-                                    <p className="text-sm font-semibold">Status</p>
-                                    <p className="text-xs text-muted-foreground">{order.giftScanned ? "Scanned" : "Not Scanned"}</p>
+                                    <p className="text-sm font-semibold">Gift Result</p>
+                                    <p className="text-xs text-muted-foreground">Auto-assigned on order placement</p>
                                 </div>
                                 <Badge variant="outline" className={`${
                                     order.giftStatus === 'won' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 
                                     order.giftStatus === 'lost' ? 'bg-gray-100 text-gray-500 border-gray-200' : 
                                     'bg-yellow-50 text-yellow-700 border-yellow-200'
                                 } capitalize`}>
-                                    {order.giftStatus || "pending"}
+                                    {order.giftStatus === 'won' ? '🎁 Won' : order.giftStatus === 'lost' ? 'No Gift' : 'Pending'}
                                 </Badge>
                             </div>
                             

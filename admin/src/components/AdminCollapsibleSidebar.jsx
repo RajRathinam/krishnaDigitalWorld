@@ -75,6 +75,7 @@ export function AdminCollapsibleSidebar({ activeSection, showFooter = true, isCo
     { id: "hero-slider", title: "Hero Slider", icon: ImageIcon, path: "/hero-slider" },
     { id: "advertisements", title: "Advertisements", icon: Video, path: "/advertisements" }, // New Advertisement item
     { id: "gifts", title: "Gifts", icon: Gift, path: "/gifts" }, // New Gift item
+    { id: "offline-claims", title: "Gift Claims", icon: Gift, path: "/offline-claims" },
     { id: "settings", title: "Settings", icon: Settings, path: "/settings" },
   ];
 

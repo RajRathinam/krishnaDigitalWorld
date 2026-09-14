@@ -31,10 +31,12 @@ import {
   MessageCircle,
   AlertCircle,
   PhoneCall,
+  Gift,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { baseUrl } from "@/config/baseUrl";
 import { useShopInfo } from "@/contexts/ShopInfoContext";
+import { getImageUrl } from "@/lib/utils";
 
 const API_BASE_URL = baseUrl;
 
@@ -788,6 +790,89 @@ export default function OrderDetail() {
             <SectionCard title="Order Notes" icon={ReceiptText} delay={0.44}>
               <p className="text-sm text-muted-foreground leading-relaxed">{order.notes}</p>
             </SectionCard>
+          )}
+
+          {/* Gift Section — shown only if order amount > 5000 */}
+          {parseFloat(order.finalAmount) > 5000 && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.48 }}
+            >
+              {order.giftStatus === 'won' ? (
+                /* Won banner */
+                <div
+                  className="relative overflow-hidden rounded-2xl border border-pink-200 p-4 flex items-center gap-4"
+                  style={{
+                    background: 'linear-gradient(135deg, #FDF4FF 0%, #FFF7ED 50%, #FFF0F6 100%)',
+                  }}
+                >
+                  {/* Decorative blobs */}
+                  <div className="absolute top-0 right-0 w-24 h-24 rounded-full bg-purple-100 opacity-40 -translate-y-1/2 translate-x-1/2" />
+                  <div className="absolute bottom-0 left-0 w-28 h-28 rounded-full bg-orange-100 opacity-40 translate-y-1/2 -translate-x-1/3" />
+
+                  {/* Gift icon badge */}
+                  <div className="relative z-10 w-10 h-10 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center flex-shrink-0">
+                    <Gift className="w-5 h-5 text-blue-500" />
+                  </div>
+
+                  {/* Text */}
+                  <div className="flex-1 relative z-10 min-w-0">
+                    <p className="text-sm font-black text-gray-900 leading-none mb-0.5">You won a</p>
+                    <p className="text-lg font-black text-pink-700 leading-tight truncate">
+                      {order.gift?.productName || 'Surprise Gift'}
+                      {order.gift?.price && (
+                        <span className="text-sm font-semibold text-pink-500 ml-1.5">
+                          (Worth ₹{parseFloat(order.gift.price).toLocaleString('en-IN')})
+                        </span>
+                      )}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-1">Your free gift will be delivered with your order.</p>
+                  </div>
+
+                  {/* Gift image */}
+                  <div className="relative z-10 w-16 h-16 flex-shrink-0">
+                    {order.gift?.image ? (
+                      <img
+                        src={getImageUrl(order.gift.image)}
+                        alt={order.gift.productName}
+                        className="w-full h-full object-contain rounded-xl"
+                      />
+                    ) : (
+                      <div className="w-full h-full rounded-xl bg-pink-50 border border-pink-100 flex items-center justify-center">
+                        <Gift className="w-7 h-7 text-pink-400" />
+                      </div>
+                    )}
+                    {/* Green checkmark */}
+                    <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-green-500 border-2 border-white flex items-center justify-center">
+                      <Check className="w-2.5 h-2.5 text-white" strokeWidth={4} />
+                    </div>
+                  </div>
+                </div>
+              ) : order.giftStatus === 'lost' ? (
+                /* Lost / No gift banner */
+                <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                    <Gift className="w-4 h-4 text-gray-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-600">No gift this time</p>
+                    <p className="text-xs text-gray-400 mt-0.5">Better luck on your next order!</p>
+                  </div>
+                </div>
+              ) : (
+                /* Pending */
+                <div className="rounded-2xl border border-yellow-200 bg-yellow-50 p-4 flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-yellow-100 flex items-center justify-center flex-shrink-0">
+                    <Gift className="w-4 h-4 text-yellow-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-yellow-800">Gift pending</p>
+                    <p className="text-xs text-yellow-600 mt-0.5">Your gift eligibility is being confirmed.</p>
+                  </div>
+                </div>
+              )}
+            </motion.div>
           )}
         </div>
 

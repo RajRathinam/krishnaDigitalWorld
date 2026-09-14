@@ -76,7 +76,7 @@ export default function OrdersScreen() {
             >
                 <View className="p-4">
                     <View className="flex-row items-center mb-4">
-                        <TouchableOpacity onPress={() => router.back()} className="mr-3 p-2 bg-white rounded-full shadow-sm">
+                        <TouchableOpacity onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)/account')} className="mr-3 p-2 bg-white rounded-full shadow-sm">
                             <ChevronLeft size={20} color="#111827" />
                         </TouchableOpacity>
                         <Text className="text-xl font-bold text-gray-900">My Orders</Text>

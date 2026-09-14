@@ -17,6 +17,7 @@ import Sequelize from 'sequelize';
 // Add to your models/index.js
 import Advertisement from './Advertisement.js';
 import Gift from './Gift.js';
+import OfflineGiftClaim from './OfflineGiftClaim.js';
 
 // Add associations if needed
 Advertisement.belongsTo(User, { as: 'creator', foreignKey: 'createdBy' });
@@ -78,6 +79,10 @@ Model.belongsTo(Category, { foreignKey: 'categoryId', as: 'category' });
 // OTP associations
 Otp.belongsTo(User, { foreignKey: 'phone', targetKey: 'phone', as: 'user' });
 
+// OfflineGiftClaim associations
+OfflineGiftClaim.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+OfflineGiftClaim.belongsTo(Gift, { foreignKey: 'giftId', as: 'gift' });
+
 // Export all models individually
 export {
   sequelize,
@@ -94,6 +99,8 @@ export {
   UserCoupon,
   Model,
   ShopInfo,
-  HeroSlider,Advertisement,
-  Gift
+  HeroSlider,
+  Advertisement,
+  Gift,
+  OfflineGiftClaim
 };
