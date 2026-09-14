@@ -33,6 +33,16 @@ const fmtDate = (d) => {
     } catch { return "N/A"; }
 };
 
+const openMap = (addr) => {
+    if (!addr) return;
+    if (addr.lat && addr.lng) {
+        window.open(`https://www.google.com/maps/search/?api=1&query=${addr.lat},${addr.lng}`, '_blank');
+    } else {
+        const q = [addr.street, addr.city, addr.state, addr.pincode || addr.zipCode].filter(Boolean).join(', ');
+        window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`, '_blank');
+    }
+};
+
 const resolveItemImage = (item) => {
     if (item.image) return getImageUrl(item.image);
     if (item.product?.colorsAndImages && item.colorName) {
@@ -350,8 +360,18 @@ export const OrderDetails = () => {
                                 <h4 className="font-semibold mb-2 flex items-center gap-2 text-sm">
                                     <MapPin className="h-4 w-4 text-muted-foreground" /> Delivery Address
                                 </h4>
-                                <div className="text-sm text-muted-foreground space-y-0.5 ml-6 bg-muted/30 p-3 rounded-lg border border-border/50">
-                                    {shippingAddr.name   && <p className="font-semibold text-foreground">{shippingAddr.name}</p>}
+                                <div 
+                                    onClick={() => openMap(shippingAddr)}
+                                    className="text-sm text-muted-foreground space-y-0.5 ml-6 bg-muted/30 p-3 rounded-lg border border-border/50 cursor-pointer hover:bg-muted/50 transition-colors relative"
+                                >
+                                    <div className="flex items-center justify-between">
+                                        {shippingAddr.name   && <p className="font-semibold text-foreground">{shippingAddr.name}</p>}
+                                        {shippingAddr.lat && shippingAddr.lng && (
+                                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full flex items-center gap-1 font-medium hover:bg-blue-200 transition-colors">
+                                                <MapPin className="h-3 w-3" /> View on map
+                                            </span>
+                                        )}
+                                    </div>
                                     {shippingAddr.phone  && (
                                         <p className="flex items-center gap-1.5">
                                             <Phone className="h-3 w-3" />{shippingAddr.phone}

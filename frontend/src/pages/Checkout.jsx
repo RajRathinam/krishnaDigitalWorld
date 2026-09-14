@@ -464,6 +464,8 @@ export default function Checkout() {
         city:      parsed.city    || "",
         state:     parsed.state   || "",
         pincode:   parsed.pincode || "",
+        lat:       parsed.lat     || null,
+        lng:       parsed.lng     || null,
         isDefault: true,
         type:      "primary",
       });
@@ -483,6 +485,8 @@ export default function Checkout() {
           city:      addr.city    || "",
           state:     addr.state   || "",
           pincode:   addr.pincode || "",
+          lat:       addr.lat     || null,
+          lng:       addr.lng     || null,
           isDefault: addr.isDefault || false,
           type:      addr.type   || "other",
         });
@@ -614,6 +618,7 @@ export default function Checkout() {
   const buildShippingAddress = (addr) => ({
     name: addr.name, phone: addr.phone, street: addr.street,
     city: addr.city, state: addr.state, zipCode: addr.pincode, country: "India",
+    lat: addr.lat || null, lng: addr.lng || null,
   });
 
   const buildOrderItems = () =>

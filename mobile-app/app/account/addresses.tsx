@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, Alert, StyleSheet, Pressable, KeyboardAvoidingView, Platform, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, Alert, StyleSheet, Pressable, KeyboardAvoidingView, Platform, RefreshControl, Linking } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MapPin, Plus, Home, Briefcase, User, X, Edit2, Trash2, CheckCircle2, ChevronLeft, MapPinned } from 'lucide-react-native';
 import Header from '@/components/Header';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { authApi } from '@/services/api';
 import { useRouter } from 'expo-router';
+import * as Location from 'expo-location';
 import { ListItemSkeleton } from '@/components/SkeletonLoader';
 import Skeleton from '@/components/Skeleton';
 import Animated, { FadeInUp, FadeInRight, FadeInDown, Layout, FadeIn, FadeOut, FadeOutDown } from 'react-native-reanimated';
+import { MapPin as MapPinIcon } from 'lucide-react-native';
 
 const MAX_SAVED_ADDRESSES = 3;
 
@@ -28,8 +30,9 @@ export default function AddressesScreen() {
     const [editingAddress, setEditingAddress] = useState<any>(null);
 
     const [form, setForm] = useState({
-        name: '', phone: '', street: '', city: '', state: '', pincode: '', type: 'home'
+        name: '', phone: '', street: '', city: '', state: '', pincode: '', type: 'home', lat: null as number | null, lng: null as number | null
     });
+    const [isFetchingLocation, setIsFetchingLocation] = useState(false);
 
     const { data: userResponse, isLoading, refetch } = useQuery({
         queryKey: ['me'],
@@ -94,7 +97,7 @@ export default function AddressesScreen() {
         setForm({
             name: userData?.name || '',
             phone: userData?.phone || '',
-            street: '', city: '', state: '', pincode: '', type: 'home'
+            street: '', city: '', state: '', pincode: '', type: 'home', lat: null, lng: null
         });
         setShowForm(true);
     };
@@ -102,15 +105,84 @@ export default function AddressesScreen() {
     const handleOpenEditForm = (addr: any) => {
         setEditingAddress(addr);
         setForm({
-            name: addr.name || userData?.name,
-            phone: addr.phone || userData?.phone,
-            street: addr.street,
-            city: addr.city,
-            state: addr.state,
-            pincode: addr.pincode,
-            type: addr.type || 'home'
+            name: addr.name || '',
+            phone: addr.phone || '',
+            street: addr.street || '',
+            city: addr.city || '',
+            state: addr.state || '',
+            pincode: addr.pincode || '',
+            type: addr.type || 'other',
+            lat: addr.lat || null,
+            lng: addr.lng || null
         });
         setShowForm(true);
+    };
+
+    const captureLocation = async () => {
+        setIsFetchingLocation(true);
+        try {
+            const { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert('Permission denied', 'Location permission is required to capture current location.');
+                setIsFetchingLocation(false);
+                return;
+            }
+            
+            const location = await Location.getCurrentPositionAsync({});
+            const { latitude, longitude } = location.coords;
+            
+            // Reverse geocode
+            const geocode = await Location.reverseGeocodeAsync({ latitude, longitude });
+            if (geocode && geocode.length > 0) {
+                const p = geocode[0];
+                setForm(prev => ({
+                    ...prev,
+                    lat: latitude,
+                    lng: longitude,
+                    street: p.street || p.name || prev.street,
+                    city: p.city || p.district || p.subregion || prev.city,
+                    state: p.region || prev.state,
+                    pincode: p.postalCode || prev.pincode,
+                }));
+            } else {
+                setForm(prev => ({ ...prev, lat: latitude, lng: longitude }));
+            }
+            Alert.alert('Location Captured', 'Your current location has been filled in.');
+        } catch (error) {
+            console.error(error);
+            Alert.alert('Error', 'Failed to get current location.');
+        } finally {
+            setIsFetchingLocation(false);
+        }
+    };
+
+    const handleAddressChange = (field: string, value: string) => {
+        if (form.lat && form.lng) {
+            Alert.alert(
+                'Remove Captured Location?',
+                'Are you sure you want to remove the captured location and enter manually?',
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    { 
+                        text: 'Yes', 
+                        style: 'destructive',
+                        onPress: () => {
+                            setForm(prev => ({
+                                ...prev,
+                                lat: null,
+                                lng: null,
+                                street: '',
+                                city: '',
+                                state: '',
+                                pincode: ''
+                            }));
+                        }
+                    }
+                ]
+            );
+        } else {
+            setForm(prev => ({ ...prev, [field]: value }));
+        }
     };
 
     const handleSave = () => {
@@ -327,6 +399,31 @@ export default function AddressesScreen() {
                                 keyboardShouldPersistTaps="handled"
                             >
                                 <View className="space-y-4">
+                                    <View className="flex-row items-center gap-2 mb-2">
+                                        <TouchableOpacity 
+                                            onPress={captureLocation} 
+                                            disabled={isFetchingLocation}
+                                            className="flex-1 bg-purple-50 border border-purple-100 py-2.5 px-2 rounded-lg flex-row items-center justify-center"
+                                        >
+                                            {isFetchingLocation ? (
+                                                <ActivityIndicator size="small" color="#9333ea" className="mr-1" />
+                                            ) : (
+                                                <MapPin size={12} color="#9333ea" className="mr-1" />
+                                            )}
+                                            <Text className="text-purple-600 font-bold text-[10px]">
+                                                {isFetchingLocation ? 'Getting location...' : 'Capture Location'}
+                                            </Text>
+                                        </TouchableOpacity>
+                                        {form.lat && form.lng && (
+                                            <TouchableOpacity 
+                                                onPress={() => Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${form.lat},${form.lng}`)}
+                                                className="bg-green-50 border border-green-200 py-2.5 px-2 rounded-lg flex-row items-center justify-center"
+                                            >
+                                                <Text className="text-green-700 font-bold text-[10px]">View Map</Text>
+                                            </TouchableOpacity>
+                                        )}
+                                    </View>
+                                    
                                     <View>
                                         <Text className="text-gray-500 text-xs font-bold mb-2 ml-1">Contact Name *</Text>
                                         <TextInput
@@ -346,7 +443,7 @@ export default function AddressesScreen() {
                                             multiline
                                             numberOfLines={2}
                                             value={form.street}
-                                            onChangeText={val => setForm({ ...form, street: val })}
+                                            onChangeText={val => handleAddressChange('street', val)}
                                         />
                                     </View>
 
@@ -357,7 +454,7 @@ export default function AddressesScreen() {
                                                 className="bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3 text-gray-900"
                                                 placeholder="City"
                                                 value={form.city}
-                                                onChangeText={val => setForm({ ...form, city: val })}
+                                                onChangeText={val => handleAddressChange('city', val)}
                                                 returnKeyType="next"
                                             />
                                         </View>
@@ -367,7 +464,7 @@ export default function AddressesScreen() {
                                                 className="bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3 text-gray-900"
                                                 placeholder="State"
                                                 value={form.state}
-                                                onChangeText={val => setForm({ ...form, state: val })}
+                                                onChangeText={val => handleAddressChange('state', val)}
                                                 returnKeyType="next"
                                             />
                                         </View>
@@ -381,7 +478,7 @@ export default function AddressesScreen() {
                                             keyboardType="number-pad"
                                             maxLength={6}
                                             value={form.pincode}
-                                            onChangeText={val => setForm({ ...form, pincode: val.replace(/\D/g, '') })}
+                                            onChangeText={val => handleAddressChange('pincode', val.replace(/\D/g, ''))}
                                             returnKeyType="done"
                                         />
                                     </View>

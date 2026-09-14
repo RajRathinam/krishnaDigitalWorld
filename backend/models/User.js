@@ -70,6 +70,8 @@ const User = sequelize.define('User', {
           city: rawValue.city || rawValue.district || '',
           state: rawValue.state || '',
           pincode: rawValue.pincode || '',
+          lat: rawValue.lat || null,
+          lng: rawValue.lng || null,
           fullAddress: rawValue.fullAddress ||
             `${rawValue.street || ''}${rawValue.city ? `, ${rawValue.city}` : ''}${rawValue.pincode ? `, ${rawValue.pincode}` : ''}`
         };
@@ -84,6 +86,8 @@ const User = sequelize.define('User', {
           city: value.city || value.district || '',
           state: value.state || '',
           pincode: value.pincode || '',
+          lat: value.lat || null,
+          lng: value.lng || null,
           fullAddress: value.fullAddress ||
             `${value.street || ''}${value.city ? `, ${value.city}` : ''}${value.pincode ? `, ${value.pincode}` : ''}`
         });
@@ -118,6 +122,8 @@ const User = sequelize.define('User', {
         city: addr.city || '',
         state: addr.state || '',
         pincode: addr.pincode || '',
+        lat: addr.lat || null,
+        lng: addr.lng || null,
         isDefault: Boolean(addr.isDefault),
         type: addr.type || 'other',
         createdAt: addr.createdAt || new Date().toISOString(),
@@ -136,6 +142,8 @@ const User = sequelize.define('User', {
           city: addr.city || '',
           state: addr.state || '',
           pincode: addr.pincode || '',
+          lat: addr.lat || null,
+          lng: addr.lng || null,
           isDefault: Boolean(addr.isDefault),
           type: addr.type || 'other',
           createdAt: addr.createdAt || new Date().toISOString(),

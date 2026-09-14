@@ -57,8 +57,9 @@ export default function AccountAddresses() {
   const [editingAddress,     setEditingAddress    ] = useState(null);
 
   const [newAddress, setNewAddress] = useState({
-    name: '', phone: '', street: '', city: '', state: '', pincode: '', type: 'home',
+    name: '', phone: '', street: '', city: '', state: '', pincode: '', type: 'home', lat: null, lng: null
   });
+  const [isFetchingLocation, setIsFetchingLocation] = useState(false);
 
   // Derived — is the saved-address slot full?
   const isAtLimit = additionalAddresses.length >= MAX_SAVED_ADDRESSES;
@@ -135,9 +136,69 @@ export default function AccountAddresses() {
   };
 
   const resetForm = () => {
-    setNewAddress({ name: user?.name || '', phone: user?.phone || '', street: '', city: '', state: '', pincode: '', type: 'home' });
+    setNewAddress({ name: user?.name || '', phone: user?.phone || '', street: '', city: '', state: '', pincode: '', type: 'home', lat: null, lng: null });
     setEditingAddress(null);
     setShowAddressForm(false);
+  };
+
+  const captureLocation = () => {
+    if (!navigator.geolocation) {
+      toast({ title: 'Error', description: 'Geolocation is not supported by your browser', variant: 'destructive' });
+      return;
+    }
+    setIsFetchingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+          const data = await res.json();
+          const p = data.address;
+          if (p) {
+            setNewAddress(prev => ({
+              ...prev,
+              lat: latitude,
+              lng: longitude,
+              street: p.road || p.suburb || p.neighbourhood || prev.street,
+              city: p.city || p.town || p.village || p.county || prev.city,
+              state: p.state || prev.state,
+              pincode: p.postcode || prev.pincode,
+            }));
+            toast({ title: 'Location captured successfully' });
+          } else {
+            setNewAddress(prev => ({ ...prev, lat: latitude, lng: longitude }));
+            toast({ title: 'Location captured (No address details found)' });
+          }
+        } catch (error) {
+          setNewAddress(prev => ({ ...prev, lat: latitude, lng: longitude }));
+          toast({ title: 'Location captured (Failed to fetch address details)' });
+        } finally {
+          setIsFetchingLocation(false);
+        }
+      },
+      (error) => {
+        setIsFetchingLocation(false);
+        toast({ title: 'Error', description: 'Failed to capture location', variant: 'destructive' });
+      }
+    );
+  };
+
+  const handleAddressChange = (field, value) => {
+    if (newAddress.lat && newAddress.lng) {
+      if (window.confirm("Are you sure you want to remove the captured location and enter manually?")) {
+        setNewAddress(prev => ({
+          ...prev,
+          lat: null,
+          lng: null,
+          street: '',
+          city: '',
+          state: '',
+          pincode: ''
+        }));
+      }
+    } else {
+      setNewAddress(prev => ({ ...prev, [field]: value }));
+    }
   };
 
   const handleAddAddress = async () => {
@@ -214,13 +275,13 @@ export default function AccountAddresses() {
 
   const openAddForm = () => {
     setEditingAddress(null);
-    setNewAddress({ name: user?.name || '', phone: user?.phone || '', street: '', city: '', state: '', pincode: '', type: 'home' });
+    setNewAddress({ name: user?.name || '', phone: user?.phone || '', street: '', city: '', state: '', pincode: '', type: 'home', lat: null, lng: null });
     setShowAddressForm(true);
   };
 
   const openEditForm = (address) => {
     setEditingAddress(address);
-    setNewAddress({ name: address.name, phone: address.phone, street: address.street, city: address.city, state: address.state, pincode: address.pincode, type: address.type || 'home' });
+    setNewAddress({ name: address.name, phone: address.phone, street: address.street, city: address.city, state: address.state, pincode: address.pincode, type: address.type || 'home', lat: address.lat || null, lng: address.lng || null });
     setShowAddressForm(true);
   };
 
@@ -407,6 +468,25 @@ export default function AccountAddresses() {
             </div>
 
             <div className="space-y-3">
+              <div className="flex items-center gap-2 mb-2">
+                <button
+                  onClick={captureLocation}
+                  disabled={isFetchingLocation}
+                  className="flex-1 flex justify-center items-center gap-2 py-2 bg-primary/10 text-primary border border-primary/20 rounded text-sm font-medium hover:bg-primary/20 transition-colors disabled:opacity-50"
+                >
+                  <MapPinIcon className="w-4 h-4" />
+                  {isFetchingLocation ? 'Getting location...' : 'Capture Current Location'}
+                </button>
+                {newAddress.lat && newAddress.lng && (
+                  <button
+                    onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${newAddress.lat},${newAddress.lng}`, '_blank')}
+                    className="flex justify-center items-center gap-2 py-2 px-4 bg-green-50 text-green-600 border border-green-200 rounded text-sm font-medium hover:bg-green-100 transition-colors"
+                  >
+                    View Map
+                  </button>
+                )}
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1">Full Name *</label>
                 <input
@@ -447,7 +527,7 @@ export default function AccountAddresses() {
                 <label className="block text-sm font-medium text-foreground mb-1">Street Address *</label>
                 <textarea
                   value={newAddress.street}
-                  onChange={(e) => setNewAddress({ ...newAddress, street: e.target.value })}
+                  onChange={(e) => handleAddressChange('street', e.target.value)}
                   className="w-full px-3 py-2 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-accent"
                   placeholder="House no., Building, Street, Area"
                   rows={2}
@@ -460,7 +540,7 @@ export default function AccountAddresses() {
                   <input
                     type="text"
                     value={newAddress.city}
-                    onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
+                    onChange={(e) => handleAddressChange('city', e.target.value)}
                     className="w-full px-3 py-2 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-accent"
                     placeholder="City"
                   />
@@ -470,7 +550,7 @@ export default function AccountAddresses() {
                   <input
                     type="text"
                     value={newAddress.state}
-                    onChange={(e) => setNewAddress({ ...newAddress, state: e.target.value })}
+                    onChange={(e) => handleAddressChange('state', e.target.value)}
                     className="w-full px-3 py-2 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-accent"
                     placeholder="State"
                   />
@@ -482,7 +562,7 @@ export default function AccountAddresses() {
                 <input
                   type="text"
                   value={newAddress.pincode}
-                  onChange={(e) => setNewAddress({ ...newAddress, pincode: e.target.value.replace(/\D/g, '').slice(0, 6) })}
+                  onChange={(e) => handleAddressChange('pincode', e.target.value.replace(/\D/g, '').slice(0, 6))}
                   className="w-full px-3 py-2 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-accent"
                   placeholder="6-digit pincode"
                   maxLength={6}

@@ -647,7 +647,18 @@ export default function OrderDetailScreen() {
                 <User size={16} color={Y} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.addressName}>{shippingAddr.name}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <Text style={styles.addressName}>{shippingAddr.name}</Text>
+                  {shippingAddr.lat && shippingAddr.lng && (
+                    <TouchableOpacity 
+                      onPress={() => Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${shippingAddr.lat},${shippingAddr.lng}`)}
+                      style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#ecfdf5', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, borderWidth: 1, borderColor: '#a7f3d0' }}
+                    >
+                      <MapPin size={10} color="#059669" />
+                      <Text style={{ fontSize: 10, fontWeight: '700', color: '#059669', marginLeft: 4 }}>View on map</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
                 <Text style={styles.addressText}>{shippingAddr.street}</Text>
                 <Text style={styles.addressText}>{shippingAddr.city}, {shippingAddr.state} - {shippingAddr.zipCode}</Text>
                 <View style={styles.addressPhone}>

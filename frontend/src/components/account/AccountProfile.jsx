@@ -24,6 +24,9 @@ export default function AccountProfile() {
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
   const [pincode, setPincode] = useState("");
+  const [lat, setLat] = useState(null);
+  const [lng, setLng] = useState(null);
+  const [isFetchingLocation, setIsFetchingLocation] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -39,6 +42,8 @@ export default function AccountProfile() {
           setCity(user.address.city || "");
           setState(user.address.state || "");
           setPincode(user.address.pincode || "");
+          setLat(user.address.lat || null);
+          setLng(user.address.lng || null);
         } else {
           // Handle string address if needed
           const addressString = user.address;
@@ -48,6 +53,8 @@ export default function AccountProfile() {
             setCity(parsed.city || "");
             setState(parsed.state || "");
             setPincode(parsed.pincode || "");
+            setLat(parsed.lat || null);
+            setLng(parsed.lng || null);
           } catch (e) {
             // Simple parsing fallback
             const parts = addressString.split(', ');
@@ -74,6 +81,65 @@ export default function AccountProfile() {
   // DOB editable only if user has not set it yet
   const dobEditable = !(user && user.dateOfBirth);
 
+  const captureLocation = () => {
+    if (!navigator.geolocation) {
+      toast({ title: 'Error', description: 'Geolocation is not supported by your browser', variant: 'destructive' });
+      return;
+    }
+    setIsFetchingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+          const data = await res.json();
+          const p = data.address;
+          if (p) {
+            setLat(latitude);
+            setLng(longitude);
+            setStreet(p.road || p.suburb || p.neighbourhood || street);
+            setCity(p.city || p.town || p.village || p.county || city);
+            setState(p.state || state);
+            setPincode(p.postcode || pincode);
+            toast({ title: 'Location captured successfully' });
+          } else {
+            setLat(latitude);
+            setLng(longitude);
+            toast({ title: 'Location captured (No address details found)' });
+          }
+        } catch (error) {
+          setLat(latitude);
+          setLng(longitude);
+          toast({ title: 'Location captured (Failed to fetch address details)' });
+        } finally {
+          setIsFetchingLocation(false);
+        }
+      },
+      (error) => {
+        setIsFetchingLocation(false);
+        toast({ title: 'Error', description: 'Failed to capture location', variant: 'destructive' });
+      }
+    );
+  };
+
+  const handleAddressChange = (field, value) => {
+    if (lat && lng) {
+      if (window.confirm("Are you sure you want to remove the captured location and enter manually?")) {
+        setLat(null);
+        setLng(null);
+        setStreet('');
+        setCity('');
+        setState('');
+        setPincode('');
+      }
+    } else {
+      if (field === 'street') setStreet(value);
+      if (field === 'city') setCity(value);
+      if (field === 'state') setState(value);
+      if (field === 'pincode') setPincode(value);
+    }
+  };
+
   const handleSaveProfile = async () => {
     if (!user) return;
     
@@ -95,6 +161,8 @@ export default function AccountProfile() {
           city: city.trim(),
           state: state.trim(),
           pincode: pincode.trim(),
+          lat,
+          lng,
         };
         formData.append('address', JSON.stringify(addressData));
       }
@@ -221,17 +289,40 @@ export default function AccountProfile() {
 
         {/* Primary Address Fields */}
         <div className="pt-4 border-t border-border">
-          <h3 className="font-medium text-foreground mb-4 flex items-center gap-2">
-            <MapPin className="w-4 h-4" />
-            Primary Address
-          </h3>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+            <h3 className="font-medium text-foreground flex items-center gap-2">
+              <MapPin className="w-4 h-4" />
+              Primary Address
+            </h3>
+            <div className="flex items-center gap-2">
+              {lat && lng && (
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`, '_blank');
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-600 border border-green-200 rounded text-xs font-medium hover:bg-green-100 transition-colors"
+                >
+                  View Map
+                </button>
+              )}
+              <button
+                onClick={(e) => { e.preventDefault(); captureLocation(); }}
+                disabled={isFetchingLocation}
+                className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 text-primary border border-primary/20 rounded text-xs font-medium hover:bg-primary/20 transition-colors disabled:opacity-50"
+              >
+                <MapPin className="w-3.5 h-3.5" />
+                {isFetchingLocation ? 'Getting location...' : 'Capture Location'}
+              </button>
+            </div>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-foreground mb-1">Street Address *</label>
               <input
                 type="text"
                 value={street}
-                onChange={(e) => setStreet(e.target.value)}
+                onChange={(e) => handleAddressChange('street', e.target.value)}
                 className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                 placeholder="House no., Building, Street, Area"
               />
@@ -241,7 +332,7 @@ export default function AccountProfile() {
               <input
                 type="text"
                 value={city}
-                onChange={(e) => setCity(e.target.value)}
+                onChange={(e) => handleAddressChange('city', e.target.value)}
                 className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                 placeholder="City"
               />
@@ -251,7 +342,7 @@ export default function AccountProfile() {
               <input
                 type="text"
                 value={state}
-                onChange={(e) => setState(e.target.value)}
+                onChange={(e) => handleAddressChange('state', e.target.value)}
                 className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                 placeholder="State"
               />
@@ -261,7 +352,7 @@ export default function AccountProfile() {
               <input
                 type="text"
                 value={pincode}
-                onChange={(e) => setPincode(e.target.value)}
+                onChange={(e) => handleAddressChange('pincode', e.target.value)}
                 className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                 placeholder="6-digit pincode"
                 maxLength={6}

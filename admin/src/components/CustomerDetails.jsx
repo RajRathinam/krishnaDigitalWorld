@@ -59,6 +59,16 @@ export const CustomerDetails = () => {
   const params     = useParams();
   const navigate   = useNavigate();
   const { toast }  = useToast();
+
+  const openMap = (addr) => {
+    if (!addr) return;
+    if (addr.lat && addr.lng) {
+      window.open(`https://www.google.com/maps/search/?api=1&query=${addr.lat},${addr.lng}`, '_blank');
+    } else {
+      const q = [addr.street, addr.city, addr.state, addr.pincode].filter(Boolean).join(', ');
+      window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`, '_blank');
+    }
+  };
   const customerId = params.id;
 
   const [customer,  setCustomer ] = useState(null);
@@ -578,8 +588,18 @@ export const CustomerDetails = () => {
               </CardHeader>
               <CardContent>
                 {customer.address ? (
-                  <div className="bg-muted/30 border border-border/50 rounded-lg p-4 space-y-2 text-sm">
-                    {customer.address.name   && <p className="font-semibold text-foreground">{customer.address.name}</p>}
+                  <div 
+                    onClick={() => openMap(customer.address)}
+                    className="bg-muted/30 border border-border/50 rounded-lg p-4 space-y-2 text-sm cursor-pointer hover:bg-muted/50 transition-colors relative"
+                  >
+                    <div className="flex items-center justify-between">
+                      {customer.address.name   && <p className="font-semibold text-foreground">{customer.address.name}</p>}
+                      {customer.address.lat && customer.address.lng && (
+                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full flex items-center gap-1 font-medium hover:bg-blue-200 transition-colors">
+                          <MapPin className="h-3 w-3" /> View on map
+                        </span>
+                      )}
+                    </div>
                     {customer.address.phone  && (
                       <p className="text-muted-foreground flex items-center gap-1.5">
                         <Phone className="h-3 w-3" />{customer.address.phone}
@@ -627,15 +647,26 @@ export const CustomerDetails = () => {
                 {customer.additionalAddresses?.length > 0 ? (
                   <div className="space-y-3">
                     {customer.additionalAddresses.map((addr, i) => (
-                      <div key={i} className="p-4 border border-border rounded-lg space-y-1 text-sm">
+                      <div 
+                        key={i} 
+                        onClick={() => openMap(addr)}
+                        className="p-4 border border-border rounded-lg space-y-1 text-sm cursor-pointer hover:bg-muted/30 transition-colors"
+                      >
                         <div className="flex items-center justify-between mb-1">
                           <div className="flex items-center gap-2">
                             <p className="font-medium">{addr.type || "Address"} {i + 1}</p>
                             {addr.isDefault && <Badge variant="outline" className="text-xs">Default</Badge>}
                           </div>
-                          {addr.createdAt && (
-                            <span className="text-xs text-muted-foreground">{fmtDate(addr.createdAt, false)}</span>
-                          )}
+                          <div className="flex items-center gap-2">
+                            {addr.lat && addr.lng && (
+                              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full flex items-center gap-1 font-medium hover:bg-blue-200 transition-colors">
+                                <MapPin className="h-3 w-3" /> View on map
+                              </span>
+                            )}
+                            {addr.createdAt && (
+                              <span className="text-xs text-muted-foreground">{fmtDate(addr.createdAt, false)}</span>
+                            )}
+                          </div>
                         </div>
                         <p className="text-muted-foreground">
                           {addr.street}, {addr.city}, {addr.state} — {addr.pincode}

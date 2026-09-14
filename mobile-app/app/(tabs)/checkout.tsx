@@ -310,6 +310,8 @@ export default function CheckoutScreen() {
                 state: selectedAddressData.state,
                 zipCode: selectedAddressData.pincode,
                 country: 'India',
+                lat: selectedAddressData.lat || null,
+                lng: selectedAddressData.lng || null,
             };
 
             const orderItems = cart.items.map((item: any) => ({

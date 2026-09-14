@@ -58,6 +58,16 @@ const getCustomerName  = (o) => o.customerName  || o.user?.name  || o.shippingAd
 const getCustomerPhone = (o) => o.customerPhone || o.user?.phone || o.shippingAddress?.phone || "N/A";
 const getCustomerEmail = (o) => o.customerEmail || o.user?.email || "N/A";
 
+const openMap = (addr) => {
+  if (!addr) return;
+  if (addr.lat && addr.lng) {
+    window.open(`https://www.google.com/maps/search/?api=1&query=${addr.lat},${addr.lng}`, '_blank');
+  } else {
+    const q = [addr.street, addr.city, addr.state, addr.pincode || addr.zipCode].filter(Boolean).join(', ');
+    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`, '_blank');
+  }
+};
+
 /* ── badges ── */
 const STATUS_STYLES = {
   pending:     { bg: "bg-yellow-50",  text: "text-yellow-700",  border: "border-yellow-200"  },
@@ -378,8 +388,18 @@ function OrderDetailModal({ orderId, onClose, onUpdateStatus, onRequestCancel })
                   </CardHeader>
                   <CardContent>
                     {addr ? (
-                      <div className="bg-muted/30 p-4 rounded-lg border border-border/50 space-y-0.5">
-                        {addr.name   && <p className="font-semibold text-sm">{addr.name}</p>}
+                      <div 
+                        onClick={() => openMap(addr)}
+                        className="bg-muted/30 p-4 rounded-lg border border-border/50 space-y-0.5 cursor-pointer hover:bg-muted/50 transition-colors relative"
+                      >
+                        <div className="flex items-center justify-between">
+                          {addr.name   && <p className="font-semibold text-sm">{addr.name}</p>}
+                          {addr.lat && addr.lng && (
+                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full flex items-center gap-1 font-medium hover:bg-blue-200 transition-colors">
+                              <MapPin className="h-3 w-3" /> View on map
+                            </span>
+                          )}
+                        </div>
                         {addr.phone  && <p className="text-sm text-muted-foreground flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" />{addr.phone}</p>}
                         {addr.street && <p className="text-sm text-muted-foreground">{addr.street}</p>}
                         <p className="text-sm text-muted-foreground">
@@ -524,8 +544,18 @@ function OrderDetailModal({ orderId, onClose, onUpdateStatus, onRequestCancel })
                     <div>
                       <p className="text-sm font-medium mb-2 flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-muted-foreground" /> Delivery Address</p>
                       {addr ? (
-                        <div className="text-sm text-muted-foreground space-y-0.5 bg-muted/30 p-3 rounded-lg border border-border/50">
-                          {addr.name   && <p className="font-semibold text-foreground">{addr.name}</p>}
+                        <div 
+                          onClick={() => openMap(addr)}
+                          className="text-sm text-muted-foreground space-y-0.5 bg-muted/30 p-3 rounded-lg border border-border/50 cursor-pointer hover:bg-muted/50 transition-colors relative"
+                        >
+                          <div className="flex items-center justify-between">
+                            {addr.name   && <p className="font-semibold text-foreground">{addr.name}</p>}
+                            {addr.lat && addr.lng && (
+                              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full flex items-center gap-1 font-medium hover:bg-blue-200 transition-colors">
+                                <MapPin className="h-3 w-3" /> View on map
+                              </span>
+                            )}
+                          </div>
                           {addr.street && <p>{addr.street}</p>}
                           <p>{[addr.city, addr.state].filter(Boolean).join(", ")}{(addr.pincode || addr.zipCode) ? ` — ${addr.pincode || addr.zipCode}` : ""}</p>
                           {addr.country && <p>{addr.country}</p>}

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Linking } from 'react-native';
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { User, Mail, MapPin, Calendar, Phone, ChevronLeft, Camera } from 'lucide-react-native';
+import * as Location from 'expo-location';
 import * as ImagePicker from 'expo-image-picker';
 import { API_BASE_URL } from '@/services/api';
 import Header from '@/components/Header';
@@ -30,7 +31,10 @@ export default function ProfileScreen() {
     const [state, setState] = useState('');
     const [country, setCountry] = useState('');
     const [pincode, setPincode] = useState('');
+    const [lat, setLat] = useState<number | null>(null);
+    const [lng, setLng] = useState<number | null>(null);
     const [imageError, setImageError] = useState(false);
+    const [isFetchingLocation, setIsFetchingLocation] = useState(false);
 
     useEffect(() => {
         if (user) {
@@ -49,6 +53,8 @@ export default function ProfileScreen() {
                         setCity(parsed.city || '');
                         setState(parsed.state || '');
                         setPincode(parsed.pincode || '');
+                        setLat(parsed.lat || null);
+                        setLng(parsed.lng || null);
                     } catch (e) {
                          setStreet(user.address);
                     }
@@ -56,6 +62,71 @@ export default function ProfileScreen() {
             }
         }
     }, [user]);
+
+    const captureLocation = async () => {
+        setIsFetchingLocation(true);
+        try {
+            const { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert('Permission denied', 'Location permission is required to capture current location.');
+                setIsFetchingLocation(false);
+                return;
+            }
+            
+            const location = await Location.getCurrentPositionAsync({});
+            const { latitude, longitude } = location.coords;
+            
+            // Reverse geocode
+            const geocode = await Location.reverseGeocodeAsync({ latitude, longitude });
+            if (geocode && geocode.length > 0) {
+                const p = geocode[0];
+                setLat(latitude);
+                setLng(longitude);
+                setStreet(p.street || p.name || street);
+                setCity(p.city || p.district || p.subregion || city);
+                setState(p.region || state);
+                setPincode(p.postalCode || pincode);
+            } else {
+                setLat(latitude);
+                setLng(longitude);
+            }
+            Alert.alert('Location Captured', 'Your current location has been filled in.');
+        } catch (error) {
+            console.error(error);
+            Alert.alert('Error', 'Failed to get current location.');
+        } finally {
+            setIsFetchingLocation(false);
+        }
+    };
+
+    const handleAddressChange = (field: string, value: string) => {
+        if (lat && lng) {
+            Alert.alert(
+                'Remove Captured Location?',
+                'Are you sure you want to remove the captured location and enter manually?',
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    { 
+                        text: 'Yes', 
+                        style: 'destructive',
+                        onPress: () => {
+                            setLat(null);
+                            setLng(null);
+                            setStreet('');
+                            setCity('');
+                            setState('');
+                            setPincode('');
+                        }
+                    }
+                ]
+            );
+        } else {
+            if (field === 'street') setStreet(value);
+            if (field === 'city') setCity(value);
+            if (field === 'state') setState(value);
+            if (field === 'pincode') setPincode(value);
+        }
+    };
 
     const [selectedImage, setSelectedImage] = useState<any>(null);
 
@@ -117,6 +188,8 @@ export default function ProfileScreen() {
                 city,
                 state,
                 pincode,
+                lat,
+                lng,
             }));
         }
 
@@ -261,7 +334,33 @@ export default function ProfileScreen() {
                     </View>
 
                     <View className="bg-white rounded-2xl p-6 shadow-sm mb-8">
-                        <Text className="text-gray-900 font-bold mb-4 uppercase text-xs tracking-widest">Primary Address</Text>
+                        <View className="flex-col gap-3 mb-4">
+                            <Text className="text-gray-900 font-bold uppercase text-xs tracking-widest">Primary Address</Text>
+                            <View className="flex-row items-center gap-2">
+                                {lat && lng && (
+                                    <TouchableOpacity 
+                                        onPress={() => Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`)}
+                                        className="bg-green-50 border border-green-200 py-1.5 px-2 rounded-lg flex-row items-center justify-center"
+                                    >
+                                        <Text className="text-green-700 font-bold text-[10px]">View Map</Text>
+                                    </TouchableOpacity>
+                                )}
+                                <TouchableOpacity 
+                                    onPress={captureLocation} 
+                                    disabled={isFetchingLocation}
+                                    className="bg-purple-50 border border-purple-100 py-1.5 px-2 rounded-lg flex-row items-center justify-center"
+                                >
+                                    {isFetchingLocation ? (
+                                        <ActivityIndicator size="small" color="#9333ea" className="mr-1" />
+                                    ) : (
+                                        <MapPin size={12} color="#9333ea" className="mr-1" />
+                                    )}
+                                    <Text className="text-purple-600 font-bold text-[10px]">
+                                        {isFetchingLocation ? 'Getting location...' : 'Capture Location'}
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
 
                         <View className="mb-4">
                             <Text className="text-gray-500 text-sm mb-1 ml-1">Street Address</Text>
@@ -270,7 +369,7 @@ export default function ProfileScreen() {
                                 <TextInput
                                     className="flex-1 ml-3 text-gray-900"
                                     value={street}
-                                    onChangeText={setStreet}
+                                    onChangeText={(val) => handleAddressChange('street', val)}
                                     placeholder="House no., Building, Street"
                                 />
                             </View>
@@ -282,7 +381,7 @@ export default function ProfileScreen() {
                                 <TextInput
                                     className="border border-gray-200 rounded-xl px-4 py-3 bg-gray-50 text-gray-900"
                                     value={city}
-                                    onChangeText={setCity}
+                                    onChangeText={(val) => handleAddressChange('city', val)}
                                     placeholder="City"
                                 />
                             </View>
@@ -291,7 +390,7 @@ export default function ProfileScreen() {
                                 <TextInput
                                     className="border border-gray-200 rounded-xl px-4 py-3 bg-gray-50 text-gray-900"
                                     value={state}
-                                    onChangeText={setState}
+                                    onChangeText={(val) => handleAddressChange('state', val)}
                                     placeholder="State"
                                 />
                             </View>
@@ -302,7 +401,7 @@ export default function ProfileScreen() {
                             <TextInput
                                 className="border border-gray-200 rounded-xl px-4 py-3 bg-gray-50 text-gray-900"
                                 value={pincode}
-                                onChangeText={setPincode}
+                                onChangeText={(val) => handleAddressChange('pincode', val)}
                                 placeholder="6-digit pincode"
                                 keyboardType="number-pad"
                                 maxLength={6}

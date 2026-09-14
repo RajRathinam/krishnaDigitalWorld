@@ -747,8 +747,21 @@ export default function OrderDetail() {
               <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                 <User className="w-4 h-4 text-primary" />
               </div>
-              <div className="text-sm space-y-0.5">
-                {shippingAddr.name   && <p className="font-semibold text-foreground">{shippingAddr.name}</p>}
+              <div className="text-sm space-y-0.5 flex-1">
+                <div className="flex items-center justify-between mb-1">
+                  {shippingAddr.name   && <p className="font-semibold text-foreground">{shippingAddr.name}</p>}
+                  {shippingAddr.lat && shippingAddr.lng && (
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${shippingAddr.lat},${shippingAddr.lng}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 bg-green-50 text-green-600 border border-green-200 px-2 py-0.5 rounded text-[10px] font-bold hover:bg-green-100 transition-colors"
+                    >
+                      <MapPin className="w-3 h-3" />
+                      View on map
+                    </a>
+                  )}
+                </div>
                 {shippingAddr.street && <p className="text-muted-foreground">{shippingAddr.street}</p>}
                 {shippingAddr.city && shippingAddr.state && (
                   <p className="text-muted-foreground">
