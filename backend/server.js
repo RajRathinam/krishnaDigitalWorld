@@ -24,7 +24,8 @@ import {
   publicShopRouter,
   adminSettingsRouter,
   heroSliderRoutes,
-  paymentRoutes
+  paymentRoutes,
+  giftRoutes
 } from './routes/index.js';
 import advertisementRoutes from './routes/advertisementRoutes.js';
 import { apiLimiter } from './middleware/rateLimiter.js';
@@ -163,6 +164,7 @@ app.use('/api/advertisements', advertisementRoutes);
 app.use('/api/brands', brandRoutes);
 app.use('/api/models', modelRoutes);
 app.use('/api/birthdays', birthdayRoutes);
+app.use('/api/gifts', giftRoutes);
 app.use('/api/admin/settings', adminSettingsRouter);
 app.use('/api/hero-slider', heroSliderRoutes);
 app.use('/api/payments', paymentRoutes); // PhonePe PG v2 — must be before /api catch-all

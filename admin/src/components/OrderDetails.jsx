@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
     ArrowLeft, Package, Truck, ShoppingCart, CreditCard,
     MapPin, Phone, Mail, User, Clock, CheckCircle, XCircle,
-    BadgePercent, Ticket, Receipt, Tag,
+    BadgePercent, Ticket, Receipt, Tag, Gift as GiftIcon
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -560,6 +560,46 @@ export const OrderDetails = () => {
                             </CardContent>
                         </Card>
                     )}
+
+                    {/* Gift status */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <GiftIcon className="h-5 w-5" /> Gift Status
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border/50">
+                                <div>
+                                    <p className="text-sm font-semibold">Status</p>
+                                    <p className="text-xs text-muted-foreground">{order.giftScanned ? "Scanned" : "Not Scanned"}</p>
+                                </div>
+                                <Badge variant="outline" className={`${
+                                    order.giftStatus === 'won' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 
+                                    order.giftStatus === 'lost' ? 'bg-gray-100 text-gray-500 border-gray-200' : 
+                                    'bg-yellow-50 text-yellow-700 border-yellow-200'
+                                } capitalize`}>
+                                    {order.giftStatus || "pending"}
+                                </Badge>
+                            </div>
+                            
+                            {order.giftStatus === 'won' && order.gift && (
+                                <div className="mt-3 flex items-center gap-3 bg-emerald-50/50 border border-emerald-100 rounded-lg p-3">
+                                    <div className="w-12 h-12 bg-white rounded-md border border-border/50 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                                        {order.gift.image ? (
+                                            <img src={getImageUrl(order.gift.image)} alt={order.gift.productName} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <GiftIcon className="h-5 w-5 text-muted-foreground" />
+                                        )}
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-semibold text-emerald-800">{order.gift.productName}</p>
+                                        <p className="text-xs text-emerald-600">Gift Won!</p>
+                                    </div>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
         </div>

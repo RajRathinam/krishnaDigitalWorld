@@ -5,6 +5,8 @@ import { Link } from "react-router-dom";
 import axios from "axios";
 import { baseUrl } from "@/config/baseUrl";
 import { getImageUrl } from "@/lib/utils";
+import { useCart } from "@/contexts/CartContext";
+import { useNavigate } from "react-router-dom";
 
 const API_BASE_URL = baseUrl;
 
@@ -54,6 +56,8 @@ const formatPrice = (price) => {
 export default function AccountWishlist() {
   const [wishlistItems, setWishlistItems] = useState([]);
   const [movingToCart, setMovingToCart] = useState({}); // Track which items are being moved
+  const { cartItems } = useCart();
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadWishlist();
@@ -116,6 +120,19 @@ export default function AccountWishlist() {
       }
 
       console.log('Adding to cart from wishlist:', payload);
+
+      const existingItem = (cartItems || []).find(
+        (cartItem) => (String(cartItem.productId) === String(item.id) || (cartItem.product && (String(cartItem.product.id) === String(item.id) || String(cartItem.product._id) === String(item.id)))) && 
+        (cartItem.colorName === item.colorName || (!cartItem.colorName && !item.colorName))
+      );
+
+      if (existingItem) {
+        if (window.confirm("Already in Cart\n\nThis product is already in your cart. If you want to increase the quantity, please go to the cart page.\n\nClick OK to go to Cart.")) {
+            navigate('/cart');
+        }
+        setMovingToCart((prev) => ({ ...prev, [item.id]: false }));
+        return;
+      }
 
       // Call the cart API
       const result = await cartApi.addToCart(payload);

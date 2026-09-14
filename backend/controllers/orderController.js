@@ -1,4 +1,4 @@
-import { Order, Cart, Product, User, Coupon, UserCoupon, sequelize, Sequelize } from '../models/index.js';
+import { Order, Cart, Product, User, Coupon, UserCoupon, sequelize, Sequelize, Gift } from '../models/index.js';
 import { generateOrderNumber } from '../utils/helpers.js';
 
 // Helper: always returns a plain JS object for stock, handles both string and object
@@ -460,6 +460,11 @@ export const getOrder = async (req, res) => {
           model: Coupon,
           as: 'coupon',
           attributes: ['id', 'code', 'discountType', 'discountValue']
+        },
+        {
+          model: Gift,
+          as: 'gift',
+          attributes: ['id', 'productName', 'image', 'price']
         }
       ]
     });
@@ -717,5 +722,83 @@ export const getOrderByNumber = async (req, res) => {
       success: false,
       message: 'Server error while fetching order'
     });
+  }
+};
+
+/**
+ * @desc    Scan order for a gift
+ * @route   POST /api/orders/:id/scan-gift
+ * @access  Private (Customer)
+ */
+export const scanOrderGift = async (req, res) => {
+  try {
+    const orderId = req.params.id; // Either order ID or orderNumber
+    const order = await Order.findOne({
+      where: {
+        [Sequelize.Op.or]: [
+          { id: isNaN(parseInt(orderId)) ? null : parseInt(orderId) },
+          { orderNumber: orderId }
+        ],
+        userId: req.user.id
+      }
+    });
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    if (parseFloat(order.finalAmount) <= 5000) {
+      return res.status(400).json({ success: false, message: 'Order must be over ₹5,000 to win a gift.' });
+    }
+
+    if (order.giftScanned) {
+      return res.status(200).json({
+        success: true,
+        alreadyScanned: true,
+        message: order.giftStatus === 'won' ? 'You already claimed your gift for this order!' : 'You already lost your gift. Better luck next time!'
+      });
+    }
+
+    // 50% chance to win
+    const isWin = Math.random() > 0;
+    
+    if (isWin) {
+      // Find a random active gift
+      const gifts = await Gift.findAll({ where: { status: true } });
+      if (gifts.length > 0) {
+        const randomGift = gifts[Math.floor(Math.random() * gifts.length)];
+        
+        await order.update({
+          giftScanned: true,
+          giftStatus: 'won',
+          giftId: randomGift.id
+        });
+
+        return res.status(200).json({
+          success: true,
+          alreadyScanned: false,
+          status: 'won',
+          gift: randomGift,
+          message: 'Congratulations! You won a gift.'
+        });
+      }
+    }
+
+    // If lost or no active gifts
+    await order.update({
+      giftScanned: true,
+      giftStatus: 'lost'
+    });
+
+    return res.status(200).json({
+      success: true,
+      alreadyScanned: false,
+      status: 'lost',
+      message: 'Better luck next time!'
+    });
+    
+  } catch (error) {
+    console.error('Scan order gift error:', error);
+    res.status(500).json({ success: false, message: 'Server error while scanning gift' });
   }
 };

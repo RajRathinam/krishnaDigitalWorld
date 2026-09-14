@@ -618,36 +618,36 @@ export default function CheckoutScreen() {
                                 <TouchableOpacity
                                     key={addr.id}
                                     onPress={() => setSelectedAddress(addr.id)}
-                                    className={`bg-white rounded-3xl p-5 border-2 ${
+                                    className={`bg-white rounded-2xl p-4 border-2 ${
                                         isSelected ? 'border-[#FFC107]' : 'border-gray-100'
                                     } shadow-sm relative overflow-hidden`}
                                 >
-                                    <View className="flex-row items-start gap-3">
-                                        <View className={`w-5 h-5 rounded-full border-2 items-center justify-center mt-1 ${
+                                    <View className="flex-row items-start gap-2.5">
+                                        <View className={`w-5 h-5 rounded-full border-2 items-center justify-center mt-0.5 ${
                                             isSelected ? 'border-[#FFC107] bg-[#FFC107]' : 'border-gray-300'
                                         }`}>
                                             {isSelected && <Check size={10} color="#FFFFFF" strokeWidth={3} />}
                                         </View>
 
                                         <View className="flex-1">
-                                            <View className="flex-row items-center flex-wrap gap-2 mb-1">
-                                                <Text className="text-gray-900 font-bold text-sm font-heading">{addr.name}</Text>
+                                            <View className="flex-row items-center flex-wrap gap-2 mb-0.5">
+                                                <Text className="text-gray-900 font-bold text-base font-heading">{addr.name}</Text>
                                                 <View className="bg-gray-100 px-2 py-0.5 rounded-full flex-row items-center gap-1">
                                                     {getAddressTypeIcon(addr.type)}
                                                     <Text className="text-gray-500 text-[9px] font-black uppercase tracking-wider font-body">{addr.type}</Text>
                                                 </View>
                                             </View>
 
-                                            <Text className="text-gray-600 text-xs leading-relaxed mt-1 font-body">
+                                            <Text className="text-gray-700 text-sm leading-snug font-body">
                                                 {addr.street}, {addr.city}, {addr.state} - <Text className="font-bold">{addr.pincode}</Text>
                                             </Text>
 
                                             {addr.phone && (
-                                                <Text className="text-gray-400 text-[10px] font-bold mt-1 font-body">PHONE: {addr.phone}</Text>
+                                                <Text className="text-gray-500 text-xs font-bold mt-1 font-body">PHONE: {addr.phone}</Text>
                                             )}
 
                                             {/* Serviceability indicator */}
-                                            <View className="mt-3 pt-2 border-t border-gray-50 flex-row items-center gap-1.5">
+                                            <View className="mt-2 pt-2 border-t border-gray-50 flex-row items-center gap-1.5">
                                                 <View className={`w-2 h-2 rounded-full ${serviceable ? 'bg-green-500' : 'bg-red-500'}`} />
                                                 <Text className={`text-[10px] font-bold font-body ${serviceable ? 'text-green-600' : 'text-red-500'}`}>
                                                     {serviceable ? 'Serviceable Pincode' : 'Delivery Not Available'}

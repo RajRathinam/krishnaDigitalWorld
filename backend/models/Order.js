@@ -89,6 +89,25 @@ const Order = sequelize.define('Order', {
       key: 'id'
     }
   },
+  giftScanned: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    field: 'gift_scanned'
+  },
+  giftStatus: {
+    type: DataTypes.ENUM('pending', 'won', 'lost'),
+    defaultValue: 'pending',
+    field: 'gift_status'
+  },
+  giftId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    field: 'gift_id',
+    references: {
+      model: 'gifts',
+      key: 'id'
+    }
+  },
   // ── PhonePe PG v2 fields ────────────────────
   merchantOrderId: {
     type: DataTypes.STRING(120),

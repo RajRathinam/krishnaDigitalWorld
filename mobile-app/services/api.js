@@ -226,6 +226,10 @@ export const orderApi = {
     const response = await api.post('/orders', data);
     return response.data;
   },
+  scanGift: async (id) => {
+    const response = await api.post(`/orders/${id}/scan-gift`);
+    return response.data;
+  },
 };
 
 export const couponApi = {

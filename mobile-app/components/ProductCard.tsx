@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useCart } from '@/contexts/CartContext';
@@ -30,7 +30,7 @@ interface ProductCardProps {
 
 export default function ProductCard({ product, onPress, isCompact }: ProductCardProps) {
   const router = useRouter();
-  const { addToCart } = useCart();
+  const { cart, addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const [isAdding, setIsAdding] = React.useState(false);
   const [showSuccess, setShowSuccess] = React.useState(false);
@@ -101,13 +101,30 @@ export default function ProductCard({ product, onPress, isCompact }: ProductCard
   };
 
   const handleAddToCart = async () => {
+    const colorsAndImages = parseJSONSafe(product.colorsAndImages, {});
+    const colorNames = Object.keys(colorsAndImages);
+    const defaultColor = colorNames.length > 0 ? colorNames[0] : undefined;
+    const productIdStr = String(product.id || product._id);
+
+    const existingItem = cart.items.find(
+      (item) => (String(item.productId) === productIdStr || (item.product && (String(item.product.id) === productIdStr || String(item.product._id) === productIdStr))) && (String(item.colorName || '') === String(defaultColor || ''))
+    );
+
+    if (existingItem) {
+      Alert.alert(
+        'Already in Cart',
+        'This product is already in your cart. If you want to increase the quantity, please go to the cart page.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Go to Cart', onPress: () => router.push('/cart') }
+        ]
+      );
+      return;
+    }
+
     setIsAdding(true);
     try {
-      const colorsAndImages = parseJSONSafe(product.colorsAndImages, {});
-      const colorNames = Object.keys(colorsAndImages);
-      const defaultColor = colorNames.length > 0 ? colorNames[0] : undefined;
-
-      await addToCart(product.id || product._id, 1, defaultColor);
+      await addToCart(productIdStr, 1, defaultColor);
       setShowSuccess(true);
       setTimeout(() => {
         setShowSuccess(false);

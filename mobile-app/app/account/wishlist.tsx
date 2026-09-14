@@ -2,42 +2,39 @@ import React, { useState, useEffect, useRef, memo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Heart, ShoppingCart, Trash2, ChevronLeft } from 'lucide-react-native';
+import { Trash2, ChevronLeft, Eye, Heart } from 'lucide-react-native';
 import Header from '@/components/Header';
 import { useRouter, useNavigation } from 'expo-router';
 import { useWishlist } from '@/contexts/WishlistContext';
-import { useCart } from '@/contexts/CartContext';
 import { ProductCardSkeleton } from '@/components/SkeletonLoader';
 import Skeleton from '@/components/Skeleton';
 import { API_BASE_URL } from '@/services/api';
 
 // Isolated and memoized WishlistItem to prevent CSS Interop / Navigation Context loss issues
-const WishlistItem = memo(({ 
-    item, 
-    onRemove, 
-    onMoveToCart, 
-    isDeleting, 
-    isMoving 
-}: { 
-    item: any; 
-    onRemove: (id: string) => void; 
-    onMoveToCart: (item: any) => void; 
-    isDeleting: boolean; 
-    isMoving: boolean;
+const WishlistItem = memo(({
+    item,
+    onRemove,
+    onViewDetails,
+    isDeleting,
+}: {
+    item: any;
+    onRemove: (id: string) => void;
+    onViewDetails: (item: any) => void;
+    isDeleting: boolean;
 }) => {
-    const imageUrl = item.image?.startsWith('http') 
-        ? item.image 
+    const imageUrl = item.image?.startsWith('http')
+        ? item.image
         : (item.image ? `${API_BASE_URL}${item.image}` : 'https://via.placeholder.com/150');
 
     return (
         <View className="w-[48%] bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
             <View className="relative">
-                <Image 
-                    source={{ uri: imageUrl }} 
-                    className="w-full h-40 bg-white"
-                    resizeMode="contain"
+                <Image
+                    source={{ uri: imageUrl }}
+                    style={{ width: '100%', height: 160, backgroundColor: '#fff' }}
+                    contentFit="contain"
                 />
-                <TouchableOpacity 
+                <TouchableOpacity
                     className="absolute top-2 right-2 bg-white/80 p-2 rounded-full shadow-sm"
                     onPress={() => onRemove(item.id)}
                     disabled={isDeleting}
@@ -49,24 +46,17 @@ const WishlistItem = memo(({
                     )}
                 </TouchableOpacity>
             </View>
-            
+
             <View className="p-3">
                 <Text className="text-gray-900 font-medium text-xs mb-1" numberOfLines={2}>{item.name}</Text>
                 <Text className="text-[#FFC107] font-bold text-sm">₹{item.price.toLocaleString('en-IN')}</Text>
-                
-                <TouchableOpacity 
-                    className={`mt-3 bg-gray-900 py-2.5 rounded-lg items-center flex-row justify-center ${isMoving ? 'opacity-70' : ''}`}
-                    onPress={() => onMoveToCart(item)}
-                    disabled={isMoving}
+
+                <TouchableOpacity
+                    className="mt-3 bg-gray-900 py-2.5 rounded-lg items-center flex-row justify-center"
+                    onPress={() => onViewDetails(item)}
                 >
-                    {isMoving ? (
-                        <ActivityIndicator size={12} color="#FFFFFF" />
-                    ) : (
-                        <ShoppingCart size={12} color="#FFFFFF" />
-                    )}
-                    <Text className="text-white text-[10px] font-bold ml-1.5">
-                        {isMoving ? 'Moving...' : 'Move to Cart'}
-                    </Text>
+                    <Eye size={12} color="#FFFFFF" />
+                    <Text className="text-white text-[10px] font-bold ml-1.5">View Details</Text>
                 </TouchableOpacity>
             </View>
         </View>
@@ -93,9 +83,7 @@ const EmptyWishlist = memo(({ onExplore }: { onExplore: () => void }) => (
 export default function WishlistScreen() {
     const navigation = useNavigation();
     const router = useRouter(); // Keeping for /shop navigation
-    const { addToCart } = useCart();
     const { wishlist, removeFromWishlist, isLoading: loading } = useWishlist();
-    const [isMoving, setIsMoving] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState<string | null>(null);
     const isMounted = useRef(true);
 
@@ -121,24 +109,15 @@ export default function WishlistScreen() {
         }
     };
 
-    const handleMoveToCart = async (item: any) => {
-        setIsMoving(item.id);
-        try {
-            const success = await addToCart(item.id, 1, item.colorName, item.image);
-            if (success) {
-                await removeFromWishlist(item.id);
-                // Alert removed to avoid interfering with context/re-renders
-            }
-        } catch (error: any) {
-            if (isMounted.current) {
-                Alert.alert('Error', error?.message || 'Failed to move to cart');
-            }
-        } finally {
-            if (isMounted.current) {
-                setIsMoving(null);
-            }
-        }
+    const handleViewDetails = (item: any) => {
+        const slug = item.slug || item.id;
+        router.push({
+            pathname: '/product/[id]',
+            params: { id: slug }
+        });
     };
+
+
 
     if (loading) {
         return (
@@ -176,13 +155,12 @@ export default function WishlistScreen() {
                     ) : (
                         <View className="flex-row flex-wrap justify-between gap-y-4">
                             {wishlist.map((item) => (
-                                <WishlistItem 
+                                <WishlistItem
                                     key={item.id}
                                     item={item}
                                     onRemove={handleRemoveFromWishlist}
-                                    onMoveToCart={handleMoveToCart}
+                                    onViewDetails={handleViewDetails}
                                     isDeleting={isDeleting === item.id}
-                                    isMoving={isMoving === item.id}
                                 />
                             ))}
                         </View>

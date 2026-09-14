@@ -13,6 +13,7 @@ import { FloatingContactButtons } from "@/components/product/FloatingContactButt
 import { toast } from "sonner";
 import api from "@/lib/api";
 import { getImageUrl } from "@/lib/utils";
+import { useCart } from "@/contexts/CartContext";
 
 const FRONTEND_URL = import.meta.env.VITE_FRONTEND_URL || window.location.origin;
 
@@ -301,8 +302,9 @@ function SpecCell({ row, index, total, isLastInSection }) {
 // ─── Main ProductDetail ────────────────────────────────────────────────────────
 export default function ProductDetail() {
   const { slug, id } = useParams();
-  const identifier = slug || id || "";
   const navigate = useNavigate();
+  const { cartItems } = useCart();
+  const identifier = slug || id || "";
 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -442,6 +444,19 @@ export default function ProductDetail() {
           toast.error("Selected color is out of stock"); return false;
         }
       }
+
+      const existingItem = (cartItems || []).find(
+        (item) => (String(item.productId) === String(product.id) || (item.product && (String(item.product.id) === String(product.id) || String(item.product._id) === String(product.id)))) && 
+        (item.colorName === selectedColorName || (!item.colorName && !selectedColorName))
+      );
+
+      if (existingItem) {
+        if (window.confirm("Already in Cart\n\nThis product is already in your cart. If you want to increase the quantity, please go to the cart page.\n\nClick OK to go to Cart.")) {
+            navigate('/cart');
+        }
+        return false;
+      }
+
       const res = await api.post("/cart/items", payload);
       if (res.data.success) {
         window.dispatchEvent(new Event("cartUpdated"));

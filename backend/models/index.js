@@ -16,6 +16,7 @@ import HeroSlider from './HeroSlider.js';
 import Sequelize from 'sequelize';
 // Add to your models/index.js
 import Advertisement from './Advertisement.js';
+import Gift from './Gift.js';
 
 // Add associations if needed
 Advertisement.belongsTo(User, { as: 'creator', foreignKey: 'createdBy' });
@@ -45,6 +46,8 @@ Cart.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 // Order associations
 Order.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 Order.belongsTo(Coupon, { foreignKey: 'couponId', as: 'coupon' });
+Order.belongsTo(Gift, { foreignKey: 'giftId', as: 'gift' });
+Gift.hasMany(Order, { foreignKey: 'giftId', as: 'orders' });
 
 // Review associations
 Review.belongsTo(Product, { foreignKey: 'productId', as: 'product' });
@@ -91,5 +94,6 @@ export {
   UserCoupon,
   Model,
   ShopInfo,
-  HeroSlider,Advertisement
+  HeroSlider,Advertisement,
+  Gift
 };

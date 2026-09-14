@@ -5,6 +5,7 @@ import { getImageUrl } from "@/lib/utils";
 import { Star, Heart, ShoppingCart, Check, Tv, Refrigerator, WashingMachine, AirVent, Fan, Lightbulb, Flame, Microwave, Droplets, Shirt, Wind, Sofa, BedDouble, Armchair, DoorOpen, BookOpen, Package, Headphones, Speaker, Wifi, Keyboard, } from "lucide-react";
 import axios from "axios";
 import { baseUrl } from '@/config/baseUrl';
+import { useCart } from "@/contexts/CartContext";
 // Base API configuration
 const API_BASE_URL = baseUrl;
 // Helper function to parse JSON strings safely
@@ -391,6 +392,7 @@ export function ProductCard({ product, variant = "default", selectedColor }) {
     // REMOVED EMI
     const slug = parsedProduct.slug || id;
     const { addToCart: addToCartContext } = useCartContext();
+    const { cartItems } = useCart();
     // Function to find the first image and color
     const getProductImageAndColor = () => {
         let imageUrl = '/placeholder.svg';
@@ -482,6 +484,20 @@ export function ProductCard({ product, variant = "default", selectedColor }) {
                 setIsAddingToCart(false);
                 return;
             }
+
+            const existingItem = (cartItems || []).find(
+                (item) => (String(item.productId) === productIdStr || (item.product && (String(item.product.id) === productIdStr || String(item.product._id) === productIdStr))) && 
+                (item.colorName === colorName || (!item.colorName && !colorName))
+            );
+
+            if (existingItem) {
+                if (window.confirm("Already in Cart\n\nThis product is already in your cart. If you want to increase the quantity, please go to the cart page.\n\nClick OK to go to Cart.")) {
+                    navigate('/cart');
+                }
+                setIsAddingToCart(false);
+                return;
+            }
+
             // Use the addToCart from cart context with imageUrl
             const success = await addToCartContext(productIdStr, 1, colorName, imageUrl);
             if (success) {

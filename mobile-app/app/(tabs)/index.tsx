@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, Text, ScrollView, Pressable, Animated, Easing } from 'react-native';
+import { View, Text, ScrollView, Pressable, Animated, Easing, RefreshControl } from 'react-native';
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ShoppingBag, Laptop, Smartphone, Home as HomeIcon, Watch } from 'lucide-react-native';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import CategoryIcon from '@/components/CategoryIcon';
 import ProductCard from '@/components/ProductCard';
@@ -52,7 +52,7 @@ const AnimatedTodayDealsBanner = () => {
           left: '-50%',
           marginTop: -40,
           transform: [{ rotate: spin }]
-        }} />
+        }}/>
 
         {/* Inner Card container covering the center, leaving only the "border" visible */}
         <View style={{ flex: 1, borderRadius: 15, backgroundColor: '#1a1a1a', overflow: 'hidden', position: 'relative' }}>
@@ -87,12 +87,12 @@ const AnimatedTodayDealsBanner = () => {
 export default function HomeScreen() {
   const router = useRouter();
 
-  const { data: categoriesData, isLoading: categoriesLoading } = useQuery({
+  const { data: categoriesData, isLoading: categoriesLoading, refetch: refetchCategories } = useQuery({
     queryKey: ['categories'],
     queryFn: categoryApi.getCategories,
   });
 
-  const { data: productsData, isLoading: productsLoading } = useQuery({
+  const { data: productsData, isLoading: productsLoading, refetch: refetchProducts } = useQuery({
     queryKey: ['new-arrivals-products'],
     queryFn: () => productApi.getNewArrivals(6),
   });
@@ -101,6 +101,19 @@ export default function HomeScreen() {
     queryKey: ['deal-of-the-day'],
     queryFn: () => productApi.getDealOfTheDay(6),
   });
+
+  const [refreshing, setRefreshing] = React.useState(false);
+  const queryClient = useQueryClient();
+
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    try {
+      // Invalidate all queries to force child components (like sliders/brands) to refetch too
+      await queryClient.invalidateQueries();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [queryClient]);
 
   const categories = categoriesData?.data || [];
   const newArrivalsProducts = productsData?.data || [];
@@ -123,7 +136,14 @@ export default function HomeScreen() {
     <SafeAreaView className="flex-1 bg-white" edges={['left', 'right']}>
       <Header />
       <AdvertisementCarousel position="homepage_top" />
-      <ScrollView showsVerticalScrollIndicator={false} className="bg-gray-50/30 mt-2" contentContainerStyle={{ paddingBottom: 30 }}>
+      <ScrollView 
+        showsVerticalScrollIndicator={false} 
+        className="bg-gray-50/30 mt-2" 
+        contentContainerStyle={{ paddingBottom: 30 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#FFC107']} />
+        }
+      >
         <HeroSlider />
 
         {!categoriesLoading && categoriesData?.data && (

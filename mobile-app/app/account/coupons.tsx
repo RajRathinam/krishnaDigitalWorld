@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, Clipboard, Alert } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, Clipboard, Alert, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ticket, Calendar, Copy, Check, ChevronLeft, AlertCircle } from 'lucide-react-native';
 import Header from '@/components/Header';
@@ -69,10 +69,21 @@ function CouponCard({ coupon, index }: { coupon: any, index: number }) {
 
 export default function CouponsScreen() {
     const router = useRouter();
-    const { data: couponsResponse, isLoading } = useQuery({
+    const { data: couponsResponse, isLoading, refetch } = useQuery({
         queryKey: ['my-coupons'],
         queryFn: couponApi.getMyCoupons,
     });
+
+    const [refreshing, setRefreshing] = useState(false);
+
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        try {
+            await refetch();
+        } finally {
+            setRefreshing(false);
+        }
+    }, [refetch]);
 
     const coupons = couponsResponse?.data || couponsResponse || [];
 
@@ -106,7 +117,12 @@ export default function CouponsScreen() {
     return (
         <SafeAreaView className="flex-1 bg-gray-50" edges={['left', 'right', 'bottom']}>
             <Header />
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView 
+                showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#FFC107']} />
+                }
+            >
                 <View className="p-4">
                     <View className="flex-row items-center mb-6">
                         <TouchableOpacity onPress={() => router.back()} className="mr-4 p-2 bg-white rounded-full shadow-sm">

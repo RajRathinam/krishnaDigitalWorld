@@ -1,4 +1,4 @@
-import { Order, User, Product, Coupon, sequelize } from '../models/index.js';
+import { Order, User, Product, Coupon, Gift, sequelize } from '../models/index.js';
 import { Op, Sequelize } from 'sequelize'; // Add Sequelize import
 // import { sendOrderConfirmationEmail, sendOrderConfirmationSMS } from '../services/emailService.js';
 import { sendOrderShippedSMS, sendOrderDeliveredSMS } from '../services/smsService.js';
@@ -90,6 +90,11 @@ export const getAllOrders = async (req, res) => {
           model: User,
           as: 'user',
           attributes: ['id', 'name', 'phone', 'email', 'slug']
+        },
+        {
+          model: Gift,
+          as: 'gift',
+          attributes: ['id', 'productName', 'image']
         }
       ]
     });
@@ -148,6 +153,9 @@ export const getAllOrders = async (req, res) => {
             trackingId: order.trackingId,
             taxAmount: order.taxAmount,
             isCouponProvided: order.isCouponProvided,
+            giftStatus: order.giftStatus || order.dataValues?.gift_status || 'pending',
+            giftScanned: order.giftScanned || order.dataValues?.gift_scanned || false,
+            gift: order.gift || null,
             isCancelled: order.orderStatus === 'cancelled',
             isShipped: order.orderStatus === 'shipped' || order.orderStatus === 'delivered',
             createdAt: order.createdAt || order.dataValues?.created_at || order.created_at,
@@ -199,6 +207,11 @@ export const getOrderDetails = async (req, res) => {
           model: Coupon,
           as: 'coupon',
           attributes: ['id', 'code', 'discountType', 'discountValue'],
+        },
+        {
+          model: Gift,
+          as: 'gift',
+          attributes: ['id', 'productName', 'image'],
         },
       ],
     });
@@ -356,6 +369,9 @@ export const getOrderDetails = async (req, res) => {
       paymentStatus:    order.paymentStatus,
       paymentMethod:    order.paymentMethod,
       isCouponProvided: order.isCouponProvided,
+      giftStatus:       order.giftStatus || order.dataValues?.gift_status || 'pending',
+      giftScanned:      order.giftScanned || order.dataValues?.gift_scanned || false,
+      gift:             order.gift || null,
 
       /* ── Items & addresses (enriched / parsed above) ───────────── */
       orderItems:     enrichedItems,

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, Alert, StyleSheet, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, Alert, StyleSheet, Pressable, KeyboardAvoidingView, Platform, RefreshControl } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MapPin, Plus, Home, Briefcase, User, X, Edit2, Trash2, CheckCircle2, ChevronLeft, MapPinned } from 'lucide-react-native';
 import Header from '@/components/Header';
@@ -31,10 +31,21 @@ export default function AddressesScreen() {
         name: '', phone: '', street: '', city: '', state: '', pincode: '', type: 'home'
     });
 
-    const { data: userResponse, isLoading } = useQuery({
+    const { data: userResponse, isLoading, refetch } = useQuery({
         queryKey: ['me'],
         queryFn: authApi.getMe,
     });
+
+    const [refreshing, setRefreshing] = useState(false);
+
+    const onRefresh = React.useCallback(async () => {
+        setRefreshing(true);
+        try {
+            await queryClient.invalidateQueries({ queryKey: ['me'] });
+        } finally {
+            setRefreshing(false);
+        }
+    }, [queryClient]);
 
     const userData = userResponse?.data || userResponse?.user;
 
@@ -144,7 +155,13 @@ export default function AddressesScreen() {
     return (
         <SafeAreaView className="flex-1 bg-gray-50" edges={['bottom', 'left', 'right']}>
             <Header />
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+            <ScrollView 
+                showsVerticalScrollIndicator={false} 
+                contentContainerStyle={{ paddingBottom: 40 }}
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#FFC107']} />
+                }
+            >
                 <View className="p-4">
                     {/* Header Row */}
                     <View className="flex-row items-center justify-between mb-6">
@@ -285,15 +302,15 @@ export default function AddressesScreen() {
 
                     {/* Form Container */}
                     <KeyboardAvoidingView 
-                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                        behavior="padding"
                         className="flex-1 justify-end" 
                         pointerEvents="box-none"
                     >
                         <Animated.View 
                             entering={FadeInDown}
                             exiting={FadeOutDown}
-                            style={{ paddingBottom: Math.max(insets.bottom + 20, 40) }}
                             className="bg-white rounded-t-[32px] p-6 shadow-2xl"
+                            style={{ paddingBottom: Math.max(insets.bottom, 10) }}
                         >
                             <View className="flex-row justify-between items-center mb-6">
                                 <Text className="text-xl font-bold text-gray-900">
@@ -317,6 +334,7 @@ export default function AddressesScreen() {
                                             placeholder="Full name of receiver"
                                             value={form.name}
                                             onChangeText={val => setForm({ ...form, name: val })}
+                                            returnKeyType="next"
                                         />
                                     </View>
 
@@ -340,6 +358,7 @@ export default function AddressesScreen() {
                                                 placeholder="City"
                                                 value={form.city}
                                                 onChangeText={val => setForm({ ...form, city: val })}
+                                                returnKeyType="next"
                                             />
                                         </View>
                                         <View className="flex-1">
@@ -349,6 +368,7 @@ export default function AddressesScreen() {
                                                 placeholder="State"
                                                 value={form.state}
                                                 onChangeText={val => setForm({ ...form, state: val })}
+                                                returnKeyType="next"
                                             />
                                         </View>
                                     </View>
@@ -362,6 +382,7 @@ export default function AddressesScreen() {
                                             maxLength={6}
                                             value={form.pincode}
                                             onChangeText={val => setForm({ ...form, pincode: val.replace(/\D/g, '') })}
+                                            returnKeyType="done"
                                         />
                                     </View>
                                 </View>
@@ -370,7 +391,7 @@ export default function AddressesScreen() {
                             <TouchableOpacity
                                 onPress={handleSave}
                                 disabled={addMutation.isPending || updateMutation.isPending}
-                                className={`bg-gray-900 py-4 rounded-2xl mt-8 items-center ${(addMutation.isPending || updateMutation.isPending) ? 'opacity-70' : ''}`}
+                                className={`bg-gray-900 py-4 rounded-2xl mt-6 items-center ${(addMutation.isPending || updateMutation.isPending) ? 'opacity-70' : ''}`}
                             >
                                 <Text className="text-white font-bold text-base">
                                     {editingAddress ? 'Update Address' : 'Save Address'}

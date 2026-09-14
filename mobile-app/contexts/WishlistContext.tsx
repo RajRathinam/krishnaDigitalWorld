@@ -10,15 +10,16 @@ interface WishlistItem {
   originalPrice: number;
   image: string;
   slug: string;
+  colorName?: string;
   addedAt: string;
 }
 
 interface WishlistContextType {
   wishlist: WishlistItem[];
-  toggleWishlist: (product: any, imageUrl?: string) => Promise<void>;
+  toggleWishlist: (product: any, imageUrl?: string) => void;
   isInWishlist: (productId: string) => boolean;
-  removeFromWishlist: (productId: string) => Promise<void>;
-  clearWishlist: () => Promise<void>;
+  removeFromWishlist: (productId: string) => void;
+  clearWishlist: () => void;
   isLoading: boolean;
 }
 
@@ -28,46 +29,39 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load wishlist on mount
+  // Load wishlist from AsyncStorage on mount
   useEffect(() => {
-    loadWishlist();
+    AsyncStorage.getItem(WISHLIST_KEY)
+      .then(saved => {
+        if (saved) setWishlist(JSON.parse(saved));
+      })
+      .catch(err => console.error('Failed to load wishlist:', err))
+      .finally(() => setIsLoading(false));
   }, []);
 
-  const loadWishlist = async () => {
-    try {
-      setIsLoading(true);
-      const savedWishlist = await AsyncStorage.getItem(WISHLIST_KEY);
-      if (savedWishlist) {
-        setWishlist(JSON.parse(savedWishlist));
-      }
-    } catch (error) {
-      console.error('Failed to load wishlist:', error);
-    } finally {
-      setIsLoading(false);
+  // Auto-save to AsyncStorage whenever wishlist changes (only after initial load)
+  useEffect(() => {
+    if (!isLoading) {
+      AsyncStorage.setItem(WISHLIST_KEY, JSON.stringify(wishlist)).catch(err =>
+        console.error('Failed to save wishlist:', err)
+      );
     }
-  };
+  }, [wishlist, isLoading]);
 
-  const saveWishlist = async (items: WishlistItem[]) => {
-    try {
-      await AsyncStorage.setItem(WISHLIST_KEY, JSON.stringify(items));
-    } catch (error) {
-      console.error('Failed to save wishlist:', error);
-    }
-  };
-
-  const isInWishlist = (productId: string) => {
+  const isInWishlist = (productId: string): boolean => {
     return wishlist.some(item => String(item.id) === String(productId));
   };
 
-  const toggleWishlist = async (product: any, imageUrl?: string) => {
+  const toggleWishlist = (product: any, imageUrl?: string): void => {
     const productId = String(product.id || product.productId || product._id);
-    
+
     if (isInWishlist(productId)) {
-      await removeFromWishlist(productId);
+      // Remove from wishlist
+      setWishlist(prev => prev.filter(item => String(item.id) !== productId));
     } else {
-      // Normalize product data for wishlist (matching web version logic)
-      let finalImage = imageUrl || product.image || (Array.isArray(product.images) && product.images[0]) || '';
-      
+      // Add to wishlist with duplicate guard
+      const finalImage = imageUrl || product.image || (Array.isArray(product.images) && product.images[0]) || '';
+
       const newItem: WishlistItem = {
         id: productId,
         name: product.name || product.shortName || 'Product',
@@ -75,34 +69,34 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         originalPrice: product.price ?? product.originalPrice ?? 0,
         image: finalImage,
         slug: product.slug || productId,
+        colorName: product.colorName || undefined,
         addedAt: new Date().toISOString()
       };
-      
-      const updatedWishlist = [...wishlist, newItem];
-      setWishlist(updatedWishlist);
-      await saveWishlist(updatedWishlist);
+
+      setWishlist(prev => {
+        const alreadyExists = prev.some(item => String(item.id) === productId);
+        if (alreadyExists) return prev;
+        return [...prev, newItem];
+      });
     }
   };
 
-  const removeFromWishlist = async (productId: string) => {
-    const updatedWishlist = wishlist.filter(item => String(item.id) !== String(productId));
-    setWishlist(updatedWishlist);
-    await saveWishlist(updatedWishlist);
+  const removeFromWishlist = (productId: string): void => {
+    setWishlist(prev => prev.filter(item => String(item.id) !== String(productId)));
   };
 
-  const clearWishlist = async () => {
+  const clearWishlist = (): void => {
     setWishlist([]);
-    await AsyncStorage.removeItem(WISHLIST_KEY);
   };
 
   return (
-    <WishlistContext.Provider value={{ 
-      wishlist, 
-      toggleWishlist, 
-      isInWishlist, 
-      removeFromWishlist, 
-      clearWishlist, 
-      isLoading 
+    <WishlistContext.Provider value={{
+      wishlist,
+      toggleWishlist,
+      isInWishlist,
+      removeFromWishlist,
+      clearWishlist,
+      isLoading
     }}>
       {children}
     </WishlistContext.Provider>

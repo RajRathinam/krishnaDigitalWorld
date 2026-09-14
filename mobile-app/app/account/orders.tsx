@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, RefreshControl } from 'react-native';
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Package, ChevronRight, Calendar, Clock, Check, Truck, X, ChevronLeft } from 'lucide-react-native';
@@ -32,10 +32,21 @@ function StatusBadge({ status }: { status: string }) {
 
 export default function OrdersScreen() {
     const router = useRouter();
-    const { data: ordersResponse, isLoading } = useQuery({
+    const { data: ordersResponse, isLoading, refetch } = useQuery({
         queryKey: ['orders'],
         queryFn: orderApi.getOrders,
     });
+
+    const [refreshing, setRefreshing] = useState(false);
+
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        try {
+            await refetch();
+        } finally {
+            setRefreshing(false);
+        }
+    }, [refetch]);
 
     const orders = ordersResponse?.data?.orders || ordersResponse?.data || ordersResponse || [];
 
@@ -56,7 +67,13 @@ export default function OrdersScreen() {
     return (
         <SafeAreaView className="flex-1 bg-gray-50" edges={['left', 'right']}>
             <Header />
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+            <ScrollView 
+                showsVerticalScrollIndicator={false} 
+                contentContainerStyle={{ paddingBottom: 100 }}
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#FFC107']} />
+                }
+            >
                 <View className="p-4">
                     <View className="flex-row items-center mb-4">
                         <TouchableOpacity onPress={() => router.back()} className="mr-3 p-2 bg-white rounded-full shadow-sm">

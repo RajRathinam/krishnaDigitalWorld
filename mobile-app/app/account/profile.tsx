@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { User, Mail, MapPin, Calendar, Phone, ChevronLeft, Camera } from 'lucide-react-native';
@@ -28,7 +28,9 @@ export default function ProfileScreen() {
     const [street, setStreet] = useState('');
     const [city, setCity] = useState('');
     const [state, setState] = useState('');
+    const [country, setCountry] = useState('');
     const [pincode, setPincode] = useState('');
+    const [imageError, setImageError] = useState(false);
 
     useEffect(() => {
         if (user) {
@@ -169,7 +171,16 @@ export default function ProfileScreen() {
     return (
         <SafeAreaView className="flex-1 bg-gray-50" edges={['right', 'left']}>
             <Header />
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 30 }}>
+            <KeyboardAvoidingView 
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 20}
+                style={{ flex: 1 }}
+            >
+                <ScrollView 
+                    showsVerticalScrollIndicator={false} 
+                    contentContainerStyle={{ flexGrow: 1, paddingBottom: 100 }}
+                    keyboardShouldPersistTaps="handled"
+                >
                 <View className="p-4">
                     <View className="flex-row items-center mb-6">
                         <TouchableOpacity onPress={() => router.back()} className="mr-4 p-2 bg-white rounded-full shadow-sm">
@@ -184,10 +195,17 @@ export default function ProfileScreen() {
                             <View className="w-28 h-28 rounded-full bg-gray-200 items-center justify-center border-4 border-white shadow-sm overflow-hidden">
                                 {selectedImage ? (
                                     <Image source={{ uri: selectedImage.uri }} className="w-full h-full" />
-                                ) : user?.profileImage ? (
-                                    <Image source={{ uri: user.profileImage.startsWith('http') ? user.profileImage : `${API_BASE_URL}${user.profileImage}` }} className="w-full h-full" />
+                                ) : (user?.profileImage && user.profileImage !== 'null' && !imageError) ? (
+                                    <Image 
+                                        source={{ uri: user.profileImage.startsWith('http') ? user.profileImage : `${API_BASE_URL}${user.profileImage.replace(/\\/g, '/').startsWith('/') ? '' : '/'}${user.profileImage.replace(/\\/g, '/')}` }} 
+                                        className="w-full h-full" 
+                                        onError={() => setImageError(true)}
+                                    />
                                 ) : (
-                                    <User size={48} color="#9CA3AF" />
+                                    <Image 
+                                        source={{ uri: `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=F3F4F6&color=9CA3AF&size=200` }} 
+                                        className="w-full h-full" 
+                                    />
                                 )}
                             </View>
                             <View className="absolute bottom-0 right-0 bg-[#FFC107] p-2 rounded-full border-2 border-white">
@@ -305,6 +323,7 @@ export default function ProfileScreen() {
                     </TouchableOpacity>
                 </View>
             </ScrollView>
+            </KeyboardAvoidingView>
         </SafeAreaView>
     );
 }

@@ -22,6 +22,7 @@ import { UserCouponManagement } from "@/components/UserCouponManagement";
 import AddBrand from "@/components/AddBrand";
 import AddCategory from "@/components/AddCategory";
 import AddAdvertisement from "@/components/AddAdvertisement"; // Import Advertisement component
+import GiftManagement from "@/components/GiftManagement";
 
 import "./index.css";
 
@@ -52,6 +53,7 @@ function App() {
                   <Route path="brands" element={<AddBrand />} />
                   <Route path="categories" element={<AddCategory />} />
                   <Route path="advertisements" element={<AddAdvertisement />} /> {/* New Advertisement route */}
+                  <Route path="gifts" element={<GiftManagement />} />
                 </Route>
               </Route>
               <Route path="*" element={<NotFound />} />

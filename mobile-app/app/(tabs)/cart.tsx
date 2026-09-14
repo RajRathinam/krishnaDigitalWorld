@@ -316,6 +316,22 @@ export default function CartScreen() {
                     <View className="mt-6 bg-white rounded-3xl p-5 shadow-sm border border-gray-200">
                         <Text className="text-lg font-bold text-gray-900 mb-5 font-heading">Order Summary</Text>
 
+                        {/* Itemized List */}
+                        <View className="flex-col gap-3 mb-5 pb-5 border-b border-dashed border-gray-200">
+                            {cart.items.map((item, index) => {
+                                const price = item.product?.discountPrice || item.product?.price || item.price || 0;
+                                return (
+                                    <View key={index} className="flex-row justify-between items-center gap-2">
+                                        <Text className="text-gray-600 font-medium font-body flex-1 max-w-[60%]" numberOfLines={1}>
+                                            {item.product?.name || item.name || `Product ${item.productId}`}
+                                        </Text>
+                                        <Text className="text-gray-400 font-bold font-body text-xs">x{item.quantity}</Text>
+                                        <Text className="text-gray-900 font-semibold font-body text-right min-w-[60px]">{formatPrice(price * item.quantity)}</Text>
+                                    </View>
+                                );
+                            })}
+                        </View>
+
                         <View className="flex-col gap-4">
                             <View className="flex-row justify-between items-center">
                                 <Text className="text-gray-500 font-medium font-body">Subtotal ({cartCount} items)</Text>
@@ -330,7 +346,7 @@ export default function CartScreen() {
                                             <Text className="text-emerald-700 text-[10px] font-bold uppercase tracking-wider font-body">Savings</Text>
                                         </View>
                                     </View>
-                                    <Text className="text-emerald-600 font-semibold font-body text-base">-{formatPrice(discount)}</Text>
+                                    <Text className="text-emerald-600 font-semibold font-body text-base">{formatPrice(discount)}</Text>
                                 </View>
                             )}
 

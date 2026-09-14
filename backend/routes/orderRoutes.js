@@ -5,7 +5,8 @@ import {
   getOrder,
   cancelOrder,
   trackOrder,
-  getOrderByNumber
+  getOrderByNumber,
+  scanOrderGift
 } from '../controllers/orderController.js';
 import { authenticate } from '../middleware/auth.js';
 import { validateOrderData } from '../middleware/validation.js';
@@ -23,5 +24,6 @@ router.get('/', getOrders);
 router.get('/number/:orderNumber', getOrderByNumber);
 router.get('/:id', getOrder);
 router.put('/:id/cancel', cancelOrder);
+router.post('/:id/scan-gift', scanOrderGift);
 
 export default router;

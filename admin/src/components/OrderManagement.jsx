@@ -4,7 +4,7 @@ import {
   Search, Filter, Eye, MapPin, Phone, Mail, Package, Truck,
   XCircle, CheckCircle, MoreVertical, Download, Clock, RefreshCw,
   ChevronLeft, ChevronRight, Loader2, CreditCard, Tag, Ticket,
-  BadgePercent, Receipt, ShoppingCart, X, User, AlertTriangle,
+  BadgePercent, Receipt, ShoppingCart, X, User, AlertTriangle, Gift
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
@@ -67,6 +67,8 @@ const STATUS_STYLES = {
   cancelled:   { bg: "bg-red-50",     text: "text-red-700",     border: "border-red-200"     },
   provided:    { bg: "bg-green-50",   text: "text-green-700",   border: "border-green-200"   },
   notprovided: { bg: "bg-red-50",     text: "text-red-700",     border: "border-red-200"     },
+  won:         { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200" },
+  lost:        { bg: "bg-gray-100",   text: "text-gray-500",    border: "border-gray-200"    },
 };
 const PAYMENT_STYLES = {
   paid:     { bg: "bg-green-100",  text: "text-green-800"  },
@@ -391,6 +393,52 @@ function OrderDetailModal({ orderId, onClose, onUpdateStatus, onRequestCancel })
                     )}
                   </CardContent>
                 </Card>
+
+                {parseFloat(order.finalAmount) > 5000 && (
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Gift className="w-4 h-4 text-muted-foreground" /> Gift Details
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="bg-muted/30 p-4 rounded-lg border border-border/50 space-y-2">
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-muted-foreground">Gift Eligibility</span>
+                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Eligible {">"} ₹5000</Badge>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-muted-foreground">Scanned Status</span>
+                          {order.giftScanned ? (
+                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Scanned</Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Not Scanned</Badge>
+                          )}
+                        </div>
+                        {order.giftScanned && (
+                          <div className="flex justify-between items-center text-sm pt-2 border-t border-border/40 mt-2">
+                            <span className="text-muted-foreground">Result</span>
+                            {order.giftStatus === 'won' ? (
+                              <div className="text-right flex items-center gap-3">
+                                {order.gift?.image && (
+                                  <img 
+                                    src={getImageUrl(order.gift.image)} 
+                                    alt={order.gift.productName} 
+                                    className="w-8 h-8 object-contain rounded bg-white shadow-sm border border-border/50" 
+                                  />
+                                )}
+                                {order.gift?.productName && <span className="text-sm font-medium text-foreground">{order.gift.productName}</span>}
+                                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Won</Badge>
+                              </div>
+                            ) : (
+                              <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Lost</Badge>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
 
                 <Card>
                   <CardHeader className="pb-3">
@@ -1056,6 +1104,7 @@ export const OrderManagement = () => {
                       <TableHead className="w-[110px] text-xs font-semibold">Delivery</TableHead>
                       <TableHead className="w-[140px] text-xs font-semibold">Payment</TableHead>
                       <TableHead className="w-[110px] text-xs font-semibold">Coupon</TableHead>
+                      <TableHead className="w-[90px] text-xs font-semibold">Gift</TableHead>
                       <TableHead className="w-[80px]  text-xs font-semibold text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -1117,6 +1166,13 @@ export const OrderManagement = () => {
                   </TableCell>
                           <TableCell className="align-middle py-3">
                             <StatusBadge status={order.isCouponProvided ? "provided" : "notprovided"} />
+                          </TableCell>
+                          <TableCell className="align-middle py-3">
+                            {parseFloat(order.finalAmount) <= 5000 ? (
+                              <Badge variant="outline" className="bg-gray-100 text-gray-600 border-gray-200">Not Eligible</Badge>
+                            ) : (
+                              <StatusBadge status={order.giftStatus || "pending"} />
+                            )}
                           </TableCell>
                           <TableCell className="text-right align-middle py-3">
                       <DropdownMenu>

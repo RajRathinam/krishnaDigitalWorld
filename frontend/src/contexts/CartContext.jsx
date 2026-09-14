@@ -28,6 +28,7 @@ const CartContext = createContext(undefined);
 export const CartProvider = ({ children }) => {
     const [cartCount, setCartCount] = useState(0);
     const [cartTotal, setCartTotal] = useState(0);
+    const [cartItems, setCartItems] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
     const cartApi = createCartApi();
@@ -49,6 +50,9 @@ export const CartProvider = ({ children }) => {
                 let count = 0;
                 if (Array.isArray(cartRes.data.items)) {
                     count = cartRes.data.items.reduce((sum, item) => sum + (item.quantity || 1), 0);
+                    setCartItems(cartRes.data.items);
+                } else {
+                    setCartItems([]);
                 }
                 setCartCount(count);
                 // Get total
@@ -58,6 +62,7 @@ export const CartProvider = ({ children }) => {
             else {
                 setCartCount(0);
                 setCartTotal(0);
+                setCartItems([]);
             }
         }
         catch (err) {
@@ -73,6 +78,7 @@ export const CartProvider = ({ children }) => {
             }
             setCartCount(0);
             setCartTotal(0);
+            setCartItems([]);
         }
         finally {
             setIsLoading(false);
@@ -268,6 +274,7 @@ export const CartProvider = ({ children }) => {
     return (<CartContext.Provider value={{
             cartCount,
             cartTotal,
+            cartItems,
             isLoading,
             refreshCart,
             addToCart,

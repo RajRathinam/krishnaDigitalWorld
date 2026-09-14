@@ -22,7 +22,11 @@
         "foregroundImage": "./assets/images/skdw.png",
         "backgroundColor": "#ffffff"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "notification": {
+        "icon": "./assets/images/sk.png",
+        "color": "#FFC107"
+      }
     },
     "web": {
       "bundler": "metro",
@@ -37,7 +41,7 @@
         "expo-notifications",
         {
           "icon": "./assets/images/sk.png",
-          "color": "#ffffff",
+          "color": "#FFC107",
           "defaultChannel": "default",
           "sounds": []
         }

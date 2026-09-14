@@ -11,6 +11,7 @@ import {
   Linking,
   Modal,
   Pressable,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
@@ -36,6 +37,10 @@ import {
   MessageCircle,
   PhoneCall,
   Star,
+  QrCode,
+  Gift,
+  Smile,
+  ArrowRight,
 } from 'lucide-react-native';
 import Header from '@/components/Header';
 import { useQuery } from '@tanstack/react-query';
@@ -56,6 +61,7 @@ import Animated, {
   Easing,
   withDelay,
 } from 'react-native-reanimated';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 
 const { width } = Dimensions.get('window');
 
@@ -337,10 +343,81 @@ export default function OrderDetailScreen() {
   const { shopInfo } = useShopInfo();
   const [showCancelPopup, setShowCancelPopup] = useState(false);
 
-  const { data: orderResponse, isLoading } = useQuery({
+  // Scanner state
+  const [showScanner, setShowScanner] = useState(false);
+  const [scanningStatus, setScanningStatus] = useState<'idle' | 'scanning' | 'won' | 'lost' | 'error' | 'already_scanned' | 'wrong_qr'>('idle');
+  const [giftResult, setGiftResult] = useState<any>(null);
+  const [permission, requestPermission] = useCameraPermissions();
+
+  const handleOpenScanner = async () => {
+    if (!permission?.granted) {
+      const { granted } = await requestPermission();
+      if (!granted) return alert('Camera permission is required to scan for gifts.');
+    }
+    setShowScanner(true);
+    setScanningStatus('idle');
+    setGiftResult(null);
+  };
+
+  const handleBarcodeScanned = async ({ data }: any) => {
+    if (scanningStatus !== 'idle') return;
+    const secretKey = process.env.EXPO_PUBLIC_GIFT_QR_SECRET || 'KRISHNA_DIGITAL_GIFT_SCAN';
+    if (data !== secretKey) {
+      setScanningStatus('wrong_qr');
+      setShowScanner(false);
+      return;
+    }
+    
+    setScanningStatus('scanning');
+    setShowScanner(false);
+    
+    try {
+      const res = await orderApi.scanGift(id);
+      if (res.success) {
+         if (res.alreadyScanned) {
+            setScanningStatus('already_scanned');
+         } else if (res.status === 'won') {
+            setGiftResult(res.gift);
+            setScanningStatus('won');
+         } else if (res.status === 'lost') {
+            setScanningStatus('lost');
+         }
+         // Refetch order details so UI updates
+         refetch();
+      } else {
+         if (res.message?.includes('already scanned')) {
+            setScanningStatus('already_scanned');
+         } else {
+            alert(`API Error: ${res.message || 'Unknown error'}`);
+            setScanningStatus('error');
+         }
+      }
+    } catch (err: any) {
+      if (err.response?.data?.message?.includes('already scanned')) {
+        setScanningStatus('already_scanned');
+      } else {
+        alert(`Network/Server Error: ${err.response?.data?.message || err.message}`);
+        setScanningStatus('error');
+      }
+    }
+  };
+
+
+  const { data: orderResponse, isLoading, refetch } = useQuery({
     queryKey: ['order', id],
     queryFn: () => orderApi.getOrderDetails(id),
   });
+
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetch]);
 
   const order = orderResponse?.data || orderResponse?.order || orderResponse;
 
@@ -394,7 +471,13 @@ export default function OrderDetailScreen() {
         <CancelRequestPopup order={order} shopInfo={shopInfo} onClose={() => setShowCancelPopup(false)} />
       )}
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+      <ScrollView 
+        showsVerticalScrollIndicator={false} 
+        contentContainerStyle={styles.scroll}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#FFC107']} />
+        }
+      >
         {/* Header Row */}
         <View style={styles.headerRow}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
@@ -461,7 +544,6 @@ export default function OrderDetailScreen() {
                   <Text style={styles.itemName} numberOfLines={2}>{item.name || item.product?.name || `Product #${item.productId}`}</Text>
                   <View style={styles.itemMeta}>
                     {item.colorName && <Text style={styles.itemMetaText}>Color: {item.colorName}</Text>}
-                    <Text style={styles.itemMetaText}>Qty: {item.quantity}</Text>
                   </View>
                   <Text style={styles.itemPriceDetail}>{formatPrice(item.price)} × {item.quantity}</Text>
                 </View>
@@ -480,6 +562,134 @@ export default function OrderDetailScreen() {
              </View>
            </View>
         </SectionCard>
+
+        {parseFloat(order.finalAmount) > 5000 && (
+          <Animated.View entering={FadeIn.delay(200).duration(600)} style={{ marginBottom: 14 }}>
+            {order.giftScanned && order.giftStatus === 'won' ? (
+              <View style={{
+                backgroundColor: '#FFF5F5',
+                borderRadius: 16,
+                flexDirection: 'row',
+                alignItems: 'center',
+                padding: 12,
+                borderWidth: 1,
+                borderColor: '#FCE7F3',
+                shadowColor: '#F43F5E',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.1,
+                shadowRadius: 10,
+                elevation: 3,
+                overflow: 'hidden'
+              }}>
+                <View style={{ position: 'absolute', top: -20, right: -20, width: 100, height: 100, borderRadius: 50, backgroundColor: '#F3E8FF', opacity: 0.6 }} />
+                <View style={{ position: 'absolute', bottom: -30, left: -10, width: 120, height: 120, borderRadius: 60, backgroundColor: '#FFEDD5', opacity: 0.6 }} />
+                
+                <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#EFF6FF', justifyContent: 'center', alignItems: 'center', marginRight: 10, zIndex: 2 }}>
+                  <Image source={require('@/assets/images/gift.png')} style={{ width: 24, height: 24 }} contentFit="contain" />
+                </View>
+
+                <View style={{ flex: 1, zIndex: 2 }}>
+                  <Text style={{ fontSize: 14, fontWeight: '900', color: '#0F172A', marginBottom: -2 }}>
+                    You won a
+                  </Text>
+                  <Text style={{ fontSize: 18, fontWeight: '900', color: '#BE185D', marginBottom: 2, letterSpacing: -0.5 }}>
+                    {order.gift?.productName || 'Surprise Gift'} {order.gift?.price && <Text style={{ fontSize: 12, color: '#DB2777' }}>(Worth ₹{order.gift.price})</Text>}!
+                  </Text>
+                  <Text style={{ fontSize: 10, color: '#475569', fontWeight: '500' }}>
+                    Your free gift will be delivered with your order.
+                  </Text>
+                </View>
+
+                <View style={{ width: 64, height: 64, justifyContent: 'center', alignItems: 'center', zIndex: 2, marginLeft: 6 }}>
+                  <Image 
+                    source={order.gift?.image ? { uri: `${API_BASE_URL}${order.gift.image.startsWith('/') ? '' : '/'}${order.gift.image}` } : require('@/assets/images/gift.png')}
+                    style={{ width: '100%', height: '100%' }}
+                    contentFit="contain"
+                  />
+                  <View style={{ position: 'absolute', top: -4, right: -4, backgroundColor: '#22C55E', width: 20, height: 20, borderRadius: 10, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#FFF' }}>
+                     <Check size={12} color="#FFF" strokeWidth={4} />
+                  </View>
+                </View>
+              </View>
+            ) : (
+              <TouchableOpacity 
+                activeOpacity={order.giftScanned ? 1 : 0.8}
+                onPress={order.giftScanned ? undefined : handleOpenScanner}
+              >
+                <LinearGradient
+                  colors={order.giftScanned ? ['#F3F4F6', '#E5E7EB'] : ['#FEFAED', '#FFF0C2']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={{
+                    borderRadius: 20,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    borderWidth: 1,
+                    borderColor: order.giftScanned ? '#D1D5DB' : '#FEE5A5',
+                    overflow: 'visible',
+                    shadowColor: order.giftScanned ? '#000' : '#F59E0B',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.15,
+                    shadowRadius: 8,
+                    elevation: 3,
+                  }}
+                >
+                  {/* Left content (Text) */}
+                  <View style={{ flex: 1, padding: 12, paddingRight: 4, zIndex: 2 }}>
+                    <Text style={{ fontSize: 16, fontWeight: '900', marginBottom: 2, color: '#1F2937', letterSpacing: -0.5 }}>
+                      {order.giftScanned ? (
+                        'Better luck next time!'
+                      ) : (
+                        <>Try for your <Text style={{ color: '#EA580C' }}>gift!</Text></>
+                      )}
+                    </Text>
+                    <Text style={{ color: '#4B5563', fontSize: 11, lineHeight: 14, fontWeight: '500' }}>
+                      {order.giftScanned ? (
+                        'You have already scanned for this order.'
+                      ) : (
+                        'Free gift unlocked for orders above ₹5,000! Scan QR to claim.'
+                      )}
+                    </Text>
+                  </View>
+
+                  {/* Center 3D Gift Image */}
+                  <View style={{ width: 64, height: 64, justifyContent: 'center', alignItems: 'center', zIndex: 1, marginVertical: 8, marginRight: 8 }}>
+                     <Image 
+                       source={require('@/assets/images/gift.png')}
+                       style={{ width: 64, height: 64, opacity: order.giftScanned ? 0.5 : 1 }}
+                       contentFit="contain"
+                     />
+                  </View>
+
+                  {/* Right QR Button */}
+                  {!order.giftScanned && (
+                    <View style={{ padding: 12, paddingLeft: 4, zIndex: 2 }}>
+                      <View style={{
+                        backgroundColor: '#FFFFFF',
+                        borderRadius: 12,
+                        padding: 8,
+                        paddingHorizontal: 6,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.08,
+                        shadowRadius: 4,
+                        elevation: 2,
+                      }}>
+                        <QrCode size={24} color="#EA580C" strokeWidth={2} />
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                          <Text style={{ color: '#EA580C', fontSize: 9, fontWeight: '800' }}>Scan Now</Text>
+                          <ChevronRight size={10} color="#EA580C" strokeWidth={3} />
+                        </View>
+                      </View>
+                    </View>
+                  )}
+                </LinearGradient>
+              </TouchableOpacity>
+            )}
+          </Animated.View>
+        )}
 
         {/* Payment & Address Grid (implemented as stack on mobile) */}
         <SectionCard title="Payment Details" icon={CreditCard} delay={250}>
@@ -557,6 +767,167 @@ export default function OrderDetailScreen() {
         </View>
 
       </ScrollView>
+
+      {/* QR Scanner Modal */}
+      <Modal visible={showScanner} transparent animationType="slide">
+        <View style={{ flex: 1, backgroundColor: '#000' }}>
+          <SafeAreaView style={{ flex: 1 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 20, zIndex: 10 }}>
+              <TouchableOpacity onPress={() => setShowScanner(false)} style={{ backgroundColor: 'rgba(255,255,255,0.2)', padding: 10, borderRadius: 20 }}>
+                <X size={24} color="#fff" />
+              </TouchableOpacity>
+              <Text style={{ color: '#fff', fontSize: 18, fontWeight: '700', alignSelf: 'center' }}>Scan Shop QR</Text>
+              <View style={{ width: 44 }} />
+            </View>
+
+            <CameraView 
+              style={StyleSheet.absoluteFillObject}
+              facing="back"
+              onBarcodeScanned={handleBarcodeScanned}
+            />
+
+            <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center' }}>
+              <View style={{ width: 250, height: 250, borderWidth: 2, borderColor: '#EA580C', backgroundColor: 'transparent', borderRadius: 20 }} />
+              <Text style={{ color: '#fff', marginTop: 20, fontWeight: '600' }}>Align QR code within the frame</Text>
+            </View>
+          </SafeAreaView>
+        </View>
+      </Modal>
+
+      {/* Result Modal */}
+      <Modal visible={scanningStatus !== 'idle'} transparent animationType="fade">
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', alignItems: 'center' }}>
+          
+          {scanningStatus === 'scanning' && (
+            <Animated.View entering={FadeIn.duration(300)} style={{ alignItems: 'center' }}>
+              <OrbitRing radius={50} speed={4000} delay={0} dotColor={Y} />
+              <OrbitRing radius={70} speed={6000} delay={200} dotColor={Y} reverse />
+              <Image source={require('@/assets/images/gift.png')} style={{ width: 80, height: 80, position: 'absolute', top: 30, left: 30 }} />
+              <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold', marginTop: 150 }}>Opening your gift...</Text>
+            </Animated.View>
+          )}
+
+          {scanningStatus === 'won' && giftResult && (
+            <Animated.View entering={FadeIn.duration(400).springify()} style={{ backgroundColor: '#fff', borderRadius: 32, alignItems: 'center', width: '90%', overflow: 'hidden', paddingBottom: 24 }}>
+              
+              {/* Close Button */}
+              <TouchableOpacity onPress={() => setScanningStatus('idle')} style={{ position: 'absolute', top: 16, right: 16, backgroundColor: '#F1F5F9', borderRadius: 20, padding: 6, zIndex: 10 }}>
+                <X size={20} color="#64748B" />
+              </TouchableOpacity>
+
+              {/* Abstract Top Background */}
+              <View style={{ width: '100%', height: 220, position: 'absolute', top: 0, left: 0, overflow: 'hidden' }}>
+                <View style={{ position: 'absolute', top: -50, left: -50, width: 200, height: 200, borderRadius: 100, backgroundColor: '#FFF5F5', opacity: 0.8 }} />
+                <View style={{ position: 'absolute', top: -30, right: -60, width: 250, height: 250, borderRadius: 125, backgroundColor: '#FFFBEB', opacity: 0.8 }} />
+              </View>
+
+              {/* Top Gift Image (Mocking the 3D gift box from screenshot) */}
+              <Image source={require('@/assets/images/gift.png')} style={{ width: 80, height: 80, marginTop: 30, zIndex: 2 }} contentFit="contain" />
+
+              <Text style={{ fontSize: 26, fontWeight: '900', color: '#EA580C', marginTop: 12, zIndex: 2 }}>Congratulations!</Text>
+              <Text style={{ fontSize: 16, fontWeight: '800', color: '#1F2937', marginBottom: 20, zIndex: 2 }}>You won a Free Gift!</Text>
+              
+              {/* Center Product Display */}
+              <View style={{ width: '100%', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>
+                {/* Subtle Podium Shadow */}
+                <View style={{ width: 140, height: 20, backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: 10, position: 'absolute', bottom: 10 }} />
+                
+                <Image 
+                  source={ giftResult.image ? { uri: `${API_BASE_URL}${giftResult.image.startsWith('/') ? '' : '/'}${giftResult.image}` } : require('@/assets/images/gift.png') } 
+                  style={{ width: 140, height: 140, zIndex: 3 }} 
+                  contentFit="contain" 
+                />
+                
+                {/* Red FREE GIFT Badge */}
+                <View style={{ position: 'absolute', top: 10, right: 30, backgroundColor: '#E11D48', width: 60, height: 60, borderRadius: 30, justifyContent: 'center', alignItems: 'center', zIndex: 4, elevation: 5, shadowColor: '#E11D48', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 5 }}>
+                  <Gift size={20} color="#FFF" style={{ marginBottom: 2 }} />
+                  <Text style={{ color: '#FFF', fontSize: 10, fontWeight: '900', textAlign: 'center', lineHeight: 11 }}>FREE{'\n'}GIFT</Text>
+                </View>
+              </View>
+
+              <Text style={{ fontSize: 22, fontWeight: '900', color: '#111827', textAlign: 'center', marginTop: 16, marginBottom: 4 }}>
+                {giftResult.productName} {giftResult.price && <Text style={{ color: '#E11D48', fontSize: 16 }}>(Worth ₹{giftResult.price})</Text>}
+              </Text>
+              <Text style={{ fontSize: 13, color: '#6B7280', textAlign: 'center', paddingHorizontal: 30, marginBottom: 24 }}>Your free gift will be delivered along with this order!</Text>
+              
+              {/* Features Row */}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, width: '100%', marginBottom: 30 }}>
+                
+                <View style={{ alignItems: 'center', width: '33%' }}>
+                  <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#DCFCE7', justifyContent: 'center', alignItems: 'center', marginBottom: 8 }}>
+                    <Truck size={20} color="#16A34A" />
+                  </View>
+                  <Text style={{ fontSize: 11, color: '#1F2937', textAlign: 'center', fontWeight: '500' }}>Delivered with your order</Text>
+                </View>
+
+                <View style={{ alignItems: 'center', width: '33%', borderLeftWidth: 1, borderRightWidth: 1, borderColor: '#F3F4F6' }}>
+                  <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#FCE7F3', justifyContent: 'center', alignItems: 'center', marginBottom: 8 }}>
+                    <Gift size={20} color="#DB2777" />
+                  </View>
+                  <Text style={{ fontSize: 11, color: '#1F2937', textAlign: 'center', fontWeight: '500' }}>Absolutely Free</Text>
+                </View>
+
+                <View style={{ alignItems: 'center', width: '33%' }}>
+                  <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#DBEAFE', justifyContent: 'center', alignItems: 'center', marginBottom: 8 }}>
+                    <Smile size={20} color="#2563EB" />
+                  </View>
+                  <Text style={{ fontSize: 11, color: '#1F2937', textAlign: 'center', fontWeight: '500' }}>Thank you for shopping!</Text>
+                </View>
+                
+              </View>
+
+              <TouchableOpacity onPress={() => setScanningStatus('idle')} style={{ backgroundColor: '#EA580C', paddingVertical: 16, paddingHorizontal: 20, borderRadius: 16, width: '85%', flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
+                <Text style={{ color: '#fff', fontSize: 18, fontWeight: '900', marginRight: 8 }}>Awesome!</Text>
+                <ArrowRight size={20} color="#fff" strokeWidth={3} />
+              </TouchableOpacity>
+
+            </Animated.View>
+          )}
+
+          {scanningStatus === 'lost' && (
+            <Animated.View entering={FadeIn.duration(400)} style={{ backgroundColor: '#fff', padding: 30, borderRadius: 24, alignItems: 'center', width: '85%' }}>
+              <Text style={{ fontSize: 24, fontWeight: '900', color: '#4B5563', marginBottom: 20 }}>Oh no!</Text>
+              <Text style={{ fontSize: 16, color: '#6B7280', textAlign: 'center', marginBottom: 20 }}>Better luck next time. You didn't win a gift for this order.</Text>
+              <TouchableOpacity onPress={() => setScanningStatus('idle')} style={{ backgroundColor: '#4B5563', paddingVertical: 14, paddingHorizontal: 40, borderRadius: 16 }}>
+                <Text style={{ color: '#fff', fontSize: 16, fontWeight: '800' }}>Okay</Text>
+              </TouchableOpacity>
+            </Animated.View>
+          )}
+
+          {scanningStatus === 'already_scanned' && (
+            <Animated.View entering={FadeIn.duration(400)} style={{ backgroundColor: '#fff', padding: 30, borderRadius: 24, alignItems: 'center', width: '85%' }}>
+              <AlertCircle size={48} color="#F59E0B" style={{ marginBottom: 20 }} />
+              <Text style={{ fontSize: 20, fontWeight: '800', color: '#111827', marginBottom: 10 }}>Already Scanned</Text>
+              <Text style={{ fontSize: 15, color: '#6B7280', textAlign: 'center', marginBottom: 20 }}>You have already checked for a gift on this order.</Text>
+              <TouchableOpacity onPress={() => setScanningStatus('idle')} style={{ backgroundColor: '#1F2937', paddingVertical: 14, paddingHorizontal: 40, borderRadius: 16 }}>
+                <Text style={{ color: '#fff', fontSize: 16, fontWeight: '800' }}>Close</Text>
+              </TouchableOpacity>
+            </Animated.View>
+          )}
+
+          {scanningStatus === 'error' && (
+            <Animated.View entering={FadeIn.duration(400)} style={{ backgroundColor: '#fff', padding: 30, borderRadius: 24, alignItems: 'center', width: '85%' }}>
+              <X size={48} color="#EF4444" style={{ marginBottom: 20 }} />
+              <Text style={{ fontSize: 20, fontWeight: '800', color: '#111827', marginBottom: 10 }}>Oops!</Text>
+              <Text style={{ fontSize: 15, color: '#6B7280', textAlign: 'center', marginBottom: 20 }}>Something went wrong. Please try scanning again.</Text>
+              <TouchableOpacity onPress={() => setScanningStatus('idle')} style={{ backgroundColor: '#1F2937', paddingVertical: 14, paddingHorizontal: 40, borderRadius: 16 }}>
+                <Text style={{ color: '#fff', fontSize: 16, fontWeight: '800' }}>Close</Text>
+              </TouchableOpacity>
+            </Animated.View>
+          )}
+
+          {scanningStatus === 'wrong_qr' && (
+            <Animated.View entering={FadeIn.duration(400)} style={{ backgroundColor: '#fff', padding: 30, borderRadius: 24, alignItems: 'center', width: '85%' }}>
+              <AlertCircle size={48} color="#EF4444" style={{ marginBottom: 20 }} />
+              <Text style={{ fontSize: 20, fontWeight: '800', color: '#111827', marginBottom: 10 }}>Invalid QR Code</Text>
+              <Text style={{ fontSize: 15, color: '#6B7280', textAlign: 'center', marginBottom: 20 }}>This is not a valid Sri Krishna Digital World gift QR. Please scan the official QR code at the shop!</Text>
+              <TouchableOpacity onPress={() => setScanningStatus('idle')} style={{ backgroundColor: '#1F2937', paddingVertical: 14, paddingHorizontal: 40, borderRadius: 16 }}>
+                <Text style={{ color: '#fff', fontSize: 16, fontWeight: '800' }}>Try Again</Text>
+              </TouchableOpacity>
+            </Animated.View>
+          )}
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }

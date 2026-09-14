@@ -38,9 +38,9 @@ const badges = [
     },
     {
         id: 3,
-        icon: RefreshCw,
-        title: "Easy Returns",
-        description: "7-day policy",
+        icon: ThumbsUp,
+        title: "Top Quality",
+        description: "Best in class",
         colors: ["#F59E0B", "#FBBF24"],
         gradientColors: ["#F59E0B", "#D97706"],
         bgColor: "#FFFBEB",

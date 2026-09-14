@@ -500,6 +500,26 @@ export default function Cart() {
             <div className="bg-card rounded-lg border border-border p-4 sticky top-24">
               <h2 className="font-bold text-foreground mb-4">Order Summary</h2>
 
+              {/* Itemized List */}
+              <div className="flex flex-col gap-2 mb-4 pb-4 border-b border-dashed border-border text-sm">
+                {cart.items.map((item, index) => {
+                  const itemName = item.product?.name || item.name || `Product ${item.productId}`;
+                  const itemPrice = item.product?.discountPrice || item.product?.price || item.price || 0;
+                  const itemQuantity = item.quantity || 1;
+                  return (
+                    <div key={index} className="flex justify-between items-center gap-2">
+                      <span className="text-muted-foreground flex-1 truncate max-w-[65%]" title={itemName}>
+                        {itemName}
+                      </span>
+                      <span className="text-muted-foreground font-medium text-xs whitespace-nowrap">x{itemQuantity}</span>
+                      <span className="text-foreground font-medium text-right min-w-[60px]">
+                        {formatPrice(itemPrice * itemQuantity)}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">
@@ -510,7 +530,7 @@ export default function Cart() {
                 {discount > 0 && (
                   <div className="flex justify-between text-accent">
                     <span>Product Discount</span>
-                    <span>-{formatPrice(discount)}</span>
+                    <span>{formatPrice(discount)}</span>
                   </div>
                 )}
                 <div className="flex justify-between">

@@ -52,6 +52,8 @@ const Admin = () => {
             return "Brands";
         if (path.includes('/categories'))
             return "Categories";
+        if (path.includes('/gifts'))
+            return "Gifts";
         return "Dashboard";
     };
     const getActiveSection = () => {
@@ -76,6 +78,8 @@ const Admin = () => {
             return 'brands';
         if (path.includes('/categories'))
             return 'categories';
+        if (path.includes('/gifts'))
+            return 'gifts';
         return 'overview';
     };
     return (<div className="min-h-screen bg-muted/40">

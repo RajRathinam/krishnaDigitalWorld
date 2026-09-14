@@ -13,6 +13,7 @@ import modelRoutes from './modelRoutes.js';
 import { publicShopRouter, adminSettingsRouter } from './settingsRoutes.js';
 import heroSliderRoutes from './heroSliderRoutes.js';
 import paymentRoutes from './paymentRoutes.js';
+import giftRoutes from './giftRoutes.js';
 
 export {
   authRoutes,
@@ -30,5 +31,6 @@ export {
   publicShopRouter,
   adminSettingsRouter,
   heroSliderRoutes,
-  paymentRoutes
+  paymentRoutes,
+  giftRoutes
 };

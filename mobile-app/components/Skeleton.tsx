@@ -15,8 +15,8 @@ const Skeleton: React.FC<SkeletonProps> = ({
   width = '100%', 
   height = 20, 
   borderRadius = 4,
-  baseColor = '#F3F4F6',
-  highlightColor = 'rgba(255, 255, 255, 0.7)',
+  baseColor = '#E5E7EB',
+  highlightColor = 'rgba(255, 255, 255, 0.6)',
   style 
 }) => {
   const [layoutWidth, setLayoutWidth] = React.useState<number>(0);

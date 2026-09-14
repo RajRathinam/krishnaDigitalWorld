@@ -175,7 +175,7 @@ export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const { addToCart } = useCart();
+  const { cart, addToCart } = useCart();
 
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -260,9 +260,27 @@ export default function ProductDetailScreen() {
       Alert.alert('Out of Stock', 'The selected color is currently out of stock.');
       return;
     }
+
+    const productIdStr = String(product.id || product._id);
+    const existingItem = cart.items.find(
+      (item) => (String(item.productId) === productIdStr || (item.product && (String(item.product.id) === productIdStr || String(item.product._id) === productIdStr))) && (String(item.colorName || '') === String(selectedColorName || ''))
+    );
+
+    if (existingItem) {
+      Alert.alert(
+        'Already in Cart',
+        'This product is already in your cart. If you want to increase the quantity, please go to the cart page.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Go to Cart', onPress: () => router.push('/cart') }
+        ]
+      );
+      return;
+    }
+
     setIsAddingToCart(true);
     try {
-      await addToCart(product.id, 1, selectedColorName);
+      await addToCart(productIdStr, 1, selectedColorName);
     } finally {
       setIsAddingToCart(false);
     }
@@ -275,6 +293,17 @@ export default function ProductDetailScreen() {
       Alert.alert('Out of Stock', 'The selected color is currently out of stock.');
       return;
     }
+
+    const productIdStr = String(product.id || product._id);
+    const existingItem = cart.items.find(
+      (item) => (String(item.productId) === productIdStr || (item.product && (String(item.product.id) === productIdStr || String(item.product._id) === productIdStr))) && (String(item.colorName || '') === String(selectedColorName || ''))
+    );
+
+    if (existingItem) {
+      router.push('/cart');
+      return;
+    }
+
     setIsBuyingNow(true);
     try {
       await addToCart(product.id, 1, selectedColorName);

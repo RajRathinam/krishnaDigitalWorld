@@ -61,9 +61,12 @@ const PRICE_RANGES = [
 
 export default function ShopScreen() {
     const insets = useSafeAreaInsets();
-    const [products, setProducts] = useState([]);
+    const [products, setProducts] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
     const [categories, setCategories] = useState<any[]>([]);
     const [brands, setBrands] = useState<any[]>([]);
     const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
@@ -85,16 +88,20 @@ export default function ShopScreen() {
     const abortControllerRef = useRef<AbortController | null>(null);
 
     // ── Fetch products ────────────────────────────────────────────────────────
-    const fetchProducts = useCallback(async (isRefresh = false) => {
+    const fetchProducts = useCallback(async (isRefresh = false, pageNum = 1) => {
         if (abortControllerRef.current) {
             abortControllerRef.current.abort();
         }
         abortControllerRef.current = new AbortController();
 
-        isRefresh ? setRefreshing(true) : setLoading(true);
+        if (pageNum === 1) {
+            isRefresh ? setRefreshing(true) : setLoading(true);
+        } else {
+            setLoadingMore(true);
+        }
 
         try {
-            const queryParams: any = { page: 1, limit: 48 };
+            const queryParams: any = { page: pageNum, limit: 16 };
 
             if (selectedBrands.length) {
                 queryParams.brandId = selectedBrands[0];
@@ -142,13 +149,25 @@ export default function ShopScreen() {
                 subcategory: selectedSubcategory || undefined,
             });
             const data = response?.data || response;
-            setProducts(data.products || []);
+            const fetchedProducts = data.products || [];
+            
+            if (pageNum === 1) {
+                setProducts(fetchedProducts);
+            } else {
+                setProducts((prev: any) => [...prev, ...fetchedProducts]);
+            }
+            
+            setHasMore(fetchedProducts.length === 16);
         } catch (err: any) {
             if (err.code !== 'ERR_CANCELED' && err.name !== 'AbortError') {
                 console.error('Failed to load products', err);
             }
         } finally {
-            isRefresh ? setRefreshing(false) : setLoading(false);
+            if (pageNum === 1) {
+                isRefresh ? setRefreshing(false) : setLoading(false);
+            } else {
+                setLoadingMore(false);
+            }
             abortControllerRef.current = null;
         }
     }, [selectedBrands, selectedPriceRange, sortBy, selectedCategory, selectedSubcategory]);
@@ -188,8 +207,17 @@ export default function ShopScreen() {
     }, [params.category, params.subcategory]);
 
     useEffect(() => {
-        fetchProducts();
+        setPage(1);
+        fetchProducts(false, 1);
     }, [selectedBrands, selectedPriceRange, sortBy, selectedCategory, selectedSubcategory]);
+
+    const loadMoreProducts = () => {
+        if (!loading && !loadingMore && hasMore) {
+            const nextPage = page + 1;
+            setPage(nextPage);
+            fetchProducts(false, nextPage);
+        }
+    };
 
     useFocusEffect(
         useCallback(() => {
@@ -550,7 +578,7 @@ export default function ShopScreen() {
             {loading ? (
                 <View style={styles.productList}>
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
-                        {[1, 2, 3, 4, 5, 6].map(i => <ProductCardSkeleton key={i} />)}
+                        {[1, 2, 3, 4, 5, 6, 7, 8].map(i => <ProductCardSkeleton key={i} />)}
                     </View>
                 </View>
             ) : products.length === 0 ? (
@@ -570,10 +598,10 @@ export default function ShopScreen() {
                 <FlatList
                     data={products}
                     renderItem={renderProduct}
-                    keyExtractor={item =>
+                    keyExtractor={(item: any, index) =>
                         item.id?.toString() ||
                         item._id?.toString() ||
-                        Math.random().toString()
+                        index.toString()
                     }
                     numColumns={2}
                     showsVerticalScrollIndicator={false}
@@ -582,9 +610,23 @@ export default function ShopScreen() {
                     refreshControl={
                         <RefreshControl
                             refreshing={refreshing}
-                            onRefresh={() => fetchProducts(true)}
+                            onRefresh={() => {
+                                setPage(1);
+                                fetchProducts(true, 1);
+                                fetchBrands();
+                                fetchCategories();
+                            }}
                             colors={['#FFC107']}
                         />
+                    }
+                    onEndReached={loadMoreProducts}
+                    onEndReachedThreshold={0.5}
+                    ListFooterComponent={
+                        loadingMore ? (
+                            <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+                                <ActivityIndicator size="small" color="#FFC107" />
+                            </View>
+                        ) : null
                     }
                     initialNumToRender={10}
                     windowSize={5}
@@ -943,7 +985,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#F9FAFB',
         borderRadius: 8,
         paddingHorizontal: 12,
-        paddingVertical: 8,
+        paddingVertical: 4,
         borderWidth: 1,
         borderColor: '#E5E7EB',
         marginBottom: 12,
@@ -954,6 +996,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#111827',
         fontFamily: 'DMSans-Regular',
+        paddingVertical: 4,
     },
     selectedChips: {
         flexDirection: 'row',

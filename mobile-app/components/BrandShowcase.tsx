@@ -16,7 +16,9 @@ import {
     Text,
     ActivityIndicator,
     StyleSheet,
+    TouchableOpacity,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import Skeleton from '@/components/Skeleton';
 import { Image } from 'expo-image';
 import Animated, {
@@ -53,6 +55,7 @@ interface RowProps {
 }
 
 const InfiniteScrollRow = ({ brands, direction }: RowProps) => {
+    const router = useRouter();
     // Total width of ONE copy of the brand list (the "loop unit")
     const loopWidth = brands.length * ITEM_STEP;
 
@@ -78,13 +81,20 @@ const InfiniteScrollRow = ({ brands, direction }: RowProps) => {
     return (
         <Animated.View style={[styles.row, animatedStyle]}>
             {doubled(brands).map((brand: any, index: number) => (
-                <View key={`${brand.id}-${index}`} style={styles.tile}>
+                <TouchableOpacity 
+                    key={`${brand.id}-${index}`} 
+                    style={styles.tile}
+                    onPress={() => router.push({
+                        pathname: '/category/products',
+                        params: { brandId: brand.id, brandName: brand.name }
+                    })}
+                >
                     <Image
                         source={{ uri: getImageUrl(brand.logo) }}
                         style={styles.logo}
                         contentFit="contain"
                     />
-                </View>
+                </TouchableOpacity>
             ))}
         </Animated.View>
     );
