@@ -31,7 +31,8 @@ export const getProducts = async (req, res) => {
       isFeatured,
       isBestSeller,
       isDealOfTheDay,
-      includeInactive
+      includeInactive,
+      includeStats
     } = req.query;
 
     const offset = (page - 1) * limit;
@@ -101,12 +102,9 @@ export const getProducts = async (req, res) => {
         { sku: { [Sequelize.Op.like]: `%${search}%` } },
         { variant: { [Sequelize.Op.like]: `%${search}%` } },
         { subcategory: { [Sequelize.Op.like]: `%${search}%` } },
-        // Search in keywords JSON array if supported by DB (MySQL JSON) or string
-        Sequelize.literal(`JSON_SEARCH(keywords, 'one', '%${search}%') IS NOT NULL`),
-        // Search in related Category name
-        Sequelize.literal(`EXISTS (SELECT 1 FROM categories WHERE categories.id = Product.categoryId AND categories.name LIKE '%${search}%')`),
-        // Search in related Brand name
-        Sequelize.literal(`EXISTS (SELECT 1 FROM brands WHERE brands.id = Product.brandId AND brands.name LIKE '%${search}%')`)
+        Sequelize.where(Sequelize.cast(Sequelize.col('Product.keywords'), 'CHAR'), { [Sequelize.Op.like]: `%${search}%` }),
+        { '$category.name$': { [Sequelize.Op.like]: `%${search}%` } },
+        { '$brand.name$': { [Sequelize.Op.like]: `%${search}%` } }
       ];
 
       // Add mapped keywords to search if any
@@ -165,9 +163,42 @@ export const getProducts = async (req, res) => {
     // Get unique subcategories for the filtered products
     const uniqueSubcategories = await Product.findAll({
       where,
+      include: [
+        { model: Category, as: 'category', attributes: [] },
+        { model: Brand, as: 'brand', attributes: [] }
+      ],
       attributes: [[Sequelize.fn('DISTINCT', Sequelize.col('subcategory')), 'subcategory']],
       raw: true
     }).then(results => results.filter(r => r.subcategory).map(r => r.subcategory));
+
+    let adminStats = null;
+    if (includeStats === 'true') {
+      const allProducts = await Product.findAll({
+        attributes: ['isActive', 'isFeatured', 'isBestSeller', 'isDealOfTheDay', 'stock'],
+      });
+      
+      let outOfStock = 0;
+      allProducts.forEach(p => {
+        let stockObj = p.stock || {};
+        if (typeof stockObj === 'string') {
+          try { stockObj = JSON.parse(stockObj); } catch(e) {}
+        }
+        let totalStock = 0;
+        if (stockObj && stockObj.options && Array.isArray(stockObj.options)) {
+          totalStock = stockObj.options.reduce((sum, opt) => sum + (parseInt(opt.quantity) || 0), 0);
+        }
+        if (totalStock <= 0) outOfStock++;
+      });
+
+      adminStats = {
+        total: allProducts.length,
+        active: allProducts.filter(p => p.isActive).length,
+        featured: allProducts.filter(p => p.isFeatured).length,
+        bestSellers: allProducts.filter(p => p.isBestSeller).length,
+        dealOfDay: allProducts.filter(p => p.isDealOfTheDay).length,
+        outOfStock
+      };
+    }
 
     res.status(200).json({
       success: true,
@@ -179,6 +210,7 @@ export const getProducts = async (req, res) => {
           totalItems: count,
           itemsPerPage: parseInt(limit)
         },
+        adminStats,
         filters: {
           categoryId,
           categorySlug,

@@ -7,6 +7,7 @@ import {
   initiateRefundHandler,
   checkPhonePeConfigHandler,
   testPaymentHandler,
+  appRedirectHandler,
 } from '../controllers/paymentController.js';
 import { authenticate, requireAdmin } from '../middleware/auth.js';
 
@@ -16,6 +17,9 @@ const router = express.Router();
 
 // Helpful for debugging credentials / SDK setup
 router.get('/check-config', checkPhonePeConfigHandler);
+
+// Bounce PhonePe redirect back to app
+router.get('/app-redirect', appRedirectHandler);
 
 // PhonePe server-to-server callback — no auth, HMAC-verified inside handler
 router.post('/callback', handleCallback);

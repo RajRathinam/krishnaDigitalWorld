@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import {
   Plus, Search, Filter, Edit, Trash2, MoreVertical, Upload, Loader2,
   Package, CheckCircle, XCircle, AlertTriangle, Star, Image as ImageIcon,
-  Tag, Layers, DollarSign, BarChart3, Settings, RefreshCw, Trophy, Zap
+  Tag, Layers, DollarSign, BarChart3, Settings, RefreshCw, Trophy, Zap,
+  ChevronLeft, ChevronRight, Download
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
@@ -27,7 +28,11 @@ export const ProductManagement = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [filterCategory, setFilterCategory] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(15);
+  const [exporting, setExporting] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingProductId, setEditingProductId] = useState(null);
@@ -109,22 +114,35 @@ export const ProductManagement = () => {
     setColorErrors([]);
   };
 
+  const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1, totalItems: 0, itemsPerPage: 15 });
+  const [stats, setStats] = useState({ total: 0, active: 0, featured: 0, bestSellers: 0, dealOfDay: 0, outOfStock: 0 });
+
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [currentPage, pageSize, searchTerm, filterCategory]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
+      // Fetch Products, Brands, and Categories concurrently
       const [prodRes, brandRes, catRes] = await Promise.all([
-        api.get("/products", { params: { page: 1, limit: 1000, includeInactive: true } }),
+        api.get("/products", { 
+          params: { 
+            page: currentPage, 
+            limit: pageSize === "all" ? 999999 : pageSize, 
+            search: searchTerm,
+            categoryId: filterCategory !== "all" ? filterCategory : undefined,
+            includeInactive: true,
+            includeStats: true
+          } 
+        }),
         api.get("/brands"),
         api.get("/categories")
       ]);
 
       // Process Products
-      const prodData = prodRes.data?.data || prodRes.data;
-      const prods = Array.isArray(prodData) ? prodData : (prodData?.products || []);
+      const responseData = prodRes.data?.data || prodRes.data;
+      const prods = Array.isArray(responseData) ? responseData : (responseData?.products || []);
 
       const safeParse = (val, defaultVal) => {
         if (!val) return defaultVal;
@@ -138,6 +156,13 @@ export const ProductManagement = () => {
         stock: safeParse(p.stock, {}),
         attributes: safeParse(p.attributes, {}),
       })));
+
+      if (responseData?.pagination) {
+        setPagination(responseData.pagination);
+      }
+      if (responseData?.adminStats) {
+        setStats(responseData.adminStats);
+      }
 
       // Process Brands & Categories
       setBrands(brandRes.data?.data || brandRes.data || []);
@@ -181,31 +206,85 @@ export const ProductManagement = () => {
     }
   }, [form.code, form.brandId, form.categoryId, form.subcategory]);
 
-  // Filtering
-  const filteredProducts = products.filter(product => {
-    const searchLower = searchTerm.toLowerCase();
-    const matchesSearch =
-      product.name?.toLowerCase().includes(searchLower) ||
-      product.sku?.toLowerCase().includes(searchLower) ||
-      product.code?.toLowerCase().includes(searchLower);
+  // Filtering is now handled by the backend
+  const filteredProducts = products;
 
-    const matchesCategory = filterCategory === "all" || product.category?.name === filterCategory;
+  // Pagination is handled by backend
+  const totalPages = pagination.totalPages || 1;
+  const paginatedProducts = products;
 
-    return matchesSearch && matchesCategory;
-  });
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
-  // Calculate Stats
-  const stats = {
-    total: products.length,
-    active: products.filter(p => p.isActive).length,
-    featured: products.filter(p => p.isFeatured).length,
-    bestSellers: products.filter(p => p.isBestSeller).length,
-    dealOfDay: products.filter(p => p.isDealOfTheDay).length,
-    outOfStock: products.filter(p => {
-      if (!p.stock) return true;
-      if (typeof p.stock === 'number') return p.stock === 0;
-      return Object.values(p.stock).every(val => Number(val) === 0);
-    }).length
+  const handleExport = async () => {
+    try {
+      setExporting(true);
+      const res = await api.get("/products", {
+        params: {
+          page: 1,
+          limit: 999999,
+          search: searchTerm,
+          categoryId: filterCategory !== "all" ? filterCategory : undefined,
+          includeInactive: true
+        }
+      });
+      
+      const responseData = res.data?.data || res.data;
+      const exportData = Array.isArray(responseData) ? responseData : (responseData?.products || []);
+      
+      if (exportData.length === 0) {
+        toast({ title: "No data", description: "No products found to export.", variant: "destructive" });
+        return;
+      }
+
+      const headers = ["Product Code", "Name", "Category", "Color", "Base Price", "Selling Price", "Stock", "Status"];
+      const csvRows = [headers.join(",")];
+      
+      const safeParse = (val, defaultVal) => {
+        if (!val) return defaultVal;
+        if (typeof val === 'object') return val;
+        try { return JSON.parse(val); } catch { return defaultVal; }
+      };
+
+      exportData.forEach(p => {
+        const stockObj = safeParse(p.stock, {});
+        const colorsObj = safeParse(p.colorsAndImages, {});
+        
+        const stock = Object.keys(stockObj).length > 0 ? Object.values(stockObj).reduce((a, b) => a + Number(b), 0) : Number(p.stock || 0);
+        const colors = Object.keys(colorsObj).join(" | ") || p.variant || "";
+        
+        const basePrice = p.price || 0;
+        const sellingPrice = p.discountPrice || p.price || 0;
+
+        csvRows.push([
+          p.code,
+          `"${(p.name || '').replace(/"/g, '""')}"`,
+          `"${(p.category?.name || p.subcategory || '').replace(/"/g, '""')}"`,
+          `"${colors}"`,
+          basePrice,
+          sellingPrice,
+          stock,
+          p.isActive ? "Active" : "Inactive"
+        ].join(","));
+      });
+
+      const csvString = csvRows.join("\n");
+      const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `products_export_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error("Export error:", error);
+      toast({ title: "Export failed", description: "Could not export products data.", variant: "destructive" });
+    } finally {
+      setExporting(false);
+    }
   };
 
   // Handlers
@@ -456,7 +535,7 @@ export const ProductManagement = () => {
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       {/* Stats Overview - Updated to include new flags */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
         {loading ? (
           // Skeleton Stats Cards
           Array.from({ length: 6 }).map((_, i) => (
@@ -521,14 +600,20 @@ export const ProductManagement = () => {
                 <CardDescription>Manage your catalog, prices, and stock levels</CardDescription>
               </div>
               <div className="flex flex-col sm:flex-row gap-2">
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search products..."
-                    className="pl-8 w-full sm:w-[250px]"
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                  />
+                <div className="flex gap-2 w-full sm:w-[250px]">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search products..."
+                      className="pl-8 w-full"
+                      value={searchInput}
+                      onChange={e => setSearchInput(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { setSearchTerm(searchInput); setCurrentPage(1); } }}
+                    />
+                  </div>
+                  <Button onClick={() => { setSearchTerm(searchInput); setCurrentPage(1); }} className="px-3">
+                    Search
+                  </Button>
                 </div>
                 <Select value={filterCategory} onValueChange={setFilterCategory}>
                   <SelectTrigger className="w-full sm:w-[180px]">
@@ -537,13 +622,25 @@ export const ProductManagement = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Categories</SelectItem>
-                    {[...new Set(categoriesList.map(c => c.name))].map(c => (
-                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    {categoriesList.map(c => (
+                      <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <Button onClick={fetchData} variant="outline" title="Refresh stock">
-                  <RefreshCw className="h-4 w-4 mr-2" /> Refresh
+                <Select value={String(pageSize)} onValueChange={(val) => { setPageSize(val === "all" ? "all" : Number(val)); setCurrentPage(1); }}>
+                  <SelectTrigger className="w-[80px]">
+                    <SelectValue placeholder="15" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="15">15</SelectItem>
+                    <SelectItem value="30">30</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                    <SelectItem value="all">All</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button onClick={handleExport} variant="outline" title="Export to CSV" className="px-3" disabled={exporting}>
+                  {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                 </Button>
                 <Button onClick={handleOpenAdd}>
                   <Plus className="h-4 w-4 mr-2" /> Add Product
@@ -557,8 +654,7 @@ export const ProductManagement = () => {
           <style jsx>{`
   .product-table-container {
     position: relative;
-    max-height: calc(100vh - 300px);
-    overflow: auto;
+    overflow-x: auto;
     border: 1px solid hsl(var(--border));
     border-radius: var(--radius);
   }
@@ -827,6 +923,65 @@ export const ProductManagement = () => {
               </tbody>
             </table>
           </div>
+
+          {/* Pagination */}
+          {totalPages > 0 && (
+            <div className="flex items-center justify-between mt-6">
+              <div className="text-sm text-muted-foreground">
+                Showing {Math.min((currentPage - 1) * pageSize + 1, pagination.totalItems || 0)} to{" "}
+                {Math.min(currentPage * pageSize, pagination.totalItems || filteredProducts.length)} of{" "}
+                {pagination.totalItems || filteredProducts.length} products
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1" />
+                  Previous
+                </Button>
+
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        className="h-8 w-8"
+                        onClick={() => handlePageChange(pageNum)}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

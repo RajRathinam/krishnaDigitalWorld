@@ -388,17 +388,15 @@ function OrderDetailModal({ orderId, onClose, onUpdateStatus, onRequestCancel })
                   </CardHeader>
                   <CardContent>
                     {addr ? (
-                      <div 
-                        onClick={() => openMap(addr)}
-                        className="bg-muted/30 p-4 rounded-lg border border-border/50 space-y-0.5 cursor-pointer hover:bg-muted/50 transition-colors relative"
-                      >
+                      <div className="bg-muted/30 p-4 rounded-lg border border-border/50 space-y-1.5 relative">
                         <div className="flex items-center justify-between">
                           {addr.name   && <p className="font-semibold text-sm">{addr.name}</p>}
-                          {addr.lat && addr.lng && (
-                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full flex items-center gap-1 font-medium hover:bg-blue-200 transition-colors">
-                              <MapPin className="h-3 w-3" /> View on map
-                            </span>
-                          )}
+                          <button 
+                            onClick={() => openMap(addr)}
+                            className="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-md flex items-center gap-1.5 font-semibold hover:bg-blue-700 transition-colors shadow-sm active:scale-95"
+                          >
+                            <MapPin className="h-3.5 w-3.5" /> View on Map
+                          </button>
                         </div>
                         {addr.phone  && <p className="text-sm text-muted-foreground flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" />{addr.phone}</p>}
                         {addr.street && <p className="text-sm text-muted-foreground">{addr.street}</p>}
@@ -544,18 +542,16 @@ function OrderDetailModal({ orderId, onClose, onUpdateStatus, onRequestCancel })
                     <div>
                       <p className="text-sm font-medium mb-2 flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-muted-foreground" /> Delivery Address</p>
                       {addr ? (
-                        <div 
-                          onClick={() => openMap(addr)}
-                          className="text-sm text-muted-foreground space-y-0.5 bg-muted/30 p-3 rounded-lg border border-border/50 cursor-pointer hover:bg-muted/50 transition-colors relative"
-                        >
-                          <div className="flex items-center justify-between">
-                            {addr.name   && <p className="font-semibold text-foreground">{addr.name}</p>}
-                            {addr.lat && addr.lng && (
-                              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full flex items-center gap-1 font-medium hover:bg-blue-200 transition-colors">
-                                <MapPin className="h-3 w-3" /> View on map
-                              </span>
-                            )}
-                          </div>
+                          <div className="bg-muted/30 p-4 rounded-lg border border-border/50 space-y-1.5 relative">
+                            <div className="flex items-center justify-between">
+                              {addr.name   && <p className="font-semibold text-sm">{addr.name}</p>}
+                              <button 
+                                onClick={() => openMap(addr)}
+                                className="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-md flex items-center gap-1.5 font-semibold hover:bg-blue-700 transition-colors shadow-sm active:scale-95"
+                              >
+                                <MapPin className="h-3.5 w-3.5" /> View on Map
+                              </button>
+                            </div>
                           {addr.street && <p>{addr.street}</p>}
                           <p>{[addr.city, addr.state].filter(Boolean).join(", ")}{(addr.pincode || addr.zipCode) ? ` — ${addr.pincode || addr.zipCode}` : ""}</p>
                           {addr.country && <p>{addr.country}</p>}
@@ -664,23 +660,25 @@ export const OrderManagement = () => {
   const navigate = useNavigate();
 
   const [orders, setOrders]                           = useState([]);
-  const [filteredOrders, setFilteredOrders]         = useState([]);
   const [loading, setLoading]                       = useState(true);
   const [searchTerm, setSearchTerm]                   = useState("");
-  const [debouncedSearch, setDebouncedSearch]         = useState("");
+  const [searchInput, setSearchInput]                 = useState("");
   const [filterStatus, setFilterStatus]               = useState("all");
   const [filterPaymentMethod, setFilterPaymentMethod] = useState("all");
-  const [isTodayOnly, setIsTodayOnly]                 = useState(false);
+  
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo]     = useState("");
+  
   const [selectedOrderId, setSelectedOrderId]         = useState(null);
   const [orderToUpdate, setOrderToUpdate]             = useState(null);
   const [isUpdateDialogOpen, setIsUpdateDialogOpen]   = useState(false);
   const [updateStatus, setUpdateStatus]               = useState("");
   const [pageSize, setPageSize]                       = useState(15);
+  const [exporting, setExporting]                     = useState(false);
   const [pagination, setPagination]                   = useState({ page: 1, limit: 15, total: 0, totalPages: 1 });
   const [stats, setStats]                             = useState({
     total: 0, pending: 0, processing: 0, shipped: 0, delivered: 0, cancelled: 0,
     revenue: 0, monthlyRevenue: 0, weeklyRevenue: 0,
-    // ── NEW: track cancelled amounts separately ──
     cancelledRevenue: 0, cancelledMonthlyRevenue: 0, cancelledWeeklyRevenue: 0,
   });
   const [cancelTarget, setCancelTarget] = useState(null);
@@ -691,13 +689,16 @@ export const OrderManagement = () => {
   const fetchOrders = async (page = 1, limit = pageSize) => {
     try {
       setLoading(true);
+      const limitParam = limit === "all" ? 999999 : limit;
       const params = new URLSearchParams({
-        page: page.toString(), limit: limit.toString(),
+        page: page.toString(), limit: limitParam.toString(),
         sortBy: "created_at", sortOrder: "desc",
       });
       if (filterStatus !== "all")        params.append("status",        filterStatus);
       if (filterPaymentMethod !== "all") params.append("paymentMethod", filterPaymentMethod);
-      // Removed search param from backend call to handle it in frontend
+      if (searchTerm)                    params.append("search",        searchTerm);
+      if (dateFrom)                      params.append("dateFrom",      dateFrom);
+      if (dateTo)                        params.append("dateTo",        dateTo);
 
       const response = await api.get(`/admin/orders?${params}`);
       if (!response.data.success) throw new Error(response.data.data?.message || "Failed to fetch orders");
@@ -705,48 +706,9 @@ export const OrderManagement = () => {
       const ordersData     = response.data.data.orders     || [];
       const paginationData = response.data.data.pagination || { page, limit, total: 0, totalPages: 1 };
       const serverCounts   = response.data.data.statusCounts || {};
-      const serverRevenue          = response.data.data.totalRevenue          ?? 0; // non-cancelled paid only (after backend fix)
-      const serverCancelledRevenue = response.data.data.cancelledRevenue      ?? null; // null = backend not yet updated
-
+      
       setOrders(ordersData);
       setPagination(paginationData);
-
-      /* ── Revenue calculations — CLIENT SIDE (current page only)
-         Split into paid-non-cancelled vs cancelled buckets ── */
-      const now          = new Date();
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const startOfWeek  = new Date(now);
-      startOfWeek.setDate(now.getDate() - now.getDay());
-      startOfWeek.setHours(0, 0, 0, 0);
-
-      let activeRev            = 0;
-      let monthlyRev           = 0;
-      let weeklyRev            = 0;
-      let cancelledRev         = 0;
-      let cancelledMonthlyRev  = 0;
-      let cancelledWeeklyRev   = 0;
-
-      ordersData.forEach((o) => {
-        const amt              = parseFloat(o.finalAmount || 0);
-        const d                = new Date(o.createdAt || o.created_at);
-        const isCancelledOrder = o.orderStatus === "cancelled";
-
-        if (isCancelledOrder) {
-          cancelledRev += amt;
-          if (d >= startOfMonth) cancelledMonthlyRev += amt;
-          if (d >= startOfWeek)  cancelledWeeklyRev  += amt;
-        } else if (o.paymentStatus === "paid") {
-          activeRev  += amt;
-          if (d >= startOfMonth) monthlyRev += amt;
-          if (d >= startOfWeek)  weeklyRev  += amt;
-        }
-      });
-
-      // If backend sends cancelledRevenue it means it already excludes cancelled from totalRevenue.
-      // Otherwise fall back to client-side activeRev (current page only, but correctly filtered).
-      const resolvedTotalRevenue = serverCancelledRevenue !== null
-        ? serverRevenue
-        : activeRev;
 
       setStats({
         total:      paginationData.total,
@@ -755,12 +717,12 @@ export const OrderManagement = () => {
         shipped:    serverCounts.shipped    || 0,
         delivered:  serverCounts.delivered  || 0,
         cancelled:  serverCounts.cancelled  || 0,
-        revenue:         resolvedTotalRevenue,
-        monthlyRevenue:  monthlyRev,
-        weeklyRevenue:   weeklyRev,
-        cancelledRevenue:        serverCancelledRevenue ?? cancelledRev,
-        cancelledMonthlyRevenue: cancelledMonthlyRev,
-        cancelledWeeklyRevenue:  cancelledWeeklyRev,
+        revenue:                 response.data.data.totalRevenue || 0,
+        monthlyRevenue:          response.data.data.monthlyRev || 0,
+        weeklyRevenue:           response.data.data.weeklyRev || 0,
+        cancelledRevenue:        response.data.data.cancelledRevenue || 0,
+        cancelledMonthlyRevenue: response.data.data.cancelledMonthlyRev || 0,
+        cancelledWeeklyRevenue:  response.data.data.cancelledWeeklyRev || 0,
       });
     } catch (error) {
       toast({ title: "Error", description: error.message || "Failed to fetch orders", variant: "destructive" });
@@ -769,91 +731,17 @@ export const OrderManagement = () => {
     }
   };
 
-  // ── Debounce Search ──
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(searchTerm), 300);
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
+  // ── Fetch on Filter Changes ──
+  useEffect(() => { 
+    fetchOrders(1, pageSize); 
+  }, [filterStatus, filterPaymentMethod, searchTerm, dateFrom, dateTo]);
 
-  // ── Local Filtering Logic ──
-  useEffect(() => {
-    if (!orders.length) {
-      setFilteredOrders([]);
-      return;
-    }
-
-    let result = [...orders];
-
-    // Status filter (already done by backend, but safe to repeat or keep if backend returns all)
-    if (filterStatus !== "all") {
-      result = result.filter(o => o.orderStatus === filterStatus);
-    }
-
-    // Payment method filter
-    if (filterPaymentMethod !== "all") {
-      if (filterPaymentMethod === "online") {
-        result = result.filter(o => o.paymentMethod !== "cod");
-      } else {
-        result = result.filter(o => o.paymentMethod === filterPaymentMethod);
-      }
-    }
-
-    // Search term (The main local operation)
-    if (debouncedSearch) {
-      const s = debouncedSearch.toLowerCase();
-      result = result.filter(o => 
-        (o.orderNumber || "").toLowerCase().includes(s) ||
-        (getCustomerName(o) || "").toLowerCase().includes(s) ||
-        (getCustomerPhone(o) || "").toLowerCase().includes(s)
-      );
-    }
-
-    // Date filter (Today Only)
-    if (isTodayOnly) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      result = result.filter(o => {
-        const orderDate = new Date(o.createdAt || o.created_at);
-        orderDate.setHours(0, 0, 0, 0);
-        return orderDate.getTime() === today.getTime();
-      });
-    }
-
-    setFilteredOrders(result);
-  }, [orders, filterStatus, filterPaymentMethod, debouncedSearch, isTodayOnly]);
-
-  useEffect(() => { fetchOrders(pagination.page, pageSize); }, [filterStatus, filterPaymentMethod]);
-
-  const handlePageSizeChange = (newSize) => { setPageSize(newSize); fetchOrders(1, newSize); };
+  const handlePageSizeChange = (newSize) => { setPageSize(newSize === "all" ? "all" : parseInt(newSize)); fetchOrders(1, newSize); };
 
   const updateOrderStatusApi = async (orderId, statusData) => {
     const response = await api.put(`/admin/orders/${orderId}/status`, statusData);
     if (response.data.success) return { success: true, data: response.data.data };
     throw new Error(response.data.message || "Failed to update order status");
-  };
-
-  /* ── recalcStats also excludes cancelled from revenue ── */
-  const recalcStats = (list, total) => {
-    // Only sum non-cancelled orders for revenue
-    const revenue = list
-      .filter(o => o.orderStatus !== "cancelled")
-      .reduce((s, o) => s + parseFloat(o.finalAmount || o.totalPrice || 0), 0);
-
-    const cancelledRevenue = list
-      .filter(o => o.orderStatus === "cancelled")
-      .reduce((s, o) => s + parseFloat(o.finalAmount || o.totalPrice || 0), 0);
-
-    setStats(prev => ({
-      ...prev,
-      total:      total ?? list.length,
-      pending:    list.filter(o => o.orderStatus === "pending").length,
-      processing: list.filter(o => o.orderStatus === "processing").length,
-      shipped:    list.filter(o => o.orderStatus === "shipped").length,
-      delivered:  list.filter(o => o.orderStatus === "delivered").length,
-      cancelled:  list.filter(o => o.orderStatus === "cancelled").length,
-      revenue,
-      cancelledRevenue,
-    }));
   };
 
   const requestCancel = (order) => {
@@ -867,10 +755,8 @@ export const OrderManagement = () => {
       setIsCancelling(true);
       const result = await updateOrderStatusApi(cancelTarget.id, { status: "cancelled" });
       if (result.success) {
-        const updated = orders.map(o => o.id === cancelTarget.id ? { ...o, orderStatus: "cancelled" } : o);
-        setOrders(updated);
-        recalcStats(updated, pagination.total);
         toast({ title: "Order Cancelled", description: `${cancelTarget.orderNumber} has been cancelled.` });
+        await fetchOrders(pagination.page, pageSize);
         setCancelTarget(null);
       }
     } catch (error) {
@@ -888,13 +774,7 @@ export const OrderManagement = () => {
       });
       if (result.success) {
         toast({ title: "Success", description: "Order status updated successfully" });
-        const updated = orders.map(o =>
-          o.id === orderToUpdate.id
-            ? { ...o, orderStatus: updateStatus }
-            : o
-        );
-        setOrders(updated);
-        recalcStats(updated, pagination.total);
+        await fetchOrders(pagination.page, pageSize);
         setIsUpdateDialogOpen(false);
         setUpdateStatus("");
         setOrderToUpdate(null);
@@ -917,23 +797,44 @@ export const OrderManagement = () => {
     }
   };
 
-  const handleExportOrders = () => {
-    if (!orders.length) { toast({ title: "No orders to export", variant: "destructive" }); return; }
-    const esc = (v) => { const s = String(v ?? ""); return s.includes(",") || s.includes('"') ? `"${s.replace(/"/g,'""')}"` : s; };
-    const headers = ["Order Number","Customer","Phone","Email","Date","Status","Amount","Payment Method","Payment Status","Items","Tracking ID"].join(",");
-    const rows = orders.map(o => [
-      o.orderNumber, getCustomerName(o), getCustomerPhone(o), getCustomerEmail(o),
-      fmtDate(o.createdAt), o.orderStatus, o.finalAmount || o.totalPrice || 0,
-      o.paymentMethod || "COD", o.paymentStatus || "pending",
-      countItems(o.orderItems), o.trackingId || "",
-    ].map(esc).join(","));
-    const blob = new Blob([[headers, ...rows].join("\n")], { type: "text/csv;charset=utf-8;" });
-    const link = Object.assign(document.createElement("a"), {
-      href: URL.createObjectURL(blob),
-      download: `orders_${new Date().toISOString().slice(0,10)}.csv`,
-    });
-    document.body.appendChild(link); link.click(); document.body.removeChild(link);
-    toast({ title: "Exported", description: `${orders.length} orders exported` });
+  const handleExportOrders = async () => {
+    try {
+      setExporting(true);
+      const params = new URLSearchParams({
+        page: "1", limit: "2000",
+        sortBy: "created_at", sortOrder: "desc",
+      });
+      if (filterStatus !== "all")        params.append("status",        filterStatus);
+      if (filterPaymentMethod !== "all") params.append("paymentMethod", filterPaymentMethod);
+      if (debouncedSearch)               params.append("search",        debouncedSearch);
+      if (dateFrom)                      params.append("dateFrom",      dateFrom);
+      if (dateTo)                        params.append("dateTo",        dateTo);
+
+      const response = await api.get(`/admin/orders?${params}`);
+      if (!response.data.success) throw new Error("Failed to fetch orders");
+      const exportData = response.data.data.orders || [];
+
+      if (!exportData.length) { toast({ title: "No orders to export", variant: "destructive" }); return; }
+      const esc = (v) => { const s = String(v ?? ""); return s.includes(",") || s.includes('"') ? `"${s.replace(/"/g,'""')}"` : s; };
+      const headers = ["Order Number","Customer","Phone","Email","Date","Status","Amount","Payment Method","Payment Status","Items","Tracking ID"].join(",");
+      const rows = exportData.map(o => [
+        o.orderNumber, getCustomerName(o), getCustomerPhone(o), getCustomerEmail(o),
+        fmtDate(o.createdAt), o.orderStatus, o.finalAmount || o.totalPrice || 0,
+        o.paymentMethod || "COD", o.paymentStatus || "pending",
+        countItems(o.orderItems), o.trackingId || "",
+      ].map(esc).join(","));
+      const blob = new Blob([[headers, ...rows].join("\n")], { type: "text/csv;charset=utf-8;" });
+      const link = Object.assign(document.createElement("a"), {
+        href: URL.createObjectURL(blob),
+        download: `orders_${new Date().toISOString().slice(0,10)}.csv`,
+      });
+      document.body.appendChild(link); link.click(); document.body.removeChild(link);
+      toast({ title: "Exported", description: `${exportData.length} orders exported` });
+    } catch (e) {
+      toast({ title: "Export Error", description: e.message, variant: "destructive" });
+    } finally {
+      setExporting(false);
+    }
   };
 
   /* ── stat card config with optional "cancelled sub-line" ── */
@@ -1023,31 +924,53 @@ export const OrderManagement = () => {
         <CardContent className="p-4 space-y-4">
           <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-border/50">
             <Button 
-              variant={isTodayOnly ? "default" : "outline"} 
+              variant={dateFrom === new Date().toISOString().split('T')[0] && dateTo === new Date().toISOString().split('T')[0] ? "default" : "outline"} 
               size="sm" 
-              onClick={() => setIsTodayOnly(!isTodayOnly)}
-              className={`rounded-full px-4 h-9 ${isTodayOnly ? "bg-primary shadow-md" : "hover:bg-muted"}`}
+              onClick={() => {
+                const today = new Date().toISOString().split('T')[0];
+                if (dateFrom === today && dateTo === today) {
+                  setDateFrom("");
+                  setDateTo("");
+                } else {
+                  setDateFrom(today);
+                  setDateTo(today);
+                }
+              }}
+              className={`rounded-full px-4 h-9 ${dateFrom === new Date().toISOString().split('T')[0] && dateTo === new Date().toISOString().split('T')[0] ? "bg-primary shadow-md" : "hover:bg-muted"}`}
             >
               <Clock className="w-4 h-4 mr-2" />
               Today's Orders
-              {isTodayOnly && <XCircle className="w-3.5 h-3.5 ml-2 opacity-70 hover:opacity-100" />}
+              {(dateFrom === new Date().toISOString().split('T')[0] && dateTo === new Date().toISOString().split('T')[0]) && <XCircle className="w-3.5 h-3.5 ml-2 opacity-70 hover:opacity-100" />}
             </Button>
             
-            {isTodayOnly && (
+            {(dateFrom === new Date().toISOString().split('T')[0] && dateTo === new Date().toISOString().split('T')[0]) && (
               <Badge variant="secondary" className="h-6 px-2 text-[10px] bg-primary/10 text-primary border-primary/20">
-                Showing {filteredOrders.length} orders from today
+                Showing today's orders
               </Badge>
             )}
           </div>
 
           <div className="flex flex-col lg:flex-row items-center gap-3">
-            <div className="flex-1 relative w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search order ID, customer, phone..." className="pl-9"
-                value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+            <div className="flex flex-1 relative w-full lg:w-[350px] gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Search order ID, customer, phone..." className="pl-9 h-10"
+                  value={searchInput} onChange={e => setSearchInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') setSearchTerm(searchInput); }} />
+              </div>
+              <Button onClick={() => setSearchTerm(searchInput)} className="px-3 h-10">Search</Button>
             </div>
             
             <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+              <div className="flex items-center gap-2 bg-background border border-input rounded-md px-2">
+                <span className="text-xs text-muted-foreground">From</span>
+                <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="w-[120px] border-0 h-9 p-0 focus-visible:ring-0 shadow-none text-sm" />
+              </div>
+              <div className="flex items-center gap-2 bg-background border border-input rounded-md px-2">
+                <span className="text-xs text-muted-foreground">To</span>
+                <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="w-[120px] border-0 h-9 p-0 focus-visible:ring-0 shadow-none text-sm" />
+              </div>
+
               <Select value={filterPaymentMethod} onValueChange={setFilterPaymentMethod}>
                 <SelectTrigger className="w-[160px]">
                   <CreditCard className="h-4 w-4 mr-2" /><SelectValue placeholder="Payment Method" />
@@ -1073,9 +996,9 @@ export const OrderManagement = () => {
                 </SelectContent>
               </Select>
 
-              <Button onClick={() => fetchOrders(1, pageSize)} disabled={loading} size="sm" className="shrink-0 h-10 px-4">
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                <span className="ml-2">{loading ? "Loading..." : "Refresh"}</span>
+              <Button onClick={handleExportOrders} variant="outline" title="Export to CSV" className="px-3 h-10" disabled={exporting}>
+                {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                <span className="ml-2">Export</span>
               </Button>
             </div>
           </div>
@@ -1091,23 +1014,25 @@ export const OrderManagement = () => {
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground whitespace-nowrap">Show:</span>
-            <Select value={pageSize.toString()} onValueChange={v => handlePageSizeChange(parseInt(v))} disabled={loading}>
+            <Select value={pageSize.toString()} onValueChange={handlePageSizeChange} disabled={loading}>
               <SelectTrigger className="w-[100px]"><SelectValue /></SelectTrigger>
-              <SelectContent>{PAGE_SIZE_OPTIONS.map(s => <SelectItem key={s} value={s.toString()}>{s}</SelectItem>)}</SelectContent>
+              <SelectContent>
+                {[15, 30, 45, 100, "all"].map(s => <SelectItem key={s} value={s.toString()}>{s === "all" ? "All" : s}</SelectItem>)}
+              </SelectContent>
             </Select>
           </div>
       </CardHeader>
         <CardContent className="p-0">
-          {loading ? <TableSkeleton rowCount={10} columnCount={9} /> : filteredOrders.length === 0 ? (
+          {loading ? <TableSkeleton rowCount={10} columnCount={9} /> : orders.length === 0 ? (
             <div className="text-center py-12">
           <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
           <h3 className="text-lg font-medium">No orders found</h3>
           <p className="text-sm text-muted-foreground mt-2">
-                {searchTerm || filterStatus !== "all" ? "Try adjusting your search or filter" : "No orders yet"}
+                {searchTerm || filterStatus !== "all" || filterPaymentMethod !== "all" || dateFrom || dateTo ? "Try adjusting your search or filters" : "No orders yet"}
               </p>
-              {(searchTerm || filterStatus !== "all") && (
+              {(searchTerm || filterStatus !== "all" || filterPaymentMethod !== "all" || dateFrom || dateTo) && (
                 <Button variant="outline" className="mt-4"
-                  onClick={() => { setSearchTerm(""); setFilterStatus("all"); fetchOrders(1, pageSize); }}>
+                  onClick={() => { setSearchTerm(""); setFilterStatus("all"); setFilterPaymentMethod("all"); setDateFrom(""); setDateTo(""); fetchOrders(1, pageSize); }}>
             Clear filters
                 </Button>
               )}
@@ -1131,7 +1056,7 @@ export const OrderManagement = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                    {filteredOrders.map((order) => {
+                    {orders.map((order) => {
                       const isCod = order.paymentMethod === "cod";
                       const disc  = parseFloat(order.discountAmount || 0);
                       return (

@@ -11,10 +11,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import api from "@/lib/api";
-import { CheckCircle, Clock } from "lucide-react";
+import { CheckCircle, Clock, Download } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 export const BirthdayManagement = () => {
   const [customers, setCustomers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [filterPeriod, setFilterPeriod] = useState("today");
   const [filterRole, setFilterRole] = useState("all");
   const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -26,6 +34,9 @@ export const BirthdayManagement = () => {
   const [bulkWishDialogOpen, setBulkWishDialogOpen] = useState(false);
   const [bulkWishNames, setBulkWishNames] = useState([]);
   const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(15);
+  const [exporting, setExporting] = useState(false);
 
   // Get today's date for debugging
   const getTodayString = () => {
@@ -285,6 +296,42 @@ export const BirthdayManagement = () => {
   const handleRefresh = () => {
     fetchBirthdays();
   };
+
+  const handlePageSizeChange = (newSize) => {
+    setPageSize(newSize);
+    setPage(1);
+  };
+
+  const handleExportBirthdays = () => {
+    const dataToExport = getFilteredCustomers();
+    if (!dataToExport.length) {
+      toast({ title: "No data", description: "There are no birthdays to export." });
+      return;
+    }
+    
+    setExporting(true);
+    try {
+      const esc = (v) => { const s = String(v ?? ""); return s.includes(",") || s.includes('"') ? `"${s.replace(/"/g,'""')}"` : s; };
+      const headers = ["Customer ID", "Name", "Email", "Phone", "Birthday", "Age", "Role", "Wishes Sent", "Offer Sent"].join(",");
+      const rows = dataToExport.map(c => {
+        return [
+          c.id, c.name, c.email, c.phone, c.dob, c.age, c.role,
+          c.wishesSent ? "Yes" : "No", c.offerSent ? "Yes" : "No"
+        ].map(esc).join(",");
+      });
+      const blob = new Blob([[headers, ...rows].join("\n")], { type: "text/csv;charset=utf-8;" });
+      const link = Object.assign(document.createElement("a"), {
+        href: URL.createObjectURL(blob),
+        download: `birthdays_${new Date().toISOString().slice(0,10)}.csv`,
+      });
+      document.body.appendChild(link); link.click(); document.body.removeChild(link);
+      toast({ title: "Export successful", description: `${dataToExport.length} records exported.` });
+    } catch (err) {
+      toast({ title: "Export failed", description: err.message, variant: "destructive" });
+    } finally {
+      setExporting(false);
+    }
+  };
   // Check if user is authenticated
   useEffect(() => {
     const token = localStorage.getItem("authToken");
@@ -438,21 +485,48 @@ export const BirthdayManagement = () => {
 
     {/* Birthday List */}
     <Card>
-      <CardHeader>
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <CardHeader className="flex flex-col gap-4 md:flex-row items-center justify-between pb-4">
+        <div>
           <CardTitle className="flex items-center gap-2">
             <Gift className="h-5 w-5" />
             Birthday Calendar
-            <Badge variant="outline" className="ml-2">
-              {getFilteredCustomers().length} found
-            </Badge>
           </CardTitle>
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search customers..." className="pl-9" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+          <p className="text-sm text-muted-foreground mt-1">
+            Showing {getFilteredCustomers().length} birthdays
+          </p>
+        </div>
+        
+          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+            <div className="flex flex-1 md:w-[250px] gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search..."
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { setSearchTerm(searchInput); setPage(1); } }}
+                  className="pl-9 h-9 text-sm"
+                />
+              </div>
+              <Button onClick={() => { setSearchTerm(searchInput); setPage(1); }} className="h-9 px-3">
+                Search
+              </Button>
             </div>
+
+          <div className="flex items-center gap-2 border-l pl-3 ml-1">
+            <span className="text-xs text-muted-foreground whitespace-nowrap">Show:</span>
+            <Select value={pageSize.toString()} onValueChange={v => { setPageSize(v === "all" ? "all" : parseInt(v)); setPage(1); }} disabled={loading}>
+              <SelectTrigger className="w-[80px] h-9 text-sm"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {[15, 30, 45, 100, "all"].map(s => <SelectItem key={s} value={s.toString()}>{s === "all" ? "All" : s}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
+          
+          <Button onClick={handleExportBirthdays} variant="outline" title="Export to CSV" className="h-9 px-3" disabled={exporting}>
+            {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+            <span className="text-sm">Export</span>
+          </Button>
         </div>
       </CardHeader>
       <CardContent>
@@ -479,8 +553,12 @@ export const BirthdayManagement = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {getFilteredCustomers().map((customer) => {
-                const isToday = customer.dateOfBirth ?
+              {(() => {
+                const filtered = getFilteredCustomers();
+                const currentSize = pageSize === "all" ? filtered.length : parseInt(pageSize);
+                const paginated = filtered.slice((page - 1) * currentSize, page * currentSize);
+                return paginated.map((customer) => {
+                  const isToday = customer.dateOfBirth ?
                   new Date(customer.dateOfBirth).getMonth() === new Date().getMonth() &&
                   new Date(customer.dateOfBirth).getDate() === new Date().getDate() :
                   false;
@@ -537,10 +615,43 @@ export const BirthdayManagement = () => {
                     </div>
                   </TableCell>
                 </TableRow>);
-              })}
+                });
+              })()}
             </TableBody>
           </Table>
         </div>)}
+
+        {/* Pagination */}
+        {(() => {
+          const filtered = getFilteredCustomers();
+          const currentSize = pageSize === "all" ? filtered.length : parseInt(pageSize);
+          const totalPages = Math.ceil(filtered.length / currentSize) || 1;
+          if (totalPages <= 1) return null;
+          
+          return (
+            <div className="flex items-center justify-center gap-2 mt-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(page - 1)}
+                disabled={page === 1}
+              >
+                Previous
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Page {page} of {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(page + 1)}
+                disabled={page === totalPages}
+              >
+                Next
+              </Button>
+            </div>
+          );
+        })()}
       </CardContent>
     </Card>
 

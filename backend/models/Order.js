@@ -108,6 +108,11 @@ const Order = sequelize.define('Order', {
       key: 'id'
     }
   },
+  giftPopupSeen: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    field: 'gift_popup_seen'
+  },
   // ── PhonePe PG v2 fields ────────────────────
   merchantOrderId: {
     type: DataTypes.STRING(120),

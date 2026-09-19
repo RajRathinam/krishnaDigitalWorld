@@ -916,7 +916,7 @@ export const getUserCartAdmin = async (req, res) => {
     });
   }
 };
-// Add this function to adminController.js
+
 /**
  * @desc    Get customer analytics data
  * @route   GET /api/admin/users/analytics/customers
@@ -924,85 +924,85 @@ export const getUserCartAdmin = async (req, res) => {
  */
 export const getCustomerAnalytics = async (req, res) => {
   try {
-    console.log('=== Getting Customer Analytics ===');
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 15;
+    const search = req.query.search || '';
+    const status = req.query.status || 'all';
+    const offset = (page - 1) * limit;
 
-    // Get total active customers
-    const totalCustomers = await User.count({
-      where: {
-        role: 'customer',
-        isActive: true
-      }
-    }).catch(() => 0);
+    // Get base stats
+    const totalCustomers = await User.count({ where: { role: 'customer', isActive: true } }).catch(() => 0);
+    const orderedCustomersQuery = await sequelize.query(`
+      SELECT COUNT(DISTINCT user_id) as count FROM orders 
+      WHERE order_status != 'cancelled' AND user_id IN (SELECT id FROM users WHERE role = 'customer' AND is_active = true)
+    `, { type: sequelize.QueryTypes.SELECT });
+    const orderedCustomers = parseInt(orderedCustomersQuery[0]?.count || 0);
+    const signupOnlyCustomers = Math.max(0, totalCustomers - orderedCustomers);
 
-    // Get all customers with their order count
-    const customers = await User.findAll({
-      where: {
-        role: 'customer',
-        isActive: true
-      },
-      attributes: [
-        'id',
-        'customerCode',
-        'name',
-        'email',
-        'phone',
-        'dateOfBirth',
-        'isVerified',
-        'isActive',
-        'profileImage',
-        'createdAt',
-        // Use literal with correct column names (snake_case)
-        [
-          sequelize.literal(`(
-            SELECT COUNT(*) 
-            FROM orders 
-            WHERE orders.user_id = User.id 
-            AND orders.order_status != 'cancelled'
-          )`),
-          'orderCount'
-        ],
-        [
-          sequelize.literal(`(
-            SELECT SUM(final_amount) 
-            FROM orders 
-            WHERE orders.user_id = User.id 
-            AND orders.order_status != 'cancelled'
-            AND orders.payment_status = 'paid'
-          )`),
-          'totalSpent'
-        ]
+    // Build conditions for data fetch
+    let whereClause = { role: 'customer', isActive: true };
+    if (search) {
+      whereClause[Op.or] = [
+        { name: { [Op.like]: `%${search}%` } },
+        { email: { [Op.like]: `%${search}%` } },
+        { phone: { [Op.like]: `%${search}%` } },
+        { customerCode: { [Op.like]: `%${search}%` } }
+      ];
+    }
+
+    let havingClause = undefined;
+    if (status === 'ordered') havingClause = sequelize.literal(`orderCount > 0`);
+    else if (status === 'signup-only') havingClause = sequelize.literal(`orderCount = 0`);
+
+    const queryAttributes = [
+      'id', 'customerCode', 'name', 'email', 'phone', 'dateOfBirth',
+      'isVerified', 'isActive', 'profileImage', 'createdAt',
+      [
+        sequelize.literal(`(
+          SELECT COUNT(*) FROM orders 
+          WHERE orders.user_id = User.id AND orders.order_status != 'cancelled'
+        )`),
+        'orderCount'
       ],
+      [
+        sequelize.literal(`(
+          SELECT SUM(final_amount) FROM orders 
+          WHERE orders.user_id = User.id AND orders.order_status != 'cancelled' AND orders.payment_status = 'paid'
+        )`),
+        'totalSpent'
+      ]
+    ];
+
+    // Get paginated customers
+    const customers = await User.findAll({
+      where: whereClause,
+      attributes: queryAttributes,
+      having: havingClause,
       order: [['created_at', 'DESC']],
-      limit: 50
+      limit,
+      offset,
+      subQuery: false
     });
 
-    // Calculate ordered vs signup-only customers
-    let orderedCustomers = 0;
-    let signupOnlyCustomers = 0;
-
-    customers.forEach(customer => {
-      const orderCount = customer.dataValues.orderCount || 0;
-      if (orderCount > 0) {
-        orderedCustomers++;
-      } else {
-        signupOnlyCustomers++;
-      }
+    // Get total matching count (without limit/offset) to compute totalPages
+    const allMatching = await User.findAll({
+      where: whereClause,
+      attributes: ['id', [sequelize.literal(`(SELECT COUNT(*) FROM orders WHERE orders.user_id = User.id AND orders.order_status != 'cancelled')`), 'orderCount']],
+      having: havingClause,
+      subQuery: false
     });
+    const totalCount = allMatching.length;
+    const totalPages = Math.ceil(totalCount / limit);
 
-    // Format customer data for frontend
     const formattedCustomers = customers.map(customer => {
-      // Access the correct field names based on your model
       const userData = customer.get({ plain: true });
-
       return {
         id: userData.id?.toString() || '',
         customerCode: userData.customerCode || `CUST-${userData.id}`,
         name: userData.name || 'Unknown',
         email: userData.email || 'No email',
         phone: userData.phone || 'No phone',
-        dateOfBirth: userData.dateOfBirth
-          ? new Date(userData.dateOfBirth).toISOString().split('T')[0]
-          : 'Not set',
+        dateOfBirth: userData.dateOfBirth ? new Date(userData.dateOfBirth).toISOString().split('T')[0] : 'Not set',
         orders: userData.orderCount || 0,
         totalSpent: parseFloat(userData.totalSpent || 0).toFixed(2),
         status: (userData.orderCount || 0) > 0 ? 'ordered' : 'signup-only',
@@ -1015,24 +1015,21 @@ export const getCustomerAnalytics = async (req, res) => {
       };
     });
 
-    const responseData = {
-      totalCustomers,
-      orderedCustomers,
-      signupOnlyCustomers,
-      customers: formattedCustomers
-    };
-
-    console.log('Customer analytics data:', {
-      totalCustomers,
-      orderedCustomers,
-      signupOnlyCustomers,
-      customerCount: formattedCustomers.length
-    });
-
     res.status(200).json({
       success: true,
       message: 'Customer analytics fetched successfully',
-      data: responseData
+      data: {
+        totalCustomers,
+        orderedCustomers,
+        signupOnlyCustomers,
+        customers: formattedCustomers,
+        pagination: {
+          total: totalCount,
+          page,
+          limit,
+          totalPages
+        }
+      }
     });
 
   } catch (error) {

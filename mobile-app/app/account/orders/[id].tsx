@@ -51,6 +51,7 @@ import Skeleton from '@/components/Skeleton';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   FadeIn,
+  FadeInDown,
   FadeOut,
   useAnimatedStyle,
   withSpring,
@@ -335,12 +336,103 @@ function CancelRequestPopup({ order, shopInfo, onClose }: any) {
   );
 }
 
+// ─── Gift Popup ──────────────────────────────────────────────────────────────
+function GiftPopup({ order, onClose, onAwesome }: any) {
+  const shimmer = useSharedValue(0);
+  const float   = useSharedValue(0);
+  const badge   = useSharedValue(0);
+
+  useEffect(() => {
+    shimmer.value = withRepeat(withTiming(1, { duration: 1500, easing: Easing.linear }), -1);
+    float.value   = withRepeat(withSequence(withTiming(-10, { duration: 1200 }), withTiming(0, { duration: 1200 })), -1);
+    badge.value   = withDelay(600, withSpring(1, { damping: 6, stiffness: 100 }));
+  }, []);
+
+  const floatStyle = useAnimatedStyle(() => ({ transform: [{ translateY: float.value }] }));
+  const badgeStyle = useAnimatedStyle(() => ({ transform: [{ scale: badge.value }], opacity: badge.value }));
+
+  return (
+    <Modal transparent visible animationType="fade" onRequestClose={onClose}>
+      <Pressable style={styles.modalBackdrop} onPress={onClose}>
+        <Animated.View 
+          entering={FadeInDown.duration(500).springify()} 
+          style={[styles.modalContent, { overflow: 'hidden', paddingVertical: 40 }]}
+          onStartShouldSetResponder={() => true}
+        >
+          {/* Background blobs */}
+          <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
+            <View style={{ position: 'absolute', top: -60, left: -60, width: 220, height: 220, borderRadius: 110, backgroundColor: '#FFF5F5', opacity: 0.9 }} />
+            <View style={{ position: 'absolute', top: -40, right: -70, width: 260, height: 260, borderRadius: 130, backgroundColor: '#FFFBEB', opacity: 0.9 }} />
+            <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 120, backgroundColor: '#FFF7ED', opacity: 0.6 }} />
+          </View>
+
+          {/* Congrats label */}
+          <Animated.Text entering={FadeIn.delay(100)} style={{ fontSize: 16, fontWeight: '900', color: '#DB2777', textAlign: 'center', letterSpacing: 1 }}>
+            🎉 CONGRATULATIONS! 🎉
+          </Animated.Text>
+
+          {/* Floating gift image */}
+          <Animated.View style={[{ marginTop: 24, marginBottom: 16, zIndex: 5, alignSelf: 'center' }, floatStyle]}>
+            <Image
+              source={order.gift?.image 
+                ? { uri: `${API_BASE_URL}${order.gift.image.startsWith('/') ? '' : '/'}${order.gift.image}` }
+                : require('@/assets/images/gift.png')}
+              style={{ width: 140, height: 140 }}
+              contentFit="contain"
+            />
+            {/* Badge */}
+            <Animated.View style={[{
+              position: 'absolute', bottom: -10, right: -10, backgroundColor: '#EF4444', 
+              paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, 
+              flexDirection: 'row', alignItems: 'center', gap: 4, 
+              borderWidth: 2, borderColor: '#fff', elevation: 5, shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 3.84
+            }, badgeStyle]}>
+              <Gift size={12} color="#fff" />
+              <Text style={{ color: '#fff', fontSize: 12, fontWeight: '900' }}>FREE</Text>
+            </Animated.View>
+          </Animated.View>
+
+          {/* Gift name */}
+          <Animated.Text entering={FadeIn.delay(300)} style={{ fontSize: 22, fontWeight: '900', color: '#111827', textAlign: 'center', marginTop: 14, marginBottom: 8, paddingHorizontal: 8 }}>
+            {order.gift?.productName || 'Surprise Gift'}
+          </Animated.Text>
+          
+          {order.gift?.price && (
+            <Animated.View entering={FadeIn.delay(400)} style={{ backgroundColor: '#FCE7F3', alignSelf: 'center', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12, marginBottom: 16 }}>
+              <Text style={{ color: '#DB2777', fontWeight: '800', fontSize: 14 }}>Worth ₹{parseFloat(order.gift.price).toLocaleString('en-IN')}</Text>
+            </Animated.View>
+          )}
+
+          <Animated.Text entering={FadeIn.delay(500)} style={{ fontSize: 14, color: '#4B5563', textAlign: 'center', paddingHorizontal: 20, lineHeight: 22, fontWeight: '500', marginBottom: 24 }}>
+            Your free gift will be delivered along with your order.
+          </Animated.Text>
+
+          <Animated.View entering={FadeIn.delay(600)} style={{ width: '100%', paddingHorizontal: 20 }}>
+            <TouchableOpacity onPress={onAwesome} style={{
+              backgroundColor: '#111827', borderRadius: 16, height: 56,
+              flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
+              shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.2, shadowRadius: 8, elevation: 5
+            }} activeOpacity={0.85}>
+              <Text style={{ color: '#fff', fontSize: 16, fontWeight: '800', marginRight: 8 }}>Awesome!</Text>
+              <ArrowRight size={20} color="#fff" strokeWidth={3} />
+            </TouchableOpacity>
+          </Animated.View>
+        </Animated.View>
+      </Pressable>
+    </Modal>
+  );
+}
+
 // ─── Main Component ──────────────────────────────────────────────────────────
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const { shopInfo } = useShopInfo();
   const [showCancelPopup, setShowCancelPopup] = useState(false);
+  const [showGiftPopup, setShowGiftPopup] = useState(false);
+  const [hasCheckedPopup, setHasCheckedPopup] = useState(false);
 
   const { data: orderResponse, isLoading, refetch } = useQuery({
     queryKey: ['order', id],
@@ -373,6 +465,27 @@ export default function OrderDetailScreen() {
   }, [refetch]);
 
   const order = orderResponse?.data || orderResponse?.order || orderResponse;
+
+  useEffect(() => {
+    if (order && !hasCheckedPopup) {
+      if (order.giftScanned && order.giftStatus === 'won' && !order.giftPopupSeen) {
+        setShowGiftPopup(true);
+      }
+      setHasCheckedPopup(true);
+    }
+  }, [order, hasCheckedPopup]);
+
+  const handleAwesomeClick = async () => {
+    setShowGiftPopup(false);
+    if (!order?.giftPopupSeen) {
+      try {
+        await orderApi.markGiftPopupSeen(id);
+        refetch(); // refresh the order to update giftPopupSeen locally
+      } catch (error) {
+        console.error('Error marking gift popup as seen', error);
+      }
+    }
+  };
 
   if (isLoading) {
     return (
@@ -441,6 +554,10 @@ export default function OrderDetailScreen() {
       
       {showCancelPopup && (
         <CancelRequestPopup order={order} shopInfo={shopInfo} onClose={() => setShowCancelPopup(false)} />
+      )}
+
+      {showGiftPopup && order?.giftStatus === 'won' && (
+        <GiftPopup order={order} onClose={() => setShowGiftPopup(false)} onAwesome={handleAwesomeClick} />
       )}
 
       <ScrollView 
@@ -538,51 +655,53 @@ export default function OrderDetailScreen() {
         {parseFloat(order.finalAmount) > 5000 && (
           <Animated.View entering={FadeIn.delay(200).duration(600)} style={{ marginBottom: 14 }}>
             {order.giftScanned && order.giftStatus === 'won' && (
-              <View style={{
-                backgroundColor: '#FFF5F5',
-                borderRadius: 16,
-                flexDirection: 'row',
-                alignItems: 'center',
-                padding: 12,
-                borderWidth: 1,
-                borderColor: '#FCE7F3',
-                shadowColor: '#F43F5E',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.1,
-                shadowRadius: 10,
-                elevation: 3,
-                overflow: 'hidden'
-              }}>
-                <View style={{ position: 'absolute', top: -20, right: -20, width: 100, height: 100, borderRadius: 50, backgroundColor: '#F3E8FF', opacity: 0.6 }} />
-                <View style={{ position: 'absolute', bottom: -30, left: -10, width: 120, height: 120, borderRadius: 60, backgroundColor: '#FFEDD5', opacity: 0.6 }} />
-                
-                <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#EFF6FF', justifyContent: 'center', alignItems: 'center', marginRight: 10, zIndex: 2 }}>
-                  <Image source={require('@/assets/images/gift.png')} style={{ width: 24, height: 24 }} contentFit="contain" />
-                </View>
+              <TouchableOpacity activeOpacity={0.9} onPress={() => setShowGiftPopup(true)}>
+                <View style={{
+                  backgroundColor: '#FFF5F5',
+                  borderRadius: 16,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  padding: 12,
+                  borderWidth: 1,
+                  borderColor: '#FCE7F3',
+                  shadowColor: '#F43F5E',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 10,
+                  elevation: 3,
+                  overflow: 'hidden'
+                }}>
+                  <View style={{ position: 'absolute', top: -20, right: -20, width: 100, height: 100, borderRadius: 50, backgroundColor: '#F3E8FF', opacity: 0.6 }} />
+                  <View style={{ position: 'absolute', bottom: -30, left: -10, width: 120, height: 120, borderRadius: 60, backgroundColor: '#FFEDD5', opacity: 0.6 }} />
+                  
+                  <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#EFF6FF', justifyContent: 'center', alignItems: 'center', marginRight: 10, zIndex: 2 }}>
+                    <Image source={require('@/assets/images/gift.png')} style={{ width: 24, height: 24 }} contentFit="contain" />
+                  </View>
 
-                <View style={{ flex: 1, zIndex: 2 }}>
-                  <Text style={{ fontSize: 14, fontWeight: '900', color: '#0F172A', marginBottom: -2 }}>
-                    You won a
-                  </Text>
-                  <Text style={{ fontSize: 18, fontWeight: '900', color: '#BE185D', marginBottom: 2, letterSpacing: -0.5 }}>
-                    {order.gift?.productName || 'Surprise Gift'} {order.gift?.price && <Text style={{ fontSize: 12, color: '#DB2777' }}>(Worth ₹{order.gift.price})</Text>}
-                  </Text>
-                  <Text style={{ fontSize: 10, color: '#475569', fontWeight: '500' }}>
-                    Your free gift will be delivered with your order.
-                  </Text>
-                </View>
+                  <View style={{ flex: 1, zIndex: 2 }}>
+                    <Text style={{ fontSize: 14, fontWeight: '900', color: '#0F172A', marginBottom: -2 }}>
+                      You won a
+                    </Text>
+                    <Text style={{ fontSize: 18, fontWeight: '900', color: '#BE185D', marginBottom: 2, letterSpacing: -0.5 }}>
+                      {order.gift?.productName || 'Surprise Gift'} {order.gift?.price && <Text style={{ fontSize: 12, color: '#DB2777' }}>(Worth ₹{order.gift.price})</Text>}
+                    </Text>
+                    <Text style={{ fontSize: 10, color: '#475569', fontWeight: '500' }}>
+                      Your free gift will be delivered with your order.
+                    </Text>
+                  </View>
 
-                <View style={{ width: 64, height: 64, justifyContent: 'center', alignItems: 'center', zIndex: 2, marginLeft: 6 }}>
-                  <Image 
-                    source={order.gift?.image ? { uri: `${API_BASE_URL}${order.gift.image.startsWith('/') ? '' : '/'}${order.gift.image}` } : require('@/assets/images/gift.png')}
-                    style={{ width: '100%', height: '100%' }}
-                    contentFit="contain"
-                  />
-                  <View style={{ position: 'absolute', top: -4, right: -4, backgroundColor: '#22C55E', width: 20, height: 20, borderRadius: 10, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#FFF' }}>
-                     <Check size={12} color="#FFF" strokeWidth={4} />
+                  <View style={{ width: 64, height: 64, justifyContent: 'center', alignItems: 'center', zIndex: 2, marginLeft: 6 }}>
+                    <Image 
+                      source={order.gift?.image ? { uri: `${API_BASE_URL}${order.gift.image.startsWith('/') ? '' : '/'}${order.gift.image}` } : require('@/assets/images/gift.png')}
+                      style={{ width: '100%', height: '100%' }}
+                      contentFit="contain"
+                    />
+                    <View style={{ position: 'absolute', top: -4, right: -4, backgroundColor: '#22C55E', width: 20, height: 20, borderRadius: 10, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#FFF' }}>
+                       <Check size={12} color="#FFF" strokeWidth={4} />
+                    </View>
                   </View>
                 </View>
-              </View>
+              </TouchableOpacity>
             )}
 
             {order.giftScanned && order.giftStatus === 'lost' && (

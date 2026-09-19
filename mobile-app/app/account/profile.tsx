@@ -340,22 +340,22 @@ export default function ProfileScreen() {
                                 {lat && lng && (
                                     <TouchableOpacity 
                                         onPress={() => Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`)}
-                                        className="bg-green-50 border border-green-200 py-1.5 px-2 rounded-lg flex-row items-center justify-center"
+                                        className="bg-[#FFC107] border border-[#FFC107] py-1.5 px-3 rounded-lg flex-row items-center justify-center"
                                     >
-                                        <Text className="text-green-700 font-bold text-[10px]">View Map</Text>
+                                        <Text className="text-gray-900 font-bold text-[10px]">View Map</Text>
                                     </TouchableOpacity>
                                 )}
                                 <TouchableOpacity 
                                     onPress={captureLocation} 
                                     disabled={isFetchingLocation}
-                                    className="bg-purple-50 border border-purple-100 py-1.5 px-2 rounded-lg flex-row items-center justify-center"
+                                    className="bg-[#FFF9E6] border border-[#FFC107] py-1.5 px-2 rounded-lg flex-row items-center justify-center"
                                 >
                                     {isFetchingLocation ? (
-                                        <ActivityIndicator size="small" color="#9333ea" className="mr-1" />
+                                        <ActivityIndicator size="small" color="#E6A800" className="mr-1" />
                                     ) : (
-                                        <MapPin size={12} color="#9333ea" className="mr-1" />
+                                        <MapPin size={12} color="#E6A800" className="mr-1" />
                                     )}
-                                    <Text className="text-purple-600 font-bold text-[10px]">
+                                    <Text className="text-[#E6A800] font-bold text-[10px]">
                                         {isFetchingLocation ? 'Getting location...' : 'Capture Location'}
                                     </Text>
                                 </TouchableOpacity>

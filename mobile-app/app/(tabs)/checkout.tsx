@@ -32,6 +32,7 @@ import {
     X,
 } from 'lucide-react-native';
 import Header from '@/components/Header';
+import PhonePePaymentButton from '@/components/PhonePePaymentButton';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
 import { authApi, orderApi, couponApi, paymentApi, API_BASE_URL } from '@/services/api';
@@ -879,24 +880,72 @@ export default function CheckoutScreen() {
             {/* Sticky Order Button for Step 3 */}
             {currentStep === 'payment' && (
                 <View className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 shadow-2xl">
-                    <TouchableOpacity
-                        onPress={handlePlaceOrder}
-                        disabled={isPlacingOrder}
-                        className={`bg-gray-900 py-4 rounded-2xl flex-row items-center justify-center gap-3 active:scale-95 ${
-                            isPlacingOrder ? 'opacity-70' : ''
-                        }`}
-                    >
-                        {isPlacingOrder ? (
-                            <ActivityIndicator size="small" color="#FFFFFF" />
-                        ) : (
-                            <>
-                                <Text className="text-white font-black text-lg font-body">
-                                    {paymentMethod === 'cod' ? 'Confirm COD Order' : 'Pay & Confirm Order'}
-                                </Text>
-                                <Check size={20} color="#FFFFFF" strokeWidth={3} />
-                            </>
-                        )}
-                    </TouchableOpacity>
+                    {paymentMethod === 'phonepe' ? (
+                        <PhonePePaymentButton 
+                            shippingAddress={{
+                                name: selectedAddressData?.name,
+                                phone: selectedAddressData?.phone,
+                                street: selectedAddressData?.street,
+                                city: selectedAddressData?.city,
+                                state: selectedAddressData?.state,
+                                zipCode: selectedAddressData?.pincode,
+                                country: 'India',
+                                lat: selectedAddressData?.lat || null,
+                                lng: selectedAddressData?.lng || null,
+                            }}
+                            billingAddress={{
+                                name: selectedAddressData?.name,
+                                phone: selectedAddressData?.phone,
+                                street: selectedAddressData?.street,
+                                city: selectedAddressData?.city,
+                                state: selectedAddressData?.state,
+                                zipCode: selectedAddressData?.pincode,
+                                country: 'India',
+                                lat: selectedAddressData?.lat || null,
+                                lng: selectedAddressData?.lng || null,
+                            }}
+                            deliveryType={deliveryOption}
+                            notes={`Delivery: ${deliveryOption === 'express' ? 'Express (₹99)' : 'Standard (Free)'}${
+                                appliedCoupon ? ` • Coupon: ${appliedCoupon.code} (${formatPrice(couponDiscount)} off)` : ''
+                            }`}
+                            couponCode={appliedCoupon?.code}
+                            onPaymentSuccess={(orderId) => {
+                                setPlacedOrderData({ orderNumber: orderId, id: orderId });
+                                setOrderPlaced(true);
+                                queryClient.invalidateQueries({ queryKey: ['me'] });
+                                clearCart();
+                            }}
+                            onPaymentFailure={(err) => {
+                                Alert.alert('Payment Failed', err);
+                            }}
+                            buttonStyle={{
+                                backgroundColor: '#111827',
+                                paddingVertical: 16,
+                                marginVertical: 0
+                            }}
+                            textStyle={{
+                                color: '#FFFFFF',
+                                fontSize: 18,
+                            }}
+                        />
+                    ) : (
+                        <TouchableOpacity
+                            onPress={handlePlaceOrder}
+                            disabled={isPlacingOrder}
+                            className={`bg-gray-900 py-4 rounded-2xl flex-row items-center justify-center gap-3 active:scale-95 ${
+                                isPlacingOrder ? 'opacity-70' : ''
+                            }`}
+                        >
+                            {isPlacingOrder ? (
+                                <ActivityIndicator size="small" color="#FFFFFF" />
+                            ) : (
+                                <>
+                                    <Text className="text-white font-black text-lg font-body">Confirm COD Order</Text>
+                                    <Check size={20} color="#FFFFFF" strokeWidth={3} />
+                                </>
+                            )}
+                        </TouchableOpacity>
+                    )}
                 </View>
             )}
         </SafeAreaView>

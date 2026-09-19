@@ -52,9 +52,17 @@ export const getAllOrders = async (req, res) => {
     }
 
     if (dateFrom || dateTo) {
-      where.createdAt = {};
-      if (dateFrom) where.createdAt[Op.gte] = new Date(dateFrom);
-      if (dateTo) where.createdAt[Op.lte] = new Date(dateTo);
+      where.created_at = {};
+      if (dateFrom) {
+        const dFrom = new Date(dateFrom);
+        dFrom.setHours(0, 0, 0, 0);
+        where.created_at[Op.gte] = dFrom;
+      }
+      if (dateTo) {
+        const dTo = new Date(dateTo);
+        dTo.setHours(23, 59, 59, 999);
+        where.created_at[Op.lte] = dTo;
+      }
     }
 
     // Validate sort field - IMPORTANT: Map camelCase to snake_case
@@ -99,12 +107,44 @@ export const getAllOrders = async (req, res) => {
       ]
     });
 
-    // Compute total revenue for the FULL filtered result (only PAID orders)
-    const revenueWhere = { ...where, paymentStatus: 'paid' };
-    const totalRevenue = await Order.sum('finalAmount', { 
-      where: revenueWhere,
-      include: search ? [{ model: User, as: 'user', attributes: [] }] : []
-    }) || 0;
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const revenueWhere = { ...where, paymentStatus: 'paid', orderStatus: { [Op.ne]: 'cancelled' } };
+    const cancelledWhere = { ...where, orderStatus: 'cancelled' };
+
+    const getMergedCreatedAt = (baseWhere, minDate) => {
+      const merged = { ...baseWhere };
+      if (merged.created_at) {
+        merged.created_at = { ...merged.created_at };
+        const currentGte = merged.created_at[Op.gte];
+        merged.created_at[Op.gte] = (currentGte && currentGte > minDate) ? currentGte : minDate;
+      } else {
+        merged.created_at = { [Op.gte]: minDate };
+      }
+      return merged;
+    };
+
+    const includeUser = search ? [{ model: User, as: 'user', attributes: [] }] : [];
+
+    const [
+      totalRevenue,
+      monthlyRev,
+      weeklyRev,
+      cancelledRev,
+      cancelledMonthlyRev,
+      cancelledWeeklyRev
+    ] = await Promise.all([
+      Order.sum('finalAmount', { where: revenueWhere, include: includeUser }),
+      Order.sum('finalAmount', { where: getMergedCreatedAt(revenueWhere, startOfMonth), include: includeUser }),
+      Order.sum('finalAmount', { where: getMergedCreatedAt(revenueWhere, startOfWeek), include: includeUser }),
+      Order.sum('finalAmount', { where: cancelledWhere, include: includeUser }),
+      Order.sum('finalAmount', { where: getMergedCreatedAt(cancelledWhere, startOfMonth), include: includeUser }),
+      Order.sum('finalAmount', { where: getMergedCreatedAt(cancelledWhere, startOfWeek), include: includeUser })
+    ]);
 
     // Compute per-status counts for the full filtered set
     const statusCountRows = await Order.findAll({
@@ -163,13 +203,18 @@ export const getAllOrders = async (req, res) => {
           };
         }),
         pagination: {
+          total: count,
           page: parseInt(page),
           limit: parseInt(limit),
-          total: count,
           totalPages: Math.ceil(count / limit)
         },
-        totalRevenue: parseFloat(totalRevenue),
-        statusCounts
+        statusCounts,
+        totalRevenue: parseFloat(totalRevenue) || 0,
+        monthlyRev: parseFloat(monthlyRev) || 0,
+        weeklyRev: parseFloat(weeklyRev) || 0,
+        cancelledRevenue: parseFloat(cancelledRev) || 0,
+        cancelledMonthlyRev: parseFloat(cancelledMonthlyRev) || 0,
+        cancelledWeeklyRev: parseFloat(cancelledWeeklyRev) || 0
       }
     });
 

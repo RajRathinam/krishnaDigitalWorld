@@ -471,9 +471,13 @@ export const getOrders = async (req, res) => {
  */
 export const getOrder = async (req, res) => {
   try {
+    const { Op } = await import('sequelize');
     const order = await Order.findOne({
       where: {
-        order_number: req.params.id,
+        [Op.or]: [
+          { id: req.params.id },
+          { orderNumber: req.params.id }
+        ],
         userId: req.user.id
       },
       include: [
@@ -826,5 +830,32 @@ export const scanOrderGift = async (req, res) => {
   } catch (error) {
     console.error('Scan order gift error:', error);
     res.status(500).json({ success: false, message: 'Server error while scanning gift' });
+  }
+};
+
+export const markGiftPopupSeen = async (req, res) => {
+  try {
+    const orderId = req.params.id;
+    
+    const order = await Order.findOne({
+      where: {
+        [Sequelize.Op.or]: [
+          { id: isNaN(parseInt(orderId)) ? null : parseInt(orderId) },
+          { orderNumber: orderId }
+        ],
+        userId: req.user.id
+      }
+    });
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    await order.update({ giftPopupSeen: true });
+    
+    res.status(200).json({ success: true, message: 'Gift popup marked as seen' });
+  } catch (error) {
+    console.error('Error marking gift popup as seen:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 };

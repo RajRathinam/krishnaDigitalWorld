@@ -13,7 +13,15 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "LSApplicationQueriesSchemes": [
+          "phonepe",
+          "tezz",
+          "paytm",
+          "bhim"
+        ]
+      }
     },
     "android": {
       "usesCleartextTraffic": true,

@@ -13,8 +13,23 @@ import {
   verifyCallbackSignature,
   checkPhonePeConfig,
 } from '../services/phonePeService.js';
-import { Order, Cart, Product, User, Coupon, UserCoupon, sequelize, Sequelize } from '../models/index.js';
+import { Order, Cart, Product, User, Coupon, UserCoupon, sequelize, Sequelize, Gift } from '../models/index.js';
 import { generateOrderNumber } from '../utils/helpers.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+let cachedLogoBase64 = null;
+try {
+  const logoPath = path.join(__dirname, '..', 'uploads', 'sk.png');
+  const logoBuffer = fs.readFileSync(logoPath);
+  cachedLogoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`;
+} catch (e) {
+  console.error('Could not load logo for redirect screen:', e.message);
+}
 
 const { FRONTEND_URL, APP_URL, NODE_ENV } = process.env;
 
@@ -167,7 +182,7 @@ export const initiatePaymentHandler = async (req, res) => {
   let committed = false;
 
   try {
-    const { shippingAddress, billingAddress, notes, deliveryType, couponCode } = req.body;
+    const { shippingAddress, billingAddress, notes, deliveryType, couponCode, device } = req.body;
 
     // ── Validate shipping address ────────────────────────────────────────────
     if (!shippingAddress || typeof shippingAddress !== 'object') {
@@ -298,7 +313,19 @@ export const initiatePaymentHandler = async (req, res) => {
         let discount = 0;
         if (coupon.discountType === 'percentage') {
           discount = (totalPrice * coupon.discountValue) / 100;
-          if (coupon.maxDiscount && discount > coupon.maxDiscount) discount = coupon.maxDiscount;
+          
+          // Check for max discount cap
+          // Priority: UserCoupon.maxAmount > Coupon.maxDiscount
+          const userCouponRecord = await UserCoupon.findOne({
+            where: { userId: req.user.id, couponId: coupon.id },
+            transaction
+          });
+          
+          const effectiveMaxDiscount = userCouponRecord?.maxAmount || coupon.maxDiscount;
+          
+          if (effectiveMaxDiscount && discount > effectiveMaxDiscount) {
+            discount = effectiveMaxDiscount;
+          }
         } else {
           discount = coupon.discountValue;
         }
@@ -374,7 +401,10 @@ export const initiatePaymentHandler = async (req, res) => {
     // ── 5. Build URLs ────────────────────────────────────────────────────────
     //   redirectUrl  — browser-based, can be localhost ✅
     //   callbackUrl  — server-to-server from PhonePe, must be public ⚠️
-    const redirectUrl = `${FRONTEND_URL}/payment/return?merchantOrderId=${merchantOrderId}`;
+    const backendBaseUrl = `${req.protocol}://${req.get('host')}`;
+    const redirectUrl = req.body.returnUrl 
+      ? `${backendBaseUrl}/api/payments/app-redirect?url=${encodeURIComponent(req.body.returnUrl + '?merchantOrderId=' + merchantOrderId)}`
+      : `${FRONTEND_URL}/payment/return?merchantOrderId=${merchantOrderId}`;
     const callbackUrl = buildCallbackUrl();
 
     console.log('🔗 Payment URLs:', {
@@ -382,7 +412,7 @@ export const initiatePaymentHandler = async (req, res) => {
       callbackUrl: callbackUrl || '(none — polling only)',
     });
 
-    // ── 6. Call PhonePe SDK ──────────────────────────────────────────────────
+    // ── 7. Call PhonePe SDK (Web Flow) ───────────────────────────────────────
     let phonePeResponse;
     try {
       phonePeResponse = await initiatePayment({
@@ -418,7 +448,7 @@ export const initiatePaymentHandler = async (req, res) => {
       });
     }
 
-    // ── 7. Persist PhonePe response & return redirect URL ────────────────────
+    // ── 8. Persist PhonePe response & return redirect URL ────────────────────
     await Order.update(
       {
         phonePeResponse:     JSON.stringify(phonePeResponse.rawResponse || phonePeResponse),
@@ -552,8 +582,25 @@ export const handleCallback = async (req, res) => {
       const cart = await Cart.findOne({ where: { userId: order.userId }, transaction });
       if (cart) await cart.update({ items: [], totalAmount: 0 }, { transaction });
 
+      let giftUpdate = {};
+      if (parseFloat(order.finalAmount) > 5000 && !order.giftScanned) {
+        const isWin = Math.random() > 0.3;
+        let giftStatus = 'lost';
+        let giftId = null;
+        if (isWin) {
+          const gifts = await Gift.findAll({ where: { status: true }, transaction });
+          if (gifts.length > 0) {
+            const randomGift = gifts[Math.floor(Math.random() * gifts.length)];
+            giftStatus = 'won';
+            giftId = randomGift.id;
+          }
+        }
+        giftUpdate = { giftScanned: true, giftStatus, giftId };
+      }
+
       await order.update(
         {
+          ...giftUpdate,
           paymentStatus:       'paid',
           orderStatus:         'processing',
           phonePeTransactionId: txnId,
@@ -621,7 +668,7 @@ export const checkStatusHandler = async (req, res) => {
           status:        'COMPLETED',
           orderId:       order.id,
           orderNumber:   order.orderNumber,
-          amount:        order.finalAmount,
+          amount:        order.finalAmount || order.totalPrice,
           paymentStatus: 'paid',
         },
       });
@@ -640,7 +687,7 @@ export const checkStatusHandler = async (req, res) => {
           status:        order.paymentStatus === 'paid' ? 'COMPLETED' : 'PENDING',
           orderId:       order.id,
           orderNumber:   order.orderNumber,
-          amount:        order.finalAmount,
+          amount:        order.finalAmount || order.totalPrice,
           paymentStatus: order.paymentStatus,
           fallback:      true,
         },
@@ -660,8 +707,25 @@ export const checkStatusHandler = async (req, res) => {
         const cart = await Cart.findOne({ where: { userId: order.userId }, transaction: t });
         if (cart) await cart.update({ items: [], totalAmount: 0 }, { transaction: t });
 
+        let giftUpdate = {};
+        if (parseFloat(order.finalAmount) > 5000 && !order.giftScanned) {
+          const isWin = Math.random() > 0.3;
+          let giftStatus = 'lost';
+          let giftId = null;
+          if (isWin) {
+            const gifts = await Gift.findAll({ where: { status: true }, transaction: t });
+            if (gifts.length > 0) {
+              const randomGift = gifts[Math.floor(Math.random() * gifts.length)];
+              giftStatus = 'won';
+              giftId = randomGift.id;
+            }
+          }
+          giftUpdate = { giftScanned: true, giftStatus, giftId };
+        }
+
         await order.update(
           {
+            ...giftUpdate,
             paymentStatus:       'paid',
             orderStatus:         'processing',
             phonePeTransactionId: txnId,
@@ -679,7 +743,7 @@ export const checkStatusHandler = async (req, res) => {
             status:        'COMPLETED',
             orderId:       order.id,
             orderNumber:   order.orderNumber,
-            amount:        order.finalAmount,
+            amount:        order.finalAmount || order.totalPrice,
             paymentStatus: 'paid',
           },
         });
@@ -695,7 +759,7 @@ export const checkStatusHandler = async (req, res) => {
         status:        state,
         orderId:       order.id,
         orderNumber:   order.orderNumber,
-        amount:        order.finalAmount,
+        amount:        order.finalAmount || order.totalPrice,
         paymentStatus: order.paymentStatus,
       },
     });
@@ -778,4 +842,132 @@ export const testPaymentHandler = async (req, res) => {
   } catch (err) {
     return res.status(500).json({ success: false, error: err.message });
   }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/payments/app-redirect
+// Bounces the PhonePe redirect to the app's deep link
+// ─────────────────────────────────────────────────────────────────────────────
+export const appRedirectHandler = (req, res) => {
+  const { url } = req.query;
+  if (!url) return res.send("Invalid deep link URL");
+  
+  res.send(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <title>Returning to App...</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+      <style>
+        body {
+          margin: 0;
+          padding: 0;
+          font-family: 'Inter', sans-serif;
+          background-color: #FAF9F6;
+          color: #111827;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          min-height: 100vh;
+          text-align: center;
+        }
+        .container {
+          background: #FFFFFF;
+          padding: 40px 30px;
+          border-radius: 24px;
+          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+          max-width: 90%;
+          width: 400px;
+          border: 1px solid #F3F4F6;
+        }
+        .logo-wrapper {
+          margin: 0 auto 24px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .app-logo {
+          width: 80px;
+          height: auto;
+          object-fit: contain;
+        }
+        h2 {
+          margin: 0 0 10px;
+          font-size: 24px;
+          font-weight: 800;
+          color: #111827;
+        }
+        p {
+          margin: 0 0 24px;
+          color: #6B7280;
+          font-size: 15px;
+          line-height: 1.5;
+        }
+        .btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+          padding: 16px 0;
+          background-color: #111827;
+          color: #FFFFFF;
+          text-decoration: none;
+          border-radius: 12px;
+          font-weight: 600;
+          font-size: 16px;
+          transition: transform 0.2s, background-color 0.2s;
+          box-sizing: border-box;
+        }
+        .btn:active {
+          transform: scale(0.96);
+        }
+        .spinner-container {
+          display: flex;
+          justify-content: center;
+          margin-top: 30px;
+        }
+        .spinner {
+          width: 24px;
+          height: 24px;
+          border: 3px solid rgba(255, 193, 7, 0.3);
+          border-radius: 50%;
+          border-top-color: #FFC107;
+          animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+        .debug {
+          margin-top: 20px;
+          font-size: 12px;
+          color: #9CA3AF;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="logo-wrapper">
+          <img src="${cachedLogoBase64 || '/uploads/sk.png'}" alt="App Logo" class="app-logo" />
+        </div>
+        <h2>Transaction Processed</h2>
+        <p>Please return to the app to check your payment status and complete your order.</p>
+        <a href="${url}" class="btn" id="redirectBtn">Return to App</a>
+        
+        <div class="spinner-container">
+          <div class="spinner"></div>
+        </div>
+        <p class="debug">If you are not redirected automatically within a few seconds, tap the button above.</p>
+      </div>
+
+      <script>
+        setTimeout(function() {
+          window.location.href = "${url}";
+        }, 800);
+      </script>
+    </body>
+    </html>
+  `);
 };

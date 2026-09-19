@@ -230,6 +230,10 @@ export const orderApi = {
     const response = await api.post(`/orders/${id}/scan-gift`);
     return response.data;
   },
+  markGiftPopupSeen: async (id) => {
+    const response = await api.post(`/orders/${id}/gift-popup-seen`);
+    return response.data;
+  },
 };
 
 export const couponApi = {

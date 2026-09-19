@@ -147,104 +147,89 @@ export const AdvertisementCarousel = ({ position = 'homepage_middle' }) => {
     const renderMedia = ({ item, index }: { item: AdProps, index: number }) => {
         const isActive = index === currentIndex;
 
-        const MediaContent = () => {
-            if (item.type === 'video' && item.videoUrl) {
-                return (
-                    <Video
-                        source={{ uri: getVideoUrl(item.videoUrl) }}
-                        rate={1.0}
-                        volume={1.0}
-                        isMuted={isMuted}
-                        resizeMode={ResizeMode.COVER}
-                        shouldPlay={isActive && isPlaying}
-                        isLooping
-                        style={StyleSheet.absoluteFill}
-                    />
-                );
-            }
-            if (item.type === 'youtube' && item.externalVideoId) {
-                return (
-                    <WebView
-                        style={StyleSheet.absoluteFill}
-                        javaScriptEnabled={true}
-                        domStorageEnabled={true}
-                        startInLoadingState={true}
-                        renderLoading={() => <Skeleton height="100%" width="100%" borderRadius={0} style={StyleSheet.absoluteFill} />}
-                        source={{ uri: `https://www.youtube.com/embed/${item.externalVideoId}?autoplay=1&mute=1&controls=0&rel=0&modestbranding=1` }}
-                    />
-                );
-            }
-            if (item.type === 'vimeo' && item.externalVideoId) {
-                return (
-                    <WebView
-                        style={StyleSheet.absoluteFill}
-                        javaScriptEnabled={true}
-                        startInLoadingState={true}
-                        renderLoading={() => <Skeleton height="100%" width="100%" borderRadius={0} style={StyleSheet.absoluteFill} />}
-                        source={{ uri: `https://player.vimeo.com/video/${item.externalVideoId}?autoplay=1&muted=1&loop=1&title=0&byline=0&portrait=0` }}
-                    />
-                );
-            }
-            return (
-                <Image
-                    source={{ uri: getImageUrl(item.thumbnailUrl) || 'https://via.placeholder.com/800x400' }}
-                    className="w-full h-full"
-                    resizeMode="cover"
-                />
-            );
-        };
-
         return (
-            <TouchableOpacity
-                activeOpacity={0.9}
-                onPress={() => handleAdClick(item)}
+            <View
                 style={{ width: itemWidth, marginLeft: index === 0 ? 16 : 8, marginRight: index === ads.length - 1 ? 16 : 8 }}
                 className="h-[200px] rounded-2xl overflow-hidden bg-gray-800 shadow-lg relative"
             >
-                <MediaContent />
-
-                {/* Gradient Overlay */}
-                <View
+                {/* Main Ad Clickable Area */}
+                <TouchableOpacity
+                    activeOpacity={0.9}
+                    onPress={() => handleAdClick(item)}
                     style={StyleSheet.absoluteFill}
-                    className="bg-black/30"
-                    pointerEvents="none"
-                />
+                >
+                    {item.type === 'video' && item.videoUrl ? (
+                        <Video
+                            source={{ uri: getVideoUrl(item.videoUrl) }}
+                            rate={1.0}
+                            volume={1.0}
+                            isMuted={isMuted}
+                            resizeMode={ResizeMode.COVER}
+                            shouldPlay={isActive && isPlaying}
+                            isLooping
+                            style={StyleSheet.absoluteFill}
+                        />
+                    ) : item.type === 'youtube' && item.externalVideoId ? (
+                        <WebView
+                            style={StyleSheet.absoluteFill}
+                            javaScriptEnabled={true}
+                            domStorageEnabled={true}
+                            startInLoadingState={true}
+                            renderLoading={() => <Skeleton height="100%" width="100%" borderRadius={0} style={StyleSheet.absoluteFill} />}
+                            source={{ uri: `https://www.youtube.com/embed/${item.externalVideoId}?autoplay=1&mute=1&controls=0&rel=0&modestbranding=1` }}
+                        />
+                    ) : item.type === 'vimeo' && item.externalVideoId ? (
+                        <WebView
+                            style={StyleSheet.absoluteFill}
+                            javaScriptEnabled={true}
+                            startInLoadingState={true}
+                            renderLoading={() => <Skeleton height="100%" width="100%" borderRadius={0} style={StyleSheet.absoluteFill} />}
+                            source={{ uri: `https://player.vimeo.com/video/${item.externalVideoId}?autoplay=1&muted=1&loop=1&title=0&byline=0&portrait=0` }}
+                        />
+                    ) : (
+                        <Image
+                            source={{ uri: getImageUrl(item.thumbnailUrl) || 'https://via.placeholder.com/800x400' }}
+                            className="w-full h-full"
+                            resizeMode="cover"
+                        />
+                    )}
 
-                {/* Content */}
-                <View className="absolute bottom-0 left-0 right-0 p-5" pointerEvents="none">
-                    <View className="flex-row items-center mb-1">
-                        <View className="bg-yellow-500/80 rounded px-1.5 py-0.5 mr-2">
-                            <Text className="text-[10px] font-bold text-black">ADVERTISEMENT</Text>
+                    {/* Gradient Overlay */}
+                    <View
+                        style={StyleSheet.absoluteFill}
+                        className="bg-black/30"
+                        pointerEvents="none"
+                    />
+
+                    {/* Content */}
+                    <View className="absolute bottom-0 left-0 right-0 p-5" pointerEvents="none">
+                        <View className="flex-row items-center mb-1">
+                            <View className="bg-yellow-500/80 rounded px-1.5 py-0.5 mr-2">
+                                <Text className="text-[10px] font-bold text-black">ADVERTISEMENT</Text>
+                            </View>
                         </View>
                     </View>
+                </TouchableOpacity>
 
-                </View>
-
-                {/* Audio and Play Controls - Styled for Mobile */}
+                {/* Audio and Play Controls - Placed OUTSIDE the main TouchableOpacity */}
                 {item.type === 'video' && isActive && (
-                    <View style={{ position: 'absolute', bottom: 15, right: 15, flexDirection: 'row', zIndex: 100 }}>
+                    <View style={{ position: 'absolute', bottom: 15, right: 15, flexDirection: 'row', zIndex: 100 }} pointerEvents="box-none">
                         <TouchableOpacity
-                            onPress={(e) => {
-                                e.stopPropagation();
-                                setIsPlaying(!isPlaying);
-                            }}
+                            onPress={() => setIsPlaying(!isPlaying)}
                             style={{ marginRight: 10 }}
                             className="w-10 h-10 bg-black/60 rounded-full items-center justify-center border border-white/20"
                         >
                             {isPlaying ? <Pause size={18} color="#FFF" /> : <Play size={18} color="#FFF" />}
                         </TouchableOpacity>
                         <TouchableOpacity
-                            onPress={(e) => {
-                                e.stopPropagation();
-                                setIsMuted(!isMuted);
-                            }}
+                            onPress={() => setIsMuted(!isMuted)}
                             className="w-10 h-10 bg-black/60 rounded-full items-center justify-center border border-white/20"
                         >
                             {isMuted ? <VolumeX size={18} color="#FFF" /> : <Volume2 size={18} color="#FFF" />}
                         </TouchableOpacity>
                     </View>
                 )}
-            </TouchableOpacity>
+            </View>
         );
     };
 

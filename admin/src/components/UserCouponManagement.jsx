@@ -28,7 +28,7 @@ export const UserCouponManagement = () => {
   
   const [userCoupons, setUserCoupons] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [filterUsed, setFilterUsed] = useState("all");
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -42,7 +42,9 @@ export const UserCouponManagement = () => {
   const [maxAmount, setMaxAmount] = useState("");
   const [assigning, setAssigning] = useState(false);
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(15);
   const [totalPages, setTotalPages] = useState(1);
+  const [exporting, setExporting] = useState(false);
   const [users, setUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [stats, setStats] = useState({
@@ -63,15 +65,15 @@ export const UserCouponManagement = () => {
       
       const params = {
         page: pageNum,
-        limit: 20,
+        limit: pageSize === "all" ? 999999 : pageSize,
       };
       
       if (filterUsed !== "all") {
         params.isUsed = filterUsed === "used";
       }
       
-      if (debouncedSearchTerm.trim()) {
-        params.couponCode = debouncedSearchTerm;
+      if (searchTerm.trim()) {
+        params.couponCode = searchTerm;
       }
       
       const response = await api.get("/coupons/admin/user-coupons", { params });
@@ -126,17 +128,51 @@ export const UserCouponManagement = () => {
     }
   };
 
-  // Debounce search term
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
-
   useEffect(() => {
     fetchUserCoupons(1, userCoupons.length === 0);
-  }, [filterUsed, debouncedSearchTerm]);
+  }, [filterUsed, searchTerm, pageSize]);
+
+  const handlePageSizeChange = (newSize) => {
+    setPageSize(newSize === "all" ? "all" : parseInt(newSize));
+  };
+
+  const handleExportCoupons = async () => {
+    try {
+      setExporting(true);
+      const params = { page: 1, limit: 999999 };
+      if (filterUsed !== "all") params.isUsed = filterUsed === "used";
+      if (searchTerm.trim()) params.couponCode = searchTerm;
+
+      const response = await api.get("/coupons/admin/user-coupons", { params });
+      if (!response.data.success) throw new Error("Failed to fetch coupons");
+      const exportData = response.data.data.userCoupons || [];
+
+      if (!exportData.length) { toast.error("No coupons to export"); return; }
+      const esc = (v) => { const s = String(v ?? ""); return s.includes(",") || s.includes('"') ? `"${s.replace(/"/g,'""')}"` : s; };
+      const headers = ["User Name", "User Email", "Coupon Code", "Discount Type", "Discount Value", "Status", "Valid Until"].join(",");
+      const rows = exportData.map(uc => {
+        const isUsed = uc.isUsed;
+        const isExpired = new Date(uc.coupon.validUntil) < new Date() && !isUsed;
+        const status = isExpired ? "Expired" : (isUsed ? "Used" : "Available");
+        return [
+          uc.user?.name || "", uc.user?.email || "", uc.coupon?.code || "",
+          uc.coupon?.discountType || "", uc.coupon?.discountValue || "",
+          status, formatDate(uc.coupon?.validUntil || "")
+        ].map(esc).join(",");
+      });
+      const blob = new Blob([[headers, ...rows].join("\n")], { type: "text/csv;charset=utf-8;" });
+      const link = Object.assign(document.createElement("a"), {
+        href: URL.createObjectURL(blob),
+        download: `user_coupons_${new Date().toISOString().slice(0,10)}.csv`,
+      });
+      document.body.appendChild(link); link.click(); document.body.removeChild(link);
+      toast.success(`${exportData.length} coupons exported`);
+    } catch (e) {
+      toast.error(e.message || "Failed to export");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   // Handle userId from query params - open dialog and pre-select user
   useEffect(() => {
@@ -333,39 +369,7 @@ export const UserCouponManagement = () => {
         </Card>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">
-                Search by Coupon Code
-              </label>
-              <Input
-                placeholder="Search coupon code..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="bg-muted/50"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-2 block">
-                Filter by Status
-              </label>
-              <Select value={filterUsed} onValueChange={setFilterUsed}>
-                <SelectTrigger className="bg-muted/50">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Coupons</SelectItem>
-                  <SelectItem value="available">Available</SelectItem>
-                  <SelectItem value="used">Used</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Filters (Merged into Table Card below, this standalone card is removed) */}
 
       {/* Error message */}
       {error && (
@@ -547,8 +551,57 @@ export const UserCouponManagement = () => {
 
       {/* Table */}
       <Card>
-        <CardHeader>
-          <CardTitle>User Coupons</CardTitle>
+        <CardHeader className="flex flex-col gap-4 md:flex-row items-center justify-between pb-4">
+          <div>
+            <CardTitle>User Coupons</CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Showing {userCoupons.length} of {stats.total} coupons
+            </p>
+          </div>
+          
+          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+            <div className="flex flex-1 md:w-[250px] gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search code..."
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') setSearchTerm(searchInput); }}
+                  className="pl-9 h-9 text-sm"
+                />
+              </div>
+              <Button onClick={() => setSearchTerm(searchInput)} className="h-9 px-3">
+                Search
+              </Button>
+            </div>
+            
+            <Select value={filterUsed} onValueChange={setFilterUsed}>
+              <SelectTrigger className="w-[140px] h-9 text-sm">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="available">Available</SelectItem>
+                <SelectItem value="used">Used</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <div className="flex items-center gap-2 border-l pl-3 ml-1">
+              <span className="text-xs text-muted-foreground whitespace-nowrap">Show:</span>
+              <Select value={pageSize.toString()} onValueChange={handlePageSizeChange} disabled={loading}>
+                <SelectTrigger className="w-[80px] h-9 text-sm"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {[15, 30, 45, 100, "all"].map(s => <SelectItem key={s} value={s.toString()}>{s === "all" ? "All" : s}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <Button onClick={handleExportCoupons} variant="outline" title="Export to CSV" className="h-9 px-3" disabled={exporting}>
+              {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ticket className="h-4 w-4 mr-2" />}
+              <span className="text-sm">Export</span>
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="relative">
           {isRefreshing && (

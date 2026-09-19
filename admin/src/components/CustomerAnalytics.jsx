@@ -20,6 +20,7 @@ const PAGE_SIZE_OPTIONS = [15, 30, 45, 100];
 
 export const CustomerAnalytics = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
@@ -32,18 +33,20 @@ export const CustomerAnalytics = () => {
     customers: [],
   });
 
+  const [pagination, setPagination] = useState({ total: 0, totalPages: 1 });
+
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchCustomerData();
-  }, []);
+  }, [currentPage, pageSize, searchTerm, filterStatus]);
 
   const fetchCustomerData = async () => {
     try {
       setLoading(true);
-      // Use the customer analytics API endpoint
-      const response = await api.get("/admin/users/analytics/customers");
-      console.log("Customer analytics response:", response.data);
+      const limitParam = pageSize === "all" ? 999999 : pageSize;
+      // Use the customer analytics API endpoint with pagination params
+      const response = await api.get(`/admin/users/analytics/customers?page=${currentPage}&limit=${limitParam}&search=${encodeURIComponent(searchTerm)}&status=${filterStatus}`);
 
       if (response.data.success && response.data.data) {
         const apiData = response.data.data;
@@ -74,6 +77,11 @@ export const CustomerAnalytics = () => {
         };
 
         setAnalyticsData(transformedData);
+        if (apiData.pagination) {
+          setPagination(apiData.pagination);
+        } else {
+          setPagination({ total: transformedData.customers.length, totalPages: 1 });
+        }
       } else {
         toast({
           title: "Error",
@@ -94,7 +102,7 @@ export const CustomerAnalytics = () => {
   };
 
   const handlePageSizeChange = (newSize) => {
-    setPageSize(parseInt(newSize));
+    setPageSize(newSize === "all" ? "all" : parseInt(newSize));
     setCurrentPage(1); // Reset to first page
   };
 
@@ -190,25 +198,12 @@ export const CustomerAnalytics = () => {
     }
   };
 
-  // Filter customers based on search and status
-  const filteredCustomers = analyticsData.customers.filter((customer) => {
-    const matchesSearch =
-      customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.phone.includes(searchTerm) ||
-      customer.customerCode.toLowerCase().includes(searchTerm.toLowerCase());
+  // Filter is now handled by the backend
+  const filteredCustomers = analyticsData.customers;
 
-    const matchesFilter = filterStatus === "all" || customer.status === filterStatus;
-
-    return matchesSearch && matchesFilter;
-  });
-
-  // Pagination
-  const totalPages = Math.ceil(filteredCustomers.length / pageSize);
-  const paginatedCustomers = filteredCustomers.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
+  // Pagination is also handled by the backend
+  const totalPages = pagination.totalPages || 1;
+  const paginatedCustomers = filteredCustomers;
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -328,17 +323,25 @@ export const CustomerAnalytics = () => {
               Customer List ({filteredCustomers.length} of {analyticsData.totalCustomers} total)
             </CardTitle>
             <div className="flex flex-wrap items-center gap-2">
-              <div className="relative flex-1 min-w-[250px]">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by name, email, phone, code..."
-                  className="pl-9"
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setCurrentPage(1); // Reset to first page on search
-                  }}
-                />
+              <div className="flex flex-1 min-w-[300px] gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by name, email, phone, code..."
+                    className="pl-9 h-10"
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        setSearchTerm(searchInput);
+                        setCurrentPage(1);
+                      }
+                    }}
+                  />
+                </div>
+                <Button onClick={() => { setSearchTerm(searchInput); setCurrentPage(1); }} className="px-3">
+                  Search
+                </Button>
               </div>
 
               <Select value={filterStatus} onValueChange={(value) => {
@@ -364,9 +367,9 @@ export const CustomerAnalytics = () => {
                   <SelectValue placeholder="15" />
                 </SelectTrigger>
                 <SelectContent>
-                  {PAGE_SIZE_OPTIONS.map((size) => (
+                  {[15, 30, 45, 100, "all"].map((size) => (
                     <SelectItem key={size} value={size.toString()}>
-                      {size}
+                      {size === "all" ? "All" : size}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -516,12 +519,12 @@ export const CustomerAnalytics = () => {
               </div>
 
               {/* Pagination */}
-              {totalPages > 1 && (
+              {totalPages > 0 && (
                 <div className="flex items-center justify-between mt-6">
                   <div className="text-sm text-muted-foreground">
-                    Showing {(currentPage - 1) * pageSize + 1} to{" "}
-                    {Math.min(currentPage * pageSize, filteredCustomers.length)} of{" "}
-                    {filteredCustomers.length} customers
+                    Showing {Math.min((currentPage - 1) * pageSize + 1, pagination.total || 0)} to{" "}
+                    {Math.min(currentPage * pageSize, pagination.total || filteredCustomers.length)} of{" "}
+                    {pagination.total || filteredCustomers.length} customers
                   </div>
                   <div className="flex items-center space-x-2">
                     <Button
