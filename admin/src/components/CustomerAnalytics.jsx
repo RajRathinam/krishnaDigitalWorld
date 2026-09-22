@@ -522,8 +522,8 @@ export const CustomerAnalytics = () => {
               {totalPages > 0 && (
                 <div className="flex items-center justify-between mt-6">
                   <div className="text-sm text-muted-foreground">
-                    Showing {Math.min((currentPage - 1) * pageSize + 1, pagination.total || 0)} to{" "}
-                    {Math.min(currentPage * pageSize, pagination.total || filteredCustomers.length)} of{" "}
+                    Showing {pageSize === "all" ? 1 : Math.min((currentPage - 1) * pageSize + 1, pagination.total || 0)} to{" "}
+                    {pageSize === "all" ? (pagination.total || filteredCustomers.length) : Math.min(currentPage * pageSize, pagination.total || filteredCustomers.length)} of{" "}
                     {pagination.total || filteredCustomers.length} customers
                   </div>
                   <div className="flex items-center space-x-2">

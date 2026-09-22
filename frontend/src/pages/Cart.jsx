@@ -219,7 +219,7 @@ export default function Cart() {
     return sum + itemPrice * (item.quantity || 1);
   }, 0) || 0;
   const discount = Math.max(0, originalTotal - subtotal);
-  const deliveryFee = subtotal > 500 ? 0 : 49;
+  const deliveryFee = 0; // standard delivery is free
   const total = subtotal + deliveryFee;
 
   const handleProceedToCheckout = () => {
@@ -489,7 +489,7 @@ export default function Cart() {
               <div className="flex items-center gap-3 text-sm">
                 <Truck className="w-5 h-5 text-accent" />
                 <span className="text-foreground">
-                  <strong className="text-accent">Free Delivery</strong> on orders above ₹500
+                  <strong className="text-accent">Free Standard Delivery</strong> on all orders
                 </span>
               </div>
             </div>

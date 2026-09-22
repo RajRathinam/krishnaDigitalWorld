@@ -460,7 +460,24 @@ export default function ProductDetailScreen() {
           {/* Color Selection */}
           {colorNames.length > 0 && (
             <View className="mb-6">
-              <Text className="text-sm font-medium text-gray-900 mb-3 font-heading">Color: <Text className="text-gray-500 font-medium font-body">{selectedColorName}</Text></Text>
+              <View className="flex-row items-center justify-between mb-3">
+                <Text className="text-sm font-medium text-gray-900 font-heading">
+                  Color: <Text className="text-gray-500 font-medium font-body">{selectedColorName}</Text>
+                </Text>
+                {selectedColorName ? (
+                  <Text
+                    className={`text-xs font-bold font-body ${
+                      getStockForColor(product?.stock, selectedColorName) > 0
+                        ? 'text-green-700'
+                        : 'text-red-700'
+                    }`}
+                  >
+                    {getStockForColor(product?.stock, selectedColorName) > 0
+                      ? `In Stock: ${getStockForColor(product?.stock, selectedColorName)} available`
+                      : 'Out of Stock'}
+                  </Text>
+                ) : null}
+              </View>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
                 {colorNames.map((colorName, i) => (
                   <TouchableOpacity
@@ -489,29 +506,7 @@ export default function ProductDetailScreen() {
             </View>
           )}
 
-          {/* Stock Status */}
-          {selectedColorName ? (
-            <View className={`mb-6 border p-4 rounded-xl ${
-              getStockForColor(product?.stock, selectedColorName) > 0
-                ? 'bg-green-50/50 border-green-200'
-                : 'bg-red-50/50 border-red-200'
-            }`}>
-              <Text
-                className={`text-sm font-bold font-body ${
-                  getStockForColor(product?.stock, selectedColorName) > 0
-                    ? 'text-green-700'
-                    : 'text-red-700'
-                }`}
-              >
-                {getStockForColor(product?.stock, selectedColorName) > 0
-                  ? `In Stock: ${getStockForColor(
-                      product?.stock,
-                      selectedColorName
-                    )} available`
-                  : 'Out of Stock'}
-              </Text>
-            </View>
-          ) : null}
+
 
           {/* Description */}
           {product.description && (

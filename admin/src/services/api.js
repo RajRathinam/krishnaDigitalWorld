@@ -199,6 +199,10 @@ export const adminApi = {
     updateShopInfo: async (data) => {
         const response = await api.put('/admin/settings/shop-info', data);
         return response.data;
+    },
+    updateOnlineGifts: async (enableOnlineGifts) => {
+        const response = await api.put('/admin/settings/online-gifts', { enableOnlineGifts });
+        return response.data;
     }
 };
 // ... rest of the file remains the same

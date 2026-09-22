@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     View,
     Text,
@@ -172,6 +172,8 @@ export default function CheckoutScreen() {
     const { cart, clearCart } = useCart();
     const { user } = useAuth();
 
+    const scrollViewRef = useRef<ScrollView>(null);
+
     const [currentStep, setCurrentStep] = useState<'address' | 'delivery' | 'payment'>('address');
     const [selectedAddress, setSelectedAddress] = useState<string>('');
     const [deliveryOption, setDeliveryOption] = useState<'standard' | 'express'>('standard');
@@ -242,7 +244,7 @@ export default function CheckoutScreen() {
 
     // calculations
     const subtotal = cart?.totalAmount || 0;
-    const deliveryFee = deliveryOption === 'express' ? 99 : (subtotal > 500 ? 0 : 49);
+    const deliveryFee = deliveryOption === 'express' ? 99 : 0;
     const total = Math.max(0, subtotal - couponDiscount + deliveryFee);
 
     // Profile complete check
@@ -602,7 +604,7 @@ export default function CheckoutScreen() {
                 </View>
             </View>
 
-            <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
+            <ScrollView ref={scrollViewRef} className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
                 {/* ── STEP 1: ADDRESS SELECTION ──────────────────────────────────────── */}
                 {currentStep === 'address' && (
                     <Animated.View entering={FadeInRight} className="p-4 flex-col gap-4">
@@ -620,7 +622,12 @@ export default function CheckoutScreen() {
                             return (
                                 <TouchableOpacity
                                     key={addr.id}
-                                    onPress={() => setSelectedAddress(addr.id)}
+                                    onPress={() => {
+                                        setSelectedAddress(addr.id);
+                                        setTimeout(() => {
+                                            scrollViewRef.current?.scrollToEnd({ animated: true });
+                                        }, 100);
+                                    }}
                                     className={`bg-white rounded-2xl p-4 border-2 ${
                                         isSelected ? 'border-[#FFC107]' : 'border-gray-100'
                                     } shadow-sm relative overflow-hidden`}
@@ -697,7 +704,7 @@ export default function CheckoutScreen() {
                                 <View className="flex-1">
                                     <Text className="text-gray-900 font-bold text-sm font-heading">Standard Delivery</Text>
                                     <Text className="text-gray-400 text-xs mt-0.5 font-body">Delivered within 3-5 working days.</Text>
-                                    <Text className="text-green-600 font-bold text-xs mt-2 font-body">{subtotal > 500 ? 'FREE' : '₹49'}</Text>
+                                    <Text className="text-green-600 font-bold text-xs mt-2 font-body">FREE</Text>
                                 </View>
                             </View>
                         </TouchableOpacity>

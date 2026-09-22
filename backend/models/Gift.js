@@ -22,6 +22,10 @@ const Gift = sequelize.define('Gift', {
   status: {
     type: DataTypes.BOOLEAN,
     defaultValue: true
+  },
+  cadre: {
+    type: DataTypes.ENUM('Basic', 'Economy', 'Standard', 'Premium', 'Elite', 'Luxury', 'Platinum'),
+    defaultValue: 'Basic'
   }
 }, {
   tableName: 'gifts',

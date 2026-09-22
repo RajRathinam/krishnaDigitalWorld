@@ -434,6 +434,36 @@ const [activeTab, setActiveTab] = useState(isAdmin ? "subadmins" : "shop-info");
                 </div>
               </div>
 
+              {/* Features */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Features</h3>
+                <div className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-base">Enable Online Order Gifts</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Automatically assign gifts to online orders based on order amount and cadre.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={shopInfo.enableOnlineGifts === undefined ? true : (shopInfo.enableOnlineGifts === true || shopInfo.enableOnlineGifts === 1 || shopInfo.enableOnlineGifts === '1')}
+                      onCheckedChange={async (checked) => {
+                        // Optimistic update
+                        setShopInfo(prev => ({ ...prev, enableOnlineGifts: checked }));
+                        try {
+                          await adminApi.updateOnlineGifts(checked);
+                          toast({ title: "Success", description: "Online gifts setting updated" });
+                        } catch (error) {
+                          // Revert on failure
+                          setShopInfo(prev => ({ ...prev, enableOnlineGifts: !checked }));
+                          toast({ title: "Error", description: "Failed to update setting", variant: "destructive" });
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
               {/* Contact Information */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Contact Information</h3>

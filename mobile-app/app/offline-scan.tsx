@@ -223,6 +223,13 @@ const WonScreen = ({ giftResult, onClose }: any) => {
           </Animated.View>
         </Animated.View>
 
+        {/* Cadre Badge */}
+        {giftResult.cadre && (
+          <Animated.View entering={FadeInUp.delay(250)} style={{ backgroundColor: '#FCE7F3', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, borderWidth: 1, borderColor: '#FBCFE8', marginBottom: 6 }}>
+            <Text style={{ fontSize: 11, fontWeight: '800', color: '#BE185D', textTransform: 'uppercase' }}>{giftResult.cadre} Tier</Text>
+          </Animated.View>
+        )}
+
         {/* Gift name */}
         <Animated.Text entering={FadeInUp.delay(300)} style={styles.giftName}>
           {giftResult.productName || 'Surprise Gift'}

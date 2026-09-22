@@ -25,7 +25,8 @@
     },
     "android": {
       "usesCleartextTraffic": true,
-      "package": "com.anonymous.mobileapp",
+      "package": "com.skdigitalworld.app",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/skdw.png",
         "backgroundColor": "#ffffff"

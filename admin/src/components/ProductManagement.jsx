@@ -928,8 +928,8 @@ export const ProductManagement = () => {
           {totalPages > 0 && (
             <div className="flex items-center justify-between mt-6">
               <div className="text-sm text-muted-foreground">
-                Showing {Math.min((currentPage - 1) * pageSize + 1, pagination.totalItems || 0)} to{" "}
-                {Math.min(currentPage * pageSize, pagination.totalItems || filteredProducts.length)} of{" "}
+                Showing {pageSize === "all" ? 1 : Math.min((currentPage - 1) * pageSize + 1, pagination.totalItems || 0)} to{" "}
+                {pageSize === "all" ? (pagination.totalItems || filteredProducts.length) : Math.min(currentPage * pageSize, pagination.totalItems || filteredProducts.length)} of{" "}
                 {pagination.totalItems || filteredProducts.length} products
               </div>
               <div className="flex items-center space-x-2">

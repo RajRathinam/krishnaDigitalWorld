@@ -15,14 +15,14 @@
  * @returns {JSX.Element} Trust badges component
  */
 
-import { Truck, Shield, Headphones, RefreshCw, CreditCard, Award } from "lucide-react";
+import { Truck, Shield, Headphones, Star, CreditCard, Award } from "lucide-react";
 
 // Trust badge data
 const badges = [
     {
         icon: Truck,
         title: "Free Delivery",
-        description: "On orders above ₹999",
+        description: "On all orders",
         color: "from-blue-500 to-cyan-400",
         href: "/shipping-policy",
     },
@@ -34,11 +34,11 @@ const badges = [
         href: "/our-promise",
     },
     {
-        icon: RefreshCw,
-        title: "Easy Returns",
-        description: "7-day return policy",
+        icon: Star,
+        title: "Quality Products",
+        description: "Premium quality assured",
         color: "from-orange-500 to-amber-400",
-        href: "/return-policy",
+        href: "/our-promise",
     },
     {
         icon: CreditCard,

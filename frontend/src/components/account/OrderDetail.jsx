@@ -332,6 +332,88 @@ function StatusHero({ status }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Gift Popup
+// ─────────────────────────────────────────────────────────────────────────────
+function GiftPopup({ order, onClose, onAwesome }) {
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.9, y: 20 }}
+          transition={{ type: "spring", stiffness: 280, damping: 22 }}
+          className="bg-card border border-pink-200 rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden text-center p-8 relative"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Decorative background blobs (CSS only) */}
+          <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-purple-100 opacity-50 -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-40 h-40 rounded-full bg-orange-100 opacity-50 translate-y-1/2 -translate-x-1/3 pointer-events-none" />
+
+          {/* Close button */}
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 p-1.5 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700 transition-colors z-10"
+          >
+            <X className="w-4 h-4" />
+          </button>
+
+          <h2 className="text-xl font-black text-pink-600 mb-6 tracking-wide relative z-10">
+            CONGRATULATIONS!
+          </h2>
+
+          <div className="relative mx-auto w-32 h-32 mb-4 z-10">
+            {order.gift?.image ? (
+              <img
+                src={getImageUrl(order.gift.image)}
+                alt={order.gift.productName}
+                className="w-full h-full object-contain"
+              />
+            ) : (
+              <div className="w-full h-full bg-pink-50 rounded-full flex items-center justify-center border-4 border-pink-100">
+                <Gift className="w-16 h-16 text-pink-400" />
+              </div>
+            )}
+            {/* FREE Badge */}
+            <div className="absolute -bottom-2 -right-2 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-black shadow-lg border-2 border-white flex items-center gap-1">
+              <Gift className="w-3 h-3" /> FREE
+            </div>
+          </div>
+
+          <h3 className="text-2xl font-black text-gray-900 mb-2 relative z-10">
+            {order.gift?.productName || "Surprise Gift"}
+          </h3>
+
+          {order.gift?.price && (
+            <div className="inline-block bg-pink-100 text-pink-700 px-3 py-1 rounded-lg font-bold text-sm mb-4 relative z-10">
+              Worth ₹{parseFloat(order.gift.price).toLocaleString("en-IN")}
+            </div>
+          )}
+
+          <p className="text-gray-600 text-sm mb-6 relative z-10 font-medium">
+            Your free gift will be delivered along with your order.
+          </p>
+
+          <button
+            onClick={onAwesome}
+            className="w-full bg-gray-900 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-800 transition-colors shadow-lg relative z-10"
+          >
+            Awesome!
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Cancel Request Popup
 // ─────────────────────────────────────────────────────────────────────────────
 function CancelRequestPopup({ order, shopInfo, onClose }) {
@@ -489,10 +571,31 @@ export default function OrderDetail() {
   const [order,           setOrder          ] = useState(null);
   const [loading,         setLoading        ] = useState(true);
   const [showCancelPopup, setShowCancelPopup] = useState(false);
+  const [showGiftPopup,   setShowGiftPopup  ] = useState(false);
 
   useEffect(() => {
     fetchOrder();
   }, [id]);
+
+  useEffect(() => {
+    if (order) {
+      if (order.giftScanned && order.giftStatus === 'won' && !order.giftPopupSeen) {
+        setShowGiftPopup(true);
+      }
+    }
+  }, [order]);
+
+  const handleAwesomeClick = async () => {
+    setShowGiftPopup(false);
+    if (!order?.giftPopupSeen) {
+      try {
+        await apiRequest(`/orders/${id}/gift-popup-seen`, { method: "POST" });
+        fetchOrder();
+      } catch (err) {
+        console.error("Failed to mark gift popup seen", err);
+      }
+    }
+  };
 
   const fetchOrder = async () => {
     setLoading(true);
@@ -560,6 +663,15 @@ export default function OrderDetail() {
 
   return (
     <div className="min-h-screen bg-background">
+
+      {/* Gift Popup */}
+      {showGiftPopup && order?.giftStatus === 'won' && (
+        <GiftPopup
+          order={order}
+          onClose={() => setShowGiftPopup(false)}
+          onAwesome={handleAwesomeClick}
+        />
+      )}
 
       {/* Cancel Request Popup */}
       {showCancelPopup && (
@@ -805,13 +917,13 @@ export default function OrderDetail() {
             </SectionCard>
           )}
 
-          {/* Gift Section — shown only if order amount > 5000 */}
-          {parseFloat(order.finalAmount) > 5000 && (
+          {/* Gift Section */}
+          {order.giftScanned && (
             <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.48 }}
-            >
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.48 }}
+          >
               {order.giftStatus === 'won' ? (
                 /* Won banner */
                 <div
@@ -831,7 +943,14 @@ export default function OrderDetail() {
 
                   {/* Text */}
                   <div className="flex-1 relative z-10 min-w-0">
-                    <p className="text-sm font-black text-gray-900 leading-none mb-0.5">You won a</p>
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <p className="text-sm font-black text-gray-900 leading-none">You won a</p>
+                      {order.gift?.cadre && (
+                        <span className="text-[10px] uppercase font-bold bg-pink-100 text-pink-700 px-1.5 py-0.5 rounded shadow-sm border border-pink-200">
+                          {order.gift.cadre} Tier
+                        </span>
+                      )}
+                    </div>
                     <p className="text-lg font-black text-pink-700 leading-tight truncate">
                       {order.gift?.productName || 'Surprise Gift'}
                       {order.gift?.price && (

@@ -115,6 +115,11 @@ const ShopInfo = sequelize.define('ShopInfo', {
     type: DataTypes.STRING(20),
     allowNull: true
   },
+  enableOnlineGifts: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+    comment: 'Enable giving gifts for online orders automatically'
+  },
   isActive: {
     type: DataTypes.BOOLEAN,
     defaultValue: true

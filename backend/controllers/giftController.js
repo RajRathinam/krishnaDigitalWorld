@@ -15,9 +15,19 @@ export const scanOfflineGift = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid QR code.' });
     }
 
-    if (secretKey !== process.env.GIFT_QR_SECRET) {
+    let parsedQR;
+    try {
+      parsedQR = JSON.parse(secretKey);
+    } catch (e) {
+      // Fallback for old QR codes
+      parsedQR = { secret: secretKey, category: 'Basic' };
+    }
+
+    if (parsedQR.secret !== process.env.GIFT_QR_SECRET) {
       return res.status(400).json({ success: false, message: 'Invalid QR code. This is not the correct store QR.' });
     }
+
+    const targetCadre = parsedQR.category || 'Basic';
 
     // Check if user already scanned today
     const startOfDay = new Date();
@@ -50,7 +60,7 @@ export const scanOfflineGift = async (req, res) => {
     const isWin = Math.random() > 0.1;
     
     if (isWin) {
-      const gifts = await Gift.findAll({ where: { status: true } });
+      const gifts = await Gift.findAll({ where: { status: true, cadre: targetCadre } });
       if (gifts.length > 0) {
         const randomGift = gifts[Math.floor(Math.random() * gifts.length)];
         
@@ -147,7 +157,7 @@ export const getGift = async (req, res) => {
  */
 export const createGift = async (req, res) => {
   try {
-    const { productName, price, status } = req.body;
+    const { productName, price, status, cadre } = req.body;
 
     if (!productName || !price) {
       return res.status(400).json({
@@ -179,6 +189,7 @@ export const createGift = async (req, res) => {
       productName,
       price,
       status: status !== undefined ? status : true,
+      cadre: cadre || 'Basic',
       image
     });
 

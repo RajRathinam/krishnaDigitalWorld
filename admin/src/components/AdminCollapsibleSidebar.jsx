@@ -79,39 +79,7 @@ export function AdminCollapsibleSidebar({ activeSection, showFooter = true, isCo
     { id: "settings", title: "Settings", icon: Settings, path: "/settings" },
   ];
 
-  const handleLogout = async () => {
-    try {
-      if (logout) {
-        await logout();
-      } else {
-        // Fallback manual logout
-        localStorage.removeItem('authToken');
-        window.dispatchEvent(new Event('authChanged'));
-      }
-      toast({
-        title: 'Logged out',
-        description: 'You have been signed out successfully.'
-      });
-      navigate('/login');
-    } catch (error) {
-      console.error('Logout error:', error);
-      toast({ title: 'Logout failed', variant: 'destructive' });
-    }
-  };
 
-  // Get user initials for avatar
-  const getUserInitials = () => {
-    if (user?.name) {
-      return user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-    }
-    return 'AD';
-  };
-
-  const getUserDisplayName = () => {
-    if (user?.name) return user.name;
-    if (user?.email) return user.email.split('@')[0];
-    return 'Admin';
-  };
 
   return (
     <motion.div
@@ -135,42 +103,7 @@ export function AdminCollapsibleSidebar({ activeSection, showFooter = true, isCo
           </Button>
         </div>
 
-        {/* User Profile Dropdown */}
-        <div className="p-3">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className={cn("w-full justify-start p-2", isCollapsed ? "px-0 justify-center" : "")}>
-                <Avatar className="h-8 w-8 mr-2">
-                  <AvatarFallback className="bg-primary text-primary-foreground">{getUserInitials()}</AvatarFallback>
-                </Avatar>
-                {!isCollapsed && (
-                  <div className="flex flex-col items-start overflow-hidden">
-                    <span className="text-sm font-medium truncate w-32 text-left">{getUserDisplayName()}</span>
-                    <span className="text-xs text-muted-foreground truncate w-32 text-left">Admin</span>
-                  </div>
-                )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56" side={isCollapsed ? "right" : "bottom"}>
-              <div className="flex items-center gap-2 p-2 mx-1 my-1 bg-muted/50 rounded-md">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback>{getUserInitials()}</AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium">{getUserDisplayName()}</span>
-                  <span className="text-xs text-muted-foreground">Administrator</span>
-                </div>
-              </div>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate('/')} className="cursor-pointer">
-                <Store className="h-4 w-4 mr-2" /> Back to Store
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleLogout} className="text-destructive cursor-pointer">
-                <LogOut className="h-4 w-4 mr-2" /> Sign Out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+
 
         <Separator />
 

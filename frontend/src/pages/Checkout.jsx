@@ -881,7 +881,7 @@ export default function Checkout() {
               <span className="text-krishna-green font-medium">FREE</span>
             </div>
             <p className="text-sm text-muted-foreground mt-1">
-              Delivery by <strong>Tomorrow, 8 PM</strong>
+              Delivered within 3-5 working days.
             </p>
           </div>
         </div>
@@ -907,7 +907,7 @@ export default function Checkout() {
               <span className="text-foreground font-medium">₹99</span>
             </div>
             <p className="text-sm text-muted-foreground mt-1">
-              Delivery by <strong>Today, 10 PM</strong>
+              Priority dispatch, delivered within 1-2 working days.
             </p>
           </div>
         </div>

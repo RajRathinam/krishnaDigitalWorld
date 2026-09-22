@@ -5,6 +5,16 @@ import { AdminCollapsibleSidebar } from "@/components/AdminCollapsibleSidebar";
 import { Bell, Search, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { LogOut, Store } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { PageSkeleton } from "@/components/skeletons/PageSkeleton";
 const Admin = () => {
@@ -24,6 +34,38 @@ const Admin = () => {
         const newState = !isSidebarCollapsed;
         setIsSidebarCollapsed(newState);
         localStorage.setItem("adminSidebarCollapsed", String(newState));
+    };
+
+    const handleLogout = async () => {
+        try {
+            if (user?.logout) {
+                await user.logout();
+            } else {
+                localStorage.removeItem('authToken');
+                window.dispatchEvent(new Event('authChanged'));
+            }
+            toast({
+                title: 'Logged out',
+                description: 'You have been signed out successfully.'
+            });
+            navigate('/login');
+        } catch (error) {
+            console.error('Logout error:', error);
+            toast({ title: 'Logout failed', variant: 'destructive' });
+        }
+    };
+
+    const getUserInitials = () => {
+        if (user?.name) {
+            return user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+        }
+        return 'AD';
+    };
+
+    const getUserDisplayName = () => {
+        if (user?.name) return user.name;
+        if (user?.email) return user.email.split('@')[0];
+        return 'Admin';
     };
 
     if (loading) {
@@ -97,18 +139,38 @@ const Admin = () => {
             <header className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b px-6 py-3 flex items-center justify-between shadow-sm">
                 <h1 className="text-lg font-semibold">{getPageTitle()}</h1>
 
-                <div className="flex items-center gap-4">
-                    <div className="relative hidden md:block">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input placeholder="Search..." className="pl-9 w-64 bg-muted/50 border-none focus-visible:ring-1" />
-                    </div>
-                    <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground">
-                        <Bell className="h-5 w-5" />
-                        <span className="absolute top-2 right-2 w-2 h-2 bg-destructive rounded-full border-2 border-background" />
-                    </Button>
-                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-sm">
-                        {user?.name?.charAt(0).toUpperCase() || 'A'}
-                    </div>
+                <div className="flex items-center gap-4 ml-auto">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="flex items-center gap-2 px-2 py-1.5 h-auto">
+                                <Avatar className="h-8 w-8">
+                                    <AvatarFallback className="bg-primary text-primary-foreground">{getUserInitials()}</AvatarFallback>
+                                </Avatar>
+                                <div className="flex flex-col items-start overflow-hidden hidden sm:flex">
+                                    <span className="text-sm font-medium truncate w-32 text-left">{getUserDisplayName()}</span>
+                                    <span className="text-xs text-muted-foreground truncate w-32 text-left">Admin</span>
+                                </div>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-56">
+                            <div className="flex items-center gap-2 p-2 mx-1 my-1 bg-muted/50 rounded-md">
+                                <Avatar className="h-8 w-8">
+                                    <AvatarFallback>{getUserInitials()}</AvatarFallback>
+                                </Avatar>
+                                <div className="flex flex-col">
+                                    <span className="text-sm font-medium">{getUserDisplayName()}</span>
+                                    <span className="text-xs text-muted-foreground">Administrator</span>
+                                </div>
+                            </div>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => navigate('/')} className="cursor-pointer">
+                                <Store className="h-4 w-4 mr-2" /> Back to Store
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={handleLogout} className="text-destructive cursor-pointer">
+                                <LogOut className="h-4 w-4 mr-2" /> Sign Out
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
             </header>
 

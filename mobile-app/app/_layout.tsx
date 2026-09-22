@@ -1,7 +1,8 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import * as Notifications from 'expo-notifications';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import 'react-native-reanimated';
@@ -129,10 +130,33 @@ function RootLayoutNav() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <PushNotificationHandler />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', headerShown: true }} />
       </Stack>
     </ThemeProvider>
   );
+}
+
+function PushNotificationHandler() {
+  const lastNotificationResponse = Notifications.useLastNotificationResponse();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (
+      lastNotificationResponse &&
+      lastNotificationResponse.notification.request.content.data &&
+      lastNotificationResponse.actionIdentifier === Notifications.DEFAULT_ACTION_IDENTIFIER
+    ) {
+      const data = lastNotificationResponse.notification.request.content.data;
+      if (data.orderId) {
+        router.push(`/account/orders/${data.orderId}`);
+      } else if (data.couponId) {
+        router.push('/account/coupons');
+      }
+    }
+  }, [lastNotificationResponse, router]);
+
+  return null;
 }

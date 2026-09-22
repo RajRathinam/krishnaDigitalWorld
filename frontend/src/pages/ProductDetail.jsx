@@ -711,9 +711,18 @@ export default function ProductDetail() {
             {/* Color selection */}
             {colorNames.length > 0 && (
               <div className="mb-4">
-                <h2 className="text-sm font-medium text-foreground mb-3">
-                  Color: <span className="text-muted-foreground">{selectedColorName || "Default"}</span>
-                </h2>
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-sm font-medium text-foreground">
+                    Color: <span className="text-muted-foreground">{selectedColorName || "Default"}</span>
+                  </h2>
+                  {selectedColorName && (
+                    <span className={`text-sm font-medium ${getStockForColor(product.stock, selectedColorName) > 0 ? "text-green-600" : "text-red-600"}`}>
+                      {getStockForColor(product.stock, selectedColorName) > 0
+                        ? `In Stock: ${getStockForColor(product.stock, selectedColorName)} available`
+                        : "Out of Stock"}
+                    </span>
+                  )}
+                </div>
                 <div className="flex gap-3 flex-wrap">
                   {colorNames.map((colorName, i) => {
                     const isSelected = selectedColor === i;
@@ -744,16 +753,7 @@ export default function ProductDetail() {
               </div>
             )}
 
-            {/* Stock */}
-            {selectedColorName && (
-              <div className="mb-4">
-                <p className={`text-sm font-medium ${getStockForColor(product.stock, selectedColorName) > 0 ? "text-green-600" : "text-red-600"}`}>
-                  {getStockForColor(product.stock, selectedColorName) > 0
-                    ? `In Stock: ${getStockForColor(product.stock, selectedColorName)} available`
-                    : "Out of Stock"}
-                </p>
-              </div>
-            )}
+
 
             {/* Cart / Buy buttons */}
             <div className="flex items-center gap-4 mb-6">

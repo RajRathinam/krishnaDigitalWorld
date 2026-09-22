@@ -72,6 +72,8 @@ export default function ProductListing() {
 
   const [products,        setProducts]        = useState([]);
   const [loading,         setLoading]         = useState(false);
+  const [loadingMore,     setLoadingMore]     = useState(false);
+  const [page,            setPage]            = useState(1);
   const [isSorting,       setIsSorting]       = useState(false);
   const [pagination,      setPagination]      = useState(null);
   const [totalResults,    setTotalResults]    = useState(null);
@@ -88,18 +90,24 @@ export default function ProductListing() {
   const brandInputRef      = useRef(null);
   const priceDropdownRef   = useRef(null);
   const abortControllerRef = useRef(null);
+  const loadMoreRef        = useRef(null);
 
   // ─── Core fetch: accepts explicit overrides so stale state is never an issue ──
   const fetchProducts = useCallback(async ({
     overrideSortBy         = null,
     overrideSelectedBrands = null,
     overridePriceRangeIdx  = undefined, // undefined = "use current state", null = "Any Price"
+    overridePage           = undefined,
+    isLoadingMore          = false,
     isSortOperation        = false,
   } = {}) => {
-    if (abortControllerRef.current) abortControllerRef.current.abort();
-    abortControllerRef.current = new AbortController();
-
-    isSortOperation ? setIsSorting(true) : setLoading(true);
+    if (!isLoadingMore) {
+      if (abortControllerRef.current) abortControllerRef.current.abort();
+      abortControllerRef.current = new AbortController();
+      isSortOperation ? setIsSorting(true) : setLoading(true);
+    } else {
+      setLoadingMore(true);
+    }
 
     const activeSortBy   = overrideSortBy         ?? sortBy;
     const activeBrands   = overrideSelectedBrands ?? selectedBrands;
@@ -107,9 +115,10 @@ export default function ProductListing() {
       ? overridePriceRangeIdx
       : selectedPriceRange;
     const activePriceRange = activePriceIdx !== null ? PRICE_RANGES[activePriceIdx] : null;
+    const activePage       = overridePage !== undefined ? overridePage : page;
 
     try {
-      const params = { page: 1, limit: 48 };
+      const params = { page: activePage, limit: 16 };
 
       if (category)         params.categorySlug = category;
       if (subcategoryParam) params.subcategory  = subcategoryParam;
@@ -123,11 +132,21 @@ export default function ProductListing() {
 
       const response = await api.get('/products', {
         params,
-        signal: abortControllerRef.current.signal,
+        signal: isLoadingMore ? undefined : abortControllerRef.current.signal,
       });
 
       const data = response.data?.data || response.data;
-      setProducts(data.products || []);
+      
+      if (isLoadingMore) {
+        setProducts(prev => {
+          const existingIds = new Set(prev.map(p => p.id));
+          const newProducts = (data.products || []).filter(p => !existingIds.has(p.id));
+          return [...prev, ...newProducts];
+        });
+      } else {
+        setProducts(data.products || []);
+      }
+      
       setPagination(data.pagination || null);
       setTotalResults(data.pagination?.totalItems ?? (data.products || []).length ?? null);
 
@@ -140,17 +159,22 @@ export default function ProductListing() {
         console.error('Failed to load products', err);
       }
     } finally {
-      isSortOperation ? setIsSorting(false) : setLoading(false);
-      abortControllerRef.current = null;
+      if (!isLoadingMore) {
+        isSortOperation ? setIsSorting(false) : setLoading(false);
+        abortControllerRef.current = null;
+      } else {
+        setLoadingMore(false);
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [category, subcategoryParam, sortBy, selectedBrands, selectedPriceRange]);
+  }, [category, subcategoryParam, sortBy, selectedBrands, selectedPriceRange, page]);
 
   // ─── Sort: pass new value as override so it takes effect immediately ──────
   const handleSortChange = (newSortBy) => {
     if (newSortBy === sortBy) return;
     setSortBy(newSortBy);
-    fetchProducts({ overrideSortBy: newSortBy, isSortOperation: true });
+    setPage(1);
+    fetchProducts({ overrideSortBy: newSortBy, overridePage: 1, isSortOperation: true });
     window.scrollTo({ top: document.querySelector('main')?.offsetTop - 100 || 0, behavior: 'smooth' });
   };
 
@@ -160,7 +184,8 @@ export default function ProductListing() {
       ? selectedBrands.filter(b => b !== brandId)
       : [...selectedBrands, brandId];
     setSelectedBrands(next);
-    fetchProducts({ overrideSelectedBrands: next });
+    setPage(1);
+    fetchProducts({ overrideSelectedBrands: next, overridePage: 1 });
   };
 
   // ─── Price range ──────────────────────────────────────────────────────────
@@ -169,7 +194,8 @@ export default function ProductListing() {
     const newIdx = idx === 0 ? null : idx;
     setSelectedPriceRange(newIdx);
     setShowPriceDropdown(false);
-    fetchProducts({ overridePriceRangeIdx: newIdx });
+    setPage(1);
+    fetchProducts({ overridePriceRangeIdx: newIdx, overridePage: 1 });
   };
 
   // ─── Clear all ────────────────────────────────────────────────────────────
@@ -177,18 +203,30 @@ export default function ProductListing() {
     setSelectedBrands([]);
     setSelectedPriceRange(null);
     setSortBy("newest");
+    setPage(1);
     fetchProducts({
       overrideSortBy: "newest",
       overrideSelectedBrands: [],
       overridePriceRangeIdx: null,
+      overridePage: 1
     });
   };
 
   // ─── Initial load + re-fetch on URL change ────────────────────────────────
   useEffect(() => {
-    fetchProducts();
+    setPage(1);
+    fetchProducts({ overridePage: 1 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category, subcategoryParam]);
+
+  // ─── Manual Load More ─────────────────────────────────────────────────────
+  const handleLoadMore = () => {
+    if (pagination && pagination.currentPage < pagination.totalPages && !loading && !loadingMore) {
+      const nextPage = page + 1;
+      setPage(nextPage);
+      fetchProducts({ overridePage: nextPage, isLoadingMore: true });
+    }
+  };
 
   useEffect(() => {
     AOS.init({ duration: 600, easing: "ease-out-cubic", once: true, offset: 50, disable: 'mobile' });
@@ -682,6 +720,25 @@ export default function ProductListing() {
                     />
                   </Link>
                 ))}
+              </div>
+            )}
+
+            {/* Load More Button */}
+            {!loading && !isSorting && products.length > 0 && pagination && pagination.currentPage < pagination.totalPages && (
+              <div className="py-4 flex justify-center w-full">
+                {loadingMore ? (
+                  <div className="flex items-center gap-2 text-accent">
+                    <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                    <span className="font-medium text-xs">Loading more products...</span>
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleLoadMore}
+                    className="px-4 py-1.5 text-sm bg-card border border-border text-foreground hover:border-accent hover:text-accent font-medium rounded-full shadow-sm hover:shadow transition-all focus:outline-none focus:ring-2 focus:ring-accent"
+                  >
+                    Show More Products
+                  </button>
+                )}
               </div>
             )}
           </main>

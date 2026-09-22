@@ -215,6 +215,7 @@ const Header = () => {
                         style={{
                             transform: [{ translateX: sidebarAnim }],
                             width: width * 0.85,
+                            paddingTop: insets.top,
                         }}
                         className="bg-white h-full shadow-2xl z-50"
                     >
@@ -231,7 +232,11 @@ const Header = () => {
                             </TouchableOpacity>
                         </View>
 
-                        <ScrollView showsVerticalScrollIndicator={false} className="flex-1 px-4 py-4">
+                        <ScrollView 
+                            showsVerticalScrollIndicator={false} 
+                            className="flex-1 px-4 pt-4"
+                            contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 20) + 20 }}
+                        >
                             {/* User Profile Hook */}
                             {user && (
                                 <View className="mb-6 p-4 bg-gray-50 rounded-2xl flex-row items-center">

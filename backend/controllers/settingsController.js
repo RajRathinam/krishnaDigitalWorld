@@ -329,6 +329,42 @@ export const updateShopInfo = async (req, res) => {
 };
 
 /**
+ * @desc    Update only the enableOnlineGifts setting
+ * @route   PUT /api/admin/settings/online-gifts
+ * @access  Private (Admin/Subadmin)
+ */
+export const updateOnlineGiftsSetting = async (req, res) => {
+  try {
+    const { enableOnlineGifts } = req.body;
+    
+    let shopInfo = await ShopInfo.findOne({
+      where: { isActive: true }
+    });
+
+    if (!shopInfo) {
+      shopInfo = await ShopInfo.create({
+        enableOnlineGifts,
+        isActive: true
+      });
+    } else {
+      await shopInfo.update({ enableOnlineGifts });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Online gifts setting updated',
+      data: { enableOnlineGifts: shopInfo.enableOnlineGifts }
+    });
+  } catch (error) {
+    console.error('Update online gifts setting error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while updating setting'
+    });
+  }
+};
+
+/**
  * @desc    Get shop information (Public)
  * @route   GET /api/shop-info
  * @access  Public

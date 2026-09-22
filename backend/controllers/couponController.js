@@ -398,15 +398,20 @@ export const validateCouponForCart = async (req, res) => {
     
     // Check if user-specific coupon (userIds is now integer, not array)
     if (coupon.userIds !== null && coupon.userIds !== undefined) {
-      // Convert both to integers for comparison
-      const allowedUserId = parseInt(coupon.userIds);
-      const currentUserId = parseInt(req.user.id);
-      
-      if (allowedUserId !== currentUserId) {
-        return res.status(403).json({
-          success: false,
-          message: 'This coupon is not available for your account'
-        });
+      // If it's an empty array or something like that, ignore it
+      if (Array.isArray(coupon.userIds) && coupon.userIds.length === 0) {
+        // Not a user-specific coupon (global)
+      } else {
+        // Convert both to integers for comparison
+        const allowedUserId = parseInt(coupon.userIds);
+        const currentUserId = parseInt(req.user.id);
+        
+        if (!isNaN(allowedUserId) && allowedUserId !== currentUserId) {
+          return res.status(403).json({
+            success: false,
+            message: 'This coupon is not available for your account'
+          });
+        }
       }
     }
     

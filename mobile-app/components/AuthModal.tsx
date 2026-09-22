@@ -13,6 +13,7 @@ import {
   Alert,
   Pressable,
   Animated as RNAnimated,
+  ScrollView,
 } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { Phone, User, Sparkles, X, Gift, Check, ArrowRight, Star, ShoppingBag, Eye, EyeOff, PartyPopper, RefreshCcw } from 'lucide-react-native';
@@ -370,17 +371,10 @@ export default function AuthModal({ visible, onClose }: AuthModalProps) {
 
   const renderInfoStep = () => (
     <Animated.View entering={FadeIn.duration(300)} exiting={FadeOut.duration(300)} style={styles.card}>
-      {/* Close button for non-success steps */}
-      {step !== 'success' && (
-        <TouchableOpacity onPress={handleTryToClose} style={styles.closeButton}>
-          <X size={18} color={COLORS.muted} />
-        </TouchableOpacity>
-      )}
+
 
       <View style={styles.header}>
-        <View style={[styles.mainIconContainer, { backgroundColor: COLORS.primaryLight }]}>
-          <Sparkles size={32} color={COLORS.primary} />
-        </View>
+
         <Text style={styles.title}>
           {authMode === 'register' ? 'Join Our Community!' : 'Welcome Back!'}
         </Text>
@@ -483,14 +477,10 @@ export default function AuthModal({ visible, onClose }: AuthModalProps) {
 
   const renderOtpStep = () => (
     <Animated.View entering={FadeIn.duration(300)} exiting={FadeOut.duration(300)} style={styles.card}>
-      <TouchableOpacity onPress={handleTryToClose} style={styles.closeButton}>
-        <X size={18} color={COLORS.muted} />
-      </TouchableOpacity>
+
 
       <View style={styles.header}>
-        <View style={[styles.mainIconContainer, { backgroundColor: COLORS.primaryLight }]}>
-          <Phone size={32} color={COLORS.primary} />
-        </View>
+
         <Text style={styles.title}>Verify Your Number</Text>
         <Text style={styles.subtitle}>
           Enter the 6-digit code sent to
@@ -635,18 +625,27 @@ export default function AuthModal({ visible, onClose }: AuthModalProps) {
       onRequestClose={handleTryToClose}
     >
       <Pressable style={styles.backdrop} onPress={handleTryToClose}>
-        <Pressable style={styles.container} onPress={(e) => e.stopPropagation()}>
-          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboardView}>
-            <LinearGradient
-              colors={['#ffffff', '#fffef7']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 0, y: 1 }}
-              style={styles.modalContent}
+        <Pressable style={[styles.container, { maxHeight: '90%' }]} onPress={(e) => e.stopPropagation()}>
+          <KeyboardAvoidingView 
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+            style={[styles.keyboardView, { maxHeight: '100%' }]}
+          >
+            <ScrollView 
+              contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
             >
-              {step === 'info' && renderInfoStep()}
-              {step === 'otp' && renderOtpStep()}
-              {step === 'success' && renderSuccessStep()}
-            </LinearGradient>
+              <LinearGradient
+                colors={['#ffffff', '#fffef7']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+                style={styles.modalContent}
+              >
+                {step === 'info' && renderInfoStep()}
+                {step === 'otp' && renderOtpStep()}
+                {step === 'success' && renderSuccessStep()}
+              </LinearGradient>
+            </ScrollView>
           </KeyboardAvoidingView>
         </Pressable>
       </Pressable>
@@ -678,7 +677,7 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   card: {
-    padding: 24,
+    padding: 20,
     alignItems: 'center',
     position: 'relative',
   },
@@ -697,18 +696,18 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     width: '100%',
-    marginBottom: 24,
-  },
-  mainIconContainer: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    justifyContent: 'center',
-    alignItems: 'center',
     marginBottom: 16,
   },
+  mainIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
   title: {
-    fontSize: 26,
+    fontSize: 22,
     fontWeight: '900',
     color: COLORS.foreground,
     textAlign: 'center',
@@ -719,7 +718,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f1f5f9',
     borderRadius: 28,
     padding: 4,
-    marginVertical: 16,
+    marginVertical: 12,
     width: 200,
   },
   tabItem: {
@@ -745,24 +744,24 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 13,
     color: COLORS.muted,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 18,
     paddingHorizontal: 10,
   },
   inputSection: {
     width: '100%',
   },
   inputGroup: {
-    marginBottom: 16,
+    marginBottom: 12,
   },
   inputLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '800',
     color: COLORS.mutedLight,
     letterSpacing: 1.5,
-    marginBottom: 8,
+    marginBottom: 6,
     marginLeft: 4,
   },
   inputField: {
@@ -772,18 +771,18 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderRadius: 16,
     paddingHorizontal: 16,
-    height: 56,
+    height: 48,
   },
   textInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 15,
     color: COLORS.foreground,
     fontWeight: '600',
     marginLeft: 12,
   },
   otpWrapper: {
     position: 'relative',
-    height: 54,
+    height: 48,
     justifyContent: 'center',
   },
   hiddenOtpInput: {
@@ -799,8 +798,8 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   otpSlot: {
-    width: 46,
-    height: 54,
+    width: 42,
+    height: 48,
     borderWidth: 1.5,
     borderColor: '#e5e7eb',
     borderRadius: 10,
@@ -816,7 +815,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
   },
   otpSlotText: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '600',
     color: COLORS.foreground,
   },
@@ -828,11 +827,11 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   primaryButton: {
-    height: 56,
+    height: 48,
     borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 4,
     shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,

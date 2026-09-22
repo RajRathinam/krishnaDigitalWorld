@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import api from "@/lib/api";
 import { getImageUrl } from "@/lib/utils"; 
 
@@ -19,6 +20,7 @@ export const GiftManagement = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [editingId, setEditingId] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
+    const [cadreFilter, setCadreFilter] = useState("All");
     const { toast } = useToast();
 
     // Form State
@@ -26,6 +28,7 @@ export const GiftManagement = () => {
         productName: "",
         price: "",
         status: true,
+        cadre: "Basic",
     });
     const [selectedFile, setSelectedFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
@@ -35,6 +38,7 @@ export const GiftManagement = () => {
             productName: "",
             price: "",
             status: true,
+            cadre: "Basic",
         });
         setSelectedFile(null);
         setPreviewUrl(null);
@@ -49,7 +53,7 @@ export const GiftManagement = () => {
     const fetchGifts = async () => {
         try {
             setLoading(true);
-            const res = await api.get("/gifts");
+            const res = await api.get("/gifts", { params: { t: Date.now() } });
             const data = res.data?.data || res.data || [];
             setGifts(Array.isArray(data) ? data : []);
         } catch (err) {
@@ -96,6 +100,7 @@ export const GiftManagement = () => {
             formData.append("productName", form.productName.trim());
             formData.append("price", form.price);
             formData.append("status", form.status.toString());
+            formData.append("cadre", form.cadre);
 
             if (selectedFile) {
                 formData.append("image", selectedFile);
@@ -115,7 +120,7 @@ export const GiftManagement = () => {
 
             setIsDialogOpen(false);
             resetForm();
-            fetchGifts();
+            await fetchGifts();
         } catch (err) {
             console.error(err);
             toast({
@@ -134,6 +139,7 @@ export const GiftManagement = () => {
             productName: gift.productName || "",
             price: gift.price || "",
             status: gift.status ?? true,
+            cadre: gift.cadre || "Basic",
         });
         setEditingId(gift.id);
         if (gift.image) {
@@ -148,7 +154,7 @@ export const GiftManagement = () => {
         try {
             await api.delete(`/gifts/${id}`);
             toast({ title: "Success", description: "Gift deleted successfully" });
-            fetchGifts();
+            await fetchGifts();
         } catch (err) {
             toast({ 
                 title: "Error", 
@@ -167,9 +173,11 @@ export const GiftManagement = () => {
         }
     };
 
-    const filteredGifts = gifts.filter(gift => 
-        gift.productName.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredGifts = gifts.filter(gift => {
+        const matchesSearch = gift.productName.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesCadre = cadreFilter === "All" || gift.cadre === cadreFilter;
+        return matchesSearch && matchesCadre;
+    });
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
@@ -181,11 +189,26 @@ export const GiftManagement = () => {
                             <CardDescription>Add and manage gifts</CardDescription>
                         </div>
                         <div className="flex items-center gap-2 w-full sm:w-auto">
+                            <Select value={cadreFilter} onValueChange={setCadreFilter}>
+                                <SelectTrigger className="w-[140px]">
+                                    <SelectValue placeholder="Filter Cadre" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="All">All Cadres</SelectItem>
+                                    <SelectItem value="Basic">Basic</SelectItem>
+                                    <SelectItem value="Economy">Economy</SelectItem>
+                                    <SelectItem value="Standard">Standard</SelectItem>
+                                    <SelectItem value="Premium">Premium</SelectItem>
+                                    <SelectItem value="Elite">Elite</SelectItem>
+                                    <SelectItem value="Luxury">Luxury</SelectItem>
+                                    <SelectItem value="Platinum">Platinum</SelectItem>
+                                </SelectContent>
+                            </Select>
                             <Input
                                 placeholder="Search gifts..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full sm:w-[300px]"
+                                className="w-full sm:w-[200px]"
                             />
                             <Button onClick={() => { resetForm(); setIsDialogOpen(true); }} className="shrink-0">
                                 <Plus className="h-4 w-4 mr-2" /> Add Gift
@@ -201,6 +224,7 @@ export const GiftManagement = () => {
                                     <TableHead className="w-[80px]">Image</TableHead>
                                     <TableHead>Product Name</TableHead>
                                     <TableHead>Price</TableHead>
+                                    <TableHead>Cadre</TableHead>
                                     <TableHead className="w-[100px]">Status</TableHead>
                                     <TableHead className="w-[100px]">Created</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
@@ -249,6 +273,9 @@ export const GiftManagement = () => {
                                             </TableCell>
                                             <TableCell>
                                                 ₹{gift.price}
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge variant="outline">{gift.cadre || 'Basic'}</Badge>
                                             </TableCell>
                                             <TableCell>
                                                 <Badge 
@@ -326,6 +353,27 @@ export const GiftManagement = () => {
                                 onChange={(e) => setForm({ ...form, price: e.target.value })}
                                 placeholder="Enter price"
                             />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>Cadre *</Label>
+                            <Select 
+                                value={form.cadre} 
+                                onValueChange={(value) => setForm({ ...form, cadre: value })}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select a cadre" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Basic">Basic (Up to ₹5K)</SelectItem>
+                                    <SelectItem value="Economy">Economy (₹5K - ₹10K)</SelectItem>
+                                    <SelectItem value="Standard">Standard (₹10K - ₹25K)</SelectItem>
+                                    <SelectItem value="Premium">Premium (₹25K - ₹50K)</SelectItem>
+                                    <SelectItem value="Elite">Elite (₹50K - ₹75K)</SelectItem>
+                                    <SelectItem value="Luxury">Luxury (₹75K - ₹1L)</SelectItem>
+                                    <SelectItem value="Platinum">Platinum (₹1L+)</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                         
                         <div className="flex items-center gap-2">

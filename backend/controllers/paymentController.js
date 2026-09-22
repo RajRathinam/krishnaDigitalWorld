@@ -13,7 +13,9 @@ import {
   verifyCallbackSignature,
   checkPhonePeConfig,
 } from '../services/phonePeService.js';
-import { Order, Cart, Product, User, Coupon, UserCoupon, sequelize, Sequelize, Gift } from '../models/index.js';
+import { Order, Cart, Product, User, Coupon, UserCoupon, sequelize, Sequelize, Gift, ShopInfo } from '../models/index.js';
+import { getGiftCadreByAmount } from '../utils/giftHelper.js';
+import crypto from 'crypto';
 import { generateOrderNumber } from '../utils/helpers.js';
 import fs from 'fs';
 import path from 'path';
@@ -349,6 +351,28 @@ export const initiatePaymentHandler = async (req, res) => {
     const finalAmount   = Math.max(0, totalPrice + shippingCost - discountAmount);
     const amountInPaise = Math.round(finalAmount * 100);
 
+    // ── 2.5. Gift Logic ────────────────────────────────────────────────────────
+    const shopInfo = await ShopInfo.findOne({ where: { isActive: true }, transaction });
+    const enableOnlineGifts = shopInfo ? (shopInfo.enableOnlineGifts !== false) : true;
+    
+    let giftScanned = false;
+    let giftStatus = 'pending';
+    let giftId = null;
+
+    if (enableOnlineGifts) {
+      giftScanned = true;
+      const cadre = getGiftCadreByAmount(finalAmount);
+      const gifts = await Gift.findAll({ where: { status: true, cadre }, transaction });
+      
+      if (gifts.length > 0) {
+        const randomGift = gifts[Math.floor(Math.random() * gifts.length)];
+        giftStatus = 'won';
+        giftId = randomGift.id;
+      } else {
+        giftStatus = 'lost';
+      }
+    }
+
     // ── 3. Generate IDs & create order (status=pending) ──────────────────────
     const orderNumber    = generateOrderNumber();
     const merchantOrderId = `MO${Date.now()}${Math.floor(Math.random() * 1000)}`;
@@ -371,6 +395,9 @@ export const initiatePaymentHandler = async (req, res) => {
         finalAmount,
         couponId,
         notes:           notes || '',
+        giftScanned,
+        giftStatus,
+        giftId
       },
       { transaction },
     );
@@ -583,12 +610,13 @@ export const handleCallback = async (req, res) => {
       if (cart) await cart.update({ items: [], totalAmount: 0 }, { transaction });
 
       let giftUpdate = {};
-      if (parseFloat(order.finalAmount) > 5000 && !order.giftScanned) {
-        const isWin = Math.random() > 0.3;
+      if (!order.giftScanned) {
+        const cadre = getGiftCadreByAmount(order.finalAmount);
+        const isWin = true; // 100% chance for now
         let giftStatus = 'lost';
         let giftId = null;
         if (isWin) {
-          const gifts = await Gift.findAll({ where: { status: true }, transaction });
+          const gifts = await Gift.findAll({ where: { status: true, cadre }, transaction });
           if (gifts.length > 0) {
             const randomGift = gifts[Math.floor(Math.random() * gifts.length)];
             giftStatus = 'won';
@@ -708,12 +736,13 @@ export const checkStatusHandler = async (req, res) => {
         if (cart) await cart.update({ items: [], totalAmount: 0 }, { transaction: t });
 
         let giftUpdate = {};
-        if (parseFloat(order.finalAmount) > 5000 && !order.giftScanned) {
-          const isWin = Math.random() > 0.3;
+        if (!order.giftScanned) {
+          const cadre = getGiftCadreByAmount(order.finalAmount);
+          const isWin = true; // 100% chance for now
           let giftStatus = 'lost';
           let giftId = null;
           if (isWin) {
-            const gifts = await Gift.findAll({ where: { status: true }, transaction: t });
+            const gifts = await Gift.findAll({ where: { status: true, cadre }, transaction: t });
             if (gifts.length > 0) {
               const randomGift = gifts[Math.floor(Math.random() * gifts.length)];
               giftStatus = 'won';

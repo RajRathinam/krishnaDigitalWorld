@@ -4,6 +4,17 @@ import { Op, Sequelize } from 'sequelize'; // Add Sequelize import
 import { sendOrderShippedSMS, sendOrderDeliveredSMS } from '../services/smsService.js';
 import { sendPushNotification } from '../services/notificationService.js';
 
+// Helper: always returns a plain JS object for stock, handles both string and object
+const safeParseStock = (raw) => {
+  if (!raw) return {};
+  if (typeof raw === 'string') {
+    try { const p = JSON.parse(raw); return (typeof p === 'object' && p !== null && !Array.isArray(p)) ? p : {}; } catch { return {}; }
+  }
+  if (typeof raw === 'number') return { _total: raw }; // wrap numeric in object for uniform handling
+  if (typeof raw === 'object' && !Array.isArray(raw)) return raw;
+  return {};
+};
+
 /**
  * @desc    Get all orders (Admin)
  * @route   GET /api/admin/orders
@@ -537,6 +548,45 @@ export const updateOrderStatus = async (req, res) => {
     }
 
     await order.update(updateData, { transaction });
+
+    // Restore product stock if order is being cancelled
+    if (status === 'cancelled' && oldStatus !== 'cancelled') {
+      let orderItems = order.orderItems;
+      if (typeof orderItems === 'string') {
+        try { orderItems = JSON.parse(orderItems); } catch(e) { orderItems = []; }
+      }
+      if (!Array.isArray(orderItems)) orderItems = [];
+
+      for (const item of orderItems) {
+        const product = await Product.findByPk(item.productId, { transaction });
+
+        if (product) {
+          const stockObj = safeParseStock(product.stock);
+          let restoredStock = { ...stockObj };
+          
+          if (item.colorName && restoredStock[item.colorName] !== undefined) {
+            restoredStock[item.colorName] = (Number(restoredStock[item.colorName]) || 0) + item.quantity;
+          } else if (item.colorName) {
+            const matchKey = Object.keys(restoredStock).find(k => k.toLowerCase() === item.colorName.toLowerCase());
+            if (matchKey) restoredStock[matchKey] = (Number(restoredStock[matchKey]) || 0) + item.quantity;
+            else restoredStock[item.colorName] = item.quantity; // add color key if missing
+          } else {
+            const firstKey = Object.keys(restoredStock)[0];
+            if (firstKey) restoredStock[firstKey] = (Number(restoredStock[firstKey]) || 0) + item.quantity;
+          }
+
+          const totalRestored = Object.values(restoredStock).reduce((s, v) => s + (Number(v) || 0), 0);
+
+          await sequelize.query(
+            'UPDATE products SET stock = ?, availability = ? WHERE id = ?',
+            {
+              replacements: [JSON.stringify(restoredStock), totalRestored > 0 ? 1 : 0, item.productId],
+              transaction
+            }
+          );
+        }
+      }
+    }
 
     await transaction.commit();
 

@@ -41,7 +41,7 @@ export default function CartScreen() {
         return sum + itemPrice * (item.quantity || 1);
     }, 0) || 0;
     const discount = Math.max(0, originalTotal - subtotal);
-    const deliveryFee = subtotal > 500 ? 0 : 49;
+    const deliveryFee = 0; // standard delivery is free
     const total = subtotal + deliveryFee;
 
     const handleClearCart = () => {
@@ -245,7 +245,7 @@ export default function CartScreen() {
                                     <View className="flex-1 justify-between">
                                         <View>
                                             <TouchableOpacity onPress={() => router.push(`/product/${item.product?.slug || item.productId}`)}>
-                                                <Text className="text-gray-900 font-bold text-sm leading-tight pr-4 font-body" numberOfLines={2}>
+                                                <Text className="text-gray-900 font-bold text-sm leading-tight pr-8 font-body" numberOfLines={2}>
                                                     {item.product?.name || item.name || `Product ${item.productId}`}
                                                 </Text>
                                             </TouchableOpacity>
@@ -304,11 +304,7 @@ export default function CartScreen() {
                             <Truck size={20} color="#3B82F6" />
                         </View>
                         <View className="flex-1">
-                            {subtotal > 500 ? (
-                                <Text className="text-blue-700 font-bold text-sm font-body">You unlocked <Text className="text-blue-900 underline font-body">Free Delivery!</Text></Text>
-                            ) : (
-                                <Text className="text-blue-700 text-xs font-medium font-body">Add <Text className="text-blue-900 font-bold font-body">{formatPrice(501 - subtotal)}</Text> more for <Text className="text-blue-900 font-bold font-body">Free Delivery</Text></Text>
-                            )}
+                            <Text className="text-blue-700 font-bold text-sm font-body">Yay! You get <Text className="text-blue-900 underline font-body">Free Standard Delivery!</Text></Text>
                         </View>
                     </View>
 

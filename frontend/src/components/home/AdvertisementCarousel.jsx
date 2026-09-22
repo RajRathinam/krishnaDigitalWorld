@@ -120,15 +120,27 @@ export const AdvertisementCarousel = ({ position = 'homepage_middle' }) => {
   }, [currentIndex, ads, inView]);
 
   // ─── Helpers ───────────────────────────────────────────────────────────────
-  const goNext = () => {
+  const goNext = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setCurrentIndex((p) => (p + 1) % ads.length);
     setProgress(0);
   };
-  const goPrev = () => {
+  const goPrev = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setCurrentIndex((p) => (p - 1 + ads.length) % ads.length);
     setProgress(0);
   };
-  const goTo = (i) => {
+  const goTo = (i, e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setCurrentIndex(i);
     setProgress(0);
   };
@@ -140,7 +152,11 @@ export const AdvertisementCarousel = ({ position = 'homepage_middle' }) => {
     }
   };
 
-  const togglePlay = () => {
+  const togglePlay = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     const v = videoRefs.current[currentIndex];
     if (!v) return;
     if (v.paused) {
@@ -152,7 +168,11 @@ export const AdvertisementCarousel = ({ position = 'homepage_middle' }) => {
     }
   };
 
-  const toggleMute = () => {
+  const toggleMute = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     const v = videoRefs.current[currentIndex];
     if (!v) return;
     v.muted = !v.muted;
@@ -236,7 +256,7 @@ export const AdvertisementCarousel = ({ position = 'homepage_middle' }) => {
         {ads.map((_, i) => (
           <button
             key={i}
-            onClick={() => goTo(i)}
+            onClick={(e) => goTo(i, e)}
             className={`rounded-full transition-all duration-300 ${
               i === currentIndex
                 ? 'w-5 h-2 bg-primary'
@@ -277,7 +297,13 @@ export const AdvertisementCarousel = ({ position = 'homepage_middle' }) => {
         )}
         {ads[currentIndex]?.link && (
           <button
-            onClick={() => handleAdClick(ads[currentIndex])}
+            onClick={(e) => {
+              if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+              }
+              handleAdClick(ads[currentIndex]);
+            }}
             className={`${sz} rounded-full bg-primary/80 hover:bg-primary text-white flex items-center justify-center transition-colors`}
           >
             <ExternalLink className={icon} />
@@ -305,11 +331,11 @@ export const AdvertisementCarousel = ({ position = 'homepage_middle' }) => {
       <div className="relative w-full overflow-hidden bg-gray-950 border-b border-white/5">
         {/* Background blurred video */}
         <div className="absolute inset-0 overflow-hidden">
-          <MediaContent
-            ad={currentAd}
-            refKey={`top-${currentIndex}`}
-            className="w-full h-full object-cover scale-105 blur-sm opacity-40"
-          />
+          {MediaContent({
+            ad: currentAd,
+            refKey: `top-${currentIndex}`,
+            className: "w-full h-full object-cover scale-105 blur-sm opacity-40"
+          })}
         </div>
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-black/70" />
 
@@ -341,7 +367,7 @@ export const AdvertisementCarousel = ({ position = 'homepage_middle' }) => {
 
           {/* Controls + CTA */}
           <div className="flex items-center gap-2 shrink-0">
-            <DotIndicators />
+            {DotIndicators({})}
             {ads.length > 1 && (
               <div className="flex gap-1">
                 <button onClick={goPrev} className="h-6 w-6 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center">
@@ -352,7 +378,7 @@ export const AdvertisementCarousel = ({ position = 'homepage_middle' }) => {
                 </button>
               </div>
             )}
-            <VideoControls size="sm" isVideo={isVideoType} />
+            {VideoControls({ size: "sm", isVideo: isVideoType })}
             {currentAd.link && (
               <Button
                 size="sm"
@@ -373,7 +399,7 @@ export const AdvertisementCarousel = ({ position = 'homepage_middle' }) => {
           </button>
         </div>
 
-        <ProgressBar />
+        {ProgressBar({})}
       </div>
     );
   }
@@ -399,12 +425,12 @@ export const AdvertisementCarousel = ({ position = 'homepage_middle' }) => {
 
         {/* Video area */}
         <div className="relative" style={{ aspectRatio: '9/14' }}>
-          <MediaContent
-            ad={currentAd}
-            refKey={`sidebar-${currentIndex}`}
-            className="w-full h-full object-cover"
-            onClick={() => handleAdClick(currentAd)}
-          />
+          {MediaContent({
+            ad: currentAd,
+            refKey: `sidebar-${currentIndex}`,
+            className: "w-full h-full object-cover",
+            onClick: () => handleAdClick(currentAd)
+          })}
           <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent pointer-events-none" />
 
           {/* Ad info */}
@@ -416,15 +442,15 @@ export const AdvertisementCarousel = ({ position = 'homepage_middle' }) => {
 
           {/* Controls */}
           <div className="absolute bottom-2.5 left-3">
-            <VideoControls size="sm" isVideo={isVideoType} />
+            {VideoControls({ size: "sm", isVideo: isVideoType })}
           </div>
 
-          <ProgressBar />
+          {ProgressBar({})}
         </div>
 
         {/* Bottom bar */}
         <div className="flex items-center justify-between px-3 py-2 bg-black/40">
-          <DotIndicators />
+          {DotIndicators({})}
           {ads.length > 1 && (
             <div className="flex gap-1 ml-auto">
               <button onClick={goPrev} className="text-white/50 hover:text-white transition-colors">
@@ -452,12 +478,12 @@ export const AdvertisementCarousel = ({ position = 'homepage_middle' }) => {
           <div className="rounded-2xl overflow-hidden bg-gray-950">
             {/* Media */}
             <div className="relative aspect-video">
-              <MediaContent
-                ad={currentAd}
-                refKey={`popup-${currentIndex}`}
-                className="w-full h-full object-cover"
-                onClick={() => handleAdClick(currentAd)}
-              />
+              {MediaContent({
+                ad: currentAd,
+                refKey: `popup-${currentIndex}`,
+                className: "w-full h-full object-cover",
+                onClick: () => handleAdClick(currentAd)
+              })}
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-black/30 pointer-events-none" />
 
               {/* Close */}
@@ -476,7 +502,7 @@ export const AdvertisementCarousel = ({ position = 'homepage_middle' }) => {
                   <p className="text-white/70 text-sm mt-1.5 line-clamp-2">{currentAd.description}</p>
                 )}
                 <div className="flex items-center gap-2 mt-4">
-                  <VideoControls isVideo={isVideoType} />
+                  {VideoControls({ isVideo: isVideoType })}
                   {currentAd.link && (
                     <Button
                       size="sm"
@@ -489,13 +515,13 @@ export const AdvertisementCarousel = ({ position = 'homepage_middle' }) => {
                 </div>
               </div>
 
-              <ProgressBar />
+              {ProgressBar({})}
             </div>
 
             {/* Multi-ad footer */}
             {ads.length > 1 && (
               <div className="flex items-center justify-between px-5 py-3 bg-gray-900">
-                <DotIndicators />
+                {DotIndicators({})}
                 <div className="flex gap-1.5">
                   <button
                     onClick={goPrev}
@@ -557,12 +583,12 @@ export const AdvertisementCarousel = ({ position = 'homepage_middle' }) => {
   }`}
 >
           {/* Media layer */}
-          <MediaContent
-            ad={currentAd}
-            refKey={currentIndex}
-            className="w-full h-full object-cover transition-opacity duration-500"
-            onClick={() => handleAdClick(currentAd)}
-          />
+          {MediaContent({
+            ad: currentAd,
+            refKey: currentIndex,
+            className: "w-full h-full object-cover transition-opacity duration-500",
+            onClick: () => handleAdClick(currentAd)
+          })}
 
           {/* Gradient overlays */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-transparent pointer-events-none" />
@@ -592,13 +618,13 @@ export const AdvertisementCarousel = ({ position = 'homepage_middle' }) => {
 
           {/* Right controls */}
           <div className="absolute bottom-4 right-4 md:bottom-5 md:right-5">
-            <VideoControls isVideo={isVideoType} />
+            {VideoControls({ isVideo: isVideoType })}
           </div>
 
           {/* Dot indicators top-center */}
           {ads.length > 1 && (
             <div className="absolute top-4 left-1/2 -translate-x-1/2">
-              <DotIndicators />
+              {DotIndicators({})}
             </div>
           )}
 
@@ -620,7 +646,7 @@ export const AdvertisementCarousel = ({ position = 'homepage_middle' }) => {
             </>
           )}
 
-          <ProgressBar />
+          {ProgressBar({})}
         </div>
       </div>
     </section>

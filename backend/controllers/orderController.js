@@ -1,4 +1,5 @@
-import { Order, Cart, Product, User, Coupon, UserCoupon, sequelize, Sequelize, Gift } from '../models/index.js';
+import { Order, Cart, Product, User, Coupon, UserCoupon, sequelize, Sequelize, Gift, ShopInfo } from '../models/index.js';
+import { getGiftCadreByAmount } from '../utils/giftHelper.js';
 import { generateOrderNumber } from '../utils/helpers.js';
 
 // Helper: always returns a plain JS object for stock, handles both string and object
@@ -271,17 +272,25 @@ export const createOrder = async (req, res) => {
     // Ensure accurate float math
     const finalAmount = Math.max(0, totalPrice + shippingCost + taxAmount - discountAmount);
 
-    // Auto-assign Gift logic for online orders > ₹5000
+    // Fetch ShopInfo to check if online gifts are enabled
+    const shopInfo = await ShopInfo.findOne({ where: { isActive: true }, transaction });
+    const enableOnlineGifts = shopInfo ? (shopInfo.enableOnlineGifts !== false) : true;
+
+    // Auto-assign Gift logic for online orders based on cadre
     let giftScanned = false;
     let giftStatus = 'pending';
     let giftId = null;
 
-    if (finalAmount > 5000) {
+    if (enableOnlineGifts) {
       giftScanned = true;
-      // 70% chance to win
-      const isWin = Math.random() > 0.3;
+      const cadre = getGiftCadreByAmount(finalAmount);
+
+      // 100% chance to win for now, or you can keep random. The user said "every order gets a gift" based on cadre.
+      // "0 to 5k naa oru list la irundhu oru gift ... gift varuthu but intha cadre kue suitable ah maathanu."
+      const isWin = true; // Let's make it true for all orders since it's cadre-based now
+      
       if (isWin) {
-        const gifts = await Gift.findAll({ where: { status: true }, transaction });
+        const gifts = await Gift.findAll({ where: { status: true, cadre }, transaction });
         if (gifts.length > 0) {
           const randomGift = gifts[Math.floor(Math.random() * gifts.length)];
           giftStatus = 'won';
@@ -777,9 +786,7 @@ export const scanOrderGift = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
-    if (parseFloat(order.finalAmount) <= 5000) {
-      return res.status(400).json({ success: false, message: 'Order must be over ₹5,000 to win a gift.' });
-    }
+    const cadre = getGiftCadreByAmount(order.finalAmount);
 
     if (order.giftScanned) {
       return res.status(200).json({
@@ -789,12 +796,12 @@ export const scanOrderGift = async (req, res) => {
       });
     }
 
-    // 50% chance to win
-    const isWin = Math.random() > 0;
+    // 100% chance to win
+    const isWin = true;
     
     if (isWin) {
-      // Find a random active gift
-      const gifts = await Gift.findAll({ where: { status: true } });
+      // Find a random active gift in the appropriate cadre
+      const gifts = await Gift.findAll({ where: { status: true, cadre } });
       if (gifts.length > 0) {
         const randomGift = gifts[Math.floor(Math.random() * gifts.length)];
         
