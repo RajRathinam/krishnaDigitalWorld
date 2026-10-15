@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import api from "@/lib/api";
 import { getImageUrl } from "@/lib/utils";
 import { useCart } from "@/contexts/CartContext";
+import { useShopInfo } from "@/contexts/ShopInfoContext";
 
 const FRONTEND_URL = import.meta.env.VITE_FRONTEND_URL || window.location.origin;
 
@@ -304,6 +305,7 @@ export default function ProductDetail() {
   const { slug, id } = useParams();
   const navigate = useNavigate();
   const { cartItems } = useCart();
+  const { shopInfo } = useShopInfo();
   const identifier = slug || id || "";
 
   const [product, setProduct] = useState(null);
@@ -432,6 +434,10 @@ export default function ProductDetail() {
 
   const handleAddToCart = async () => {
     if (!product) return false;
+    if (shopInfo?.enable_add_to_cart_btn === false || shopInfo?.enable_add_to_cart_btn === 0 || shopInfo?.enable_add_to_cart_btn === '0') {
+      toast.error("Delivery partners are not available now. Please try again later.");
+      return false;
+    }
     const token = localStorage.getItem("authToken");
     if (!token) { window.dispatchEvent(new Event("openSignup")); return false; }
     try {
@@ -473,7 +479,14 @@ export default function ProductDetail() {
     }
   };
 
-  const handleBuyNow = async () => { const ok = await handleAddToCart(); if (ok) navigate("/checkout"); };
+  const handleBuyNow = async () => {
+    if (shopInfo?.enable_add_to_cart_btn === false || shopInfo?.enable_add_to_cart_btn === 0 || shopInfo?.enable_add_to_cart_btn === '0') {
+      toast.error("Delivery partners are not available now. Please try again later.");
+      return;
+    }
+    const ok = await handleAddToCart();
+    if (ok) navigate("/checkout");
+  };
 
   const generateQRCodeUrl = () =>
     product

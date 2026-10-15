@@ -1,16 +1,15 @@
 {
   "expo": {
-    "name": "Sk Digital World",
-    "slug": "mobile-app",
-    "version": "1.0.0",
+    "name": "Sri Krishna Digital",
+    "slug": "sri-krishna-digital",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/images/skdw.png",
     "scheme": "mobileapp",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/images/skdw.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#0d001a"
     },
     "ios": {
       "supportsTablet": true,
@@ -25,8 +24,8 @@
     },
     "android": {
       "usesCleartextTraffic": true,
-      "package": "com.skdigitalworld.app",
-      "versionCode": 1,
+      "package": "com.srikrishnadigital.app",
+      "versionCode": 3,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/skdw.png",
         "backgroundColor": "#ffffff"
@@ -62,9 +61,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "763bb53c-d4dd-4a8c-8b95-fe4f26bbca60"
+        "projectId": "cbb04819-c22b-49a3-82ab-c2d8bd7d616d"
       }
     },
-    "owner": "rajrathinams"
+    "owner": "infygridsolutions"
   }
 }

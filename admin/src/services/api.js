@@ -203,6 +203,10 @@ export const adminApi = {
     updateOnlineGifts: async (enableOnlineGifts) => {
         const response = await api.put('/admin/settings/online-gifts', { enableOnlineGifts });
         return response.data;
+    },
+    updateAddToCart: async (enable_add_to_cart_btn) => {
+        const response = await api.put('/admin/settings/add-to-cart', { enable_add_to_cart_btn });
+        return response.data;
     }
 };
 // ... rest of the file remains the same

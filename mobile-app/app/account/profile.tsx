@@ -26,6 +26,8 @@ export default function ProfileScreen() {
 
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
+    const [nameError, setNameError] = useState('');
+    const [emailError, setEmailError] = useState('');
     const [street, setStreet] = useState('');
     const [city, setCity] = useState('');
     const [state, setState] = useState('');
@@ -173,14 +175,46 @@ export default function ProfileScreen() {
             router.back();
         },
         onError: (error: any) => {
-            Alert.alert('Error', error?.message || 'Failed to update profile');
+            const serverMessage = 
+                error?.response?.data?.message || 
+                error?.message || 
+                'Failed to update profile. Please try again.';
+            
+            if (serverMessage.toLowerCase().includes('email')) {
+                setEmailError(serverMessage);
+            }
+            if (serverMessage.toLowerCase().includes('name')) {
+                setNameError(serverMessage);
+            }
+
+            Alert.alert('Update Failed', serverMessage);
         }
     });
 
     const handleSave = () => {
+        setNameError('');
+        setEmailError('');
+
+        const trimmedName = name.trim();
+        if (!trimmedName) {
+            setNameError('Please enter your full name');
+            Alert.alert('Validation Error', 'Please enter your full name');
+            return;
+        }
+
+        const trimmedEmail = email.trim();
+        if (trimmedEmail) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(trimmedEmail)) {
+                setEmailError('Please enter a valid email address');
+                Alert.alert('Validation Error', 'Please enter a valid email address');
+                return;
+            }
+        }
+
         const formData = new FormData();
-        formData.append('name', name);
-        if (email) formData.append('email', email);
+        formData.append('name', trimmedName);
+        formData.append('email', trimmedEmail);
 
         if (street || city || pincode) {
             formData.append('address', JSON.stringify({
@@ -293,15 +327,21 @@ export default function ProfileScreen() {
 
                         <View className="mb-4">
                             <Text className="text-gray-500 text-sm mb-1 ml-1">Full Name</Text>
-                            <View className="flex-row items-center border border-gray-200 rounded-xl px-4 bg-gray-50">
-                                <User size={18} color="#9CA3AF" />
+                            <View className={`flex-row items-center border ${nameError ? 'border-red-500 bg-red-50/20' : 'border-gray-200 bg-gray-50'} rounded-xl px-4`}>
+                                <User size={18} color={nameError ? '#EF4444' : '#9CA3AF'} />
                                 <TextInput
                                     className="flex-1 ml-3 text-gray-900"
                                     value={name}
-                                    onChangeText={setName}
+                                    onChangeText={(val) => {
+                                        setName(val);
+                                        if (nameError) setNameError('');
+                                    }}
                                     placeholder="Enter your name"
                                 />
                             </View>
+                            {nameError ? (
+                                <Text className="text-red-500 text-xs mt-1 ml-1 font-medium">{nameError}</Text>
+                            ) : null}
                         </View>
 
                         <View className="mb-4">
@@ -319,17 +359,23 @@ export default function ProfileScreen() {
 
                         <View className="mb-4">
                             <Text className="text-gray-500 text-sm mb-1 ml-1">Email Address</Text>
-                            <View className="flex-row items-center border border-gray-200 rounded-xl px-4 bg-gray-50">
-                                <Mail size={18} color="#9CA3AF" />
+                            <View className={`flex-row items-center border ${emailError ? 'border-red-500 bg-red-50/20' : 'border-gray-200 bg-gray-50'} rounded-xl px-4`}>
+                                <Mail size={18} color={emailError ? '#EF4444' : '#9CA3AF'} />
                                 <TextInput
                                     className="flex-1 ml-3 text-gray-900"
                                     value={email}
-                                    onChangeText={setEmail}
+                                    onChangeText={(val) => {
+                                        setEmail(val);
+                                        if (emailError) setEmailError('');
+                                    }}
                                     placeholder="Enter your email"
                                     keyboardType="email-address"
                                     autoCapitalize="none"
                                 />
                             </View>
+                            {emailError ? (
+                                <Text className="text-red-500 text-xs mt-1 ml-1 font-medium">{emailError}</Text>
+                            ) : null}
                         </View>
                     </View>
 

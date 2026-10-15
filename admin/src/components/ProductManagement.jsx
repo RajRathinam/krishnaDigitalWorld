@@ -987,7 +987,11 @@ export const ProductManagement = () => {
 
       {/* Product Form Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 gap-0">
+        <DialogContent 
+          className="max-w-4xl max-h-[90vh] flex flex-col p-0 gap-0"
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onInteractOutside={(e) => e.preventDefault()}
+        >
           <DialogHeader className="px-6 py-4 border-b">
             <DialogTitle>{isEditing ? "Edit Product" : "Add New Product"}</DialogTitle>
             <DialogDescription>Fill in the details below to {isEditing ? "update" : "create"} a product.</DialogDescription>

@@ -17,6 +17,7 @@ import { CartProvider } from '@/contexts/CartContext';
 import { WishlistProvider } from '@/contexts/WishlistContext';
 import AuthModal from '@/components/AuthModal';
 import CouponNotificationPopup from '@/components/coupon/CouponNotificationPopup';
+import { NetworkProvider, NetworkBanner } from '@/contexts/NetworkContext';
 import { registerForPushNotificationsAsync } from '@/services/notifications';
 import api from '@/services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -33,9 +34,6 @@ export const unstable_settings = {
   initialRouteName: '(tabs)',
 };
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
-
 export default function RootLayout() {
   const [loaded, error] = useFonts({
     'PlayfairDisplay-Regular': 'https://fonts.gstatic.com/s/playfairdisplay/v30/nuFvD-vYSZ2xE223kBvXODAfVQDQBu4Wv0dxNNKM4uo7.ttf',
@@ -47,43 +45,42 @@ export default function RootLayout() {
   });
   const [isSplashFinished, setIsSplashFinished] = useState(false);
 
-  // Expo Router uses Error Boundaries to catch errors in the navigation tree.
+  // Immediately hide native default splash screen on launch so animated splash takes over
+  useEffect(() => {
+    SplashScreen.hideAsync().catch(() => {});
+  }, []);
+
   useEffect(() => {
     if (error) {
       console.warn('Failed to load fonts dynamically, falling back to system fonts:', error);
-      // Hide the splash screen even if font loading fails so the app can render
-      SplashScreen.hideAsync();
     }
   }, [error]);
 
-  useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded]);
-
   if (!loaded && !error) {
-    return null;
+    return <AnimatedSplashScreen onFinish={() => setIsSplashFinished(true)} />;
   }
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <CartProvider>
-          <WishlistProvider>
-            <ShopInfoProvider>
-              <View style={{ flex: 1 }}>
-                <RootLayoutNav />
-                <AuthWrapper isSplashFinished={isSplashFinished} />
-                <CouponNotificationPopup />
-                {!isSplashFinished && (
-                  <AnimatedSplashScreen onFinish={() => setIsSplashFinished(true)} />
-                )}
-              </View>
-            </ShopInfoProvider>
-          </WishlistProvider>
-        </CartProvider>
-      </AuthProvider>
+      <NetworkProvider>
+        <AuthProvider>
+          <ShopInfoProvider>
+            <CartProvider>
+              <WishlistProvider>
+                <View style={{ flex: 1 }}>
+                  <NetworkBanner />
+                  <RootLayoutNav />
+                  <AuthWrapper isSplashFinished={isSplashFinished} />
+                  <CouponNotificationPopup />
+                  {!isSplashFinished && (
+                    <AnimatedSplashScreen onFinish={() => setIsSplashFinished(true)} />
+                  )}
+                </View>
+              </WishlistProvider>
+            </CartProvider>
+          </ShopInfoProvider>
+        </AuthProvider>
+      </NetworkProvider>
     </QueryClientProvider>
   );
 }

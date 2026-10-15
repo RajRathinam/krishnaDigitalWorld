@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Confetti } from "@/components/ui/confetti";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { useShopInfo } from "@/contexts/ShopInfoContext";
 import api from "@/lib/api";
 import { getImageUrl } from "@/lib/utils";
 import { 
@@ -317,6 +318,7 @@ function OrderSuccessCelebration({ orderData, onContinue }) {
 export default function Checkout() {
   const navigate = useNavigate();
   const { user }  = useAuth();
+  const { shopInfo } = useShopInfo();
 
   const [currentStep, setCurrentStep] = useState("address");
 
@@ -519,6 +521,11 @@ export default function Checkout() {
   // ── COD order ─────────────────────────────────────────────────────────────
   const handlePlaceOrder = async () => {
     if (isPlacingOrder || !selectedAddressData) return;
+
+    if (shopInfo?.enable_add_to_cart_btn === false || shopInfo?.enable_add_to_cart_btn === 0 || shopInfo?.enable_add_to_cart_btn === '0') {
+      toast.error("Delivery partners are not available now. Please try again later.");
+      return;
+    }
     
     // Final pincode check
     if (!ALLOWED_PINCODES.includes(String(selectedAddressData.pincode).trim())) {
@@ -560,7 +567,12 @@ export default function Checkout() {
     } catch (err) {
       const status  = err?.response?.status;
       const message = err?.response?.data?.message || "Failed to place order";
-      if (status === 400)      toast.error(message);
+      if (status === 400) {
+        toast.error(message);
+        if (message.toLowerCase().includes("out of stock") || message.toLowerCase().includes("stock")) {
+          setTimeout(() => navigate('/cart'), 1500);
+        }
+      }
       else if (status === 500) toast.error("Server error. Please try again.");
       else                     toast.error("Failed to place order. Please try again.");
     } finally {
@@ -571,6 +583,11 @@ export default function Checkout() {
   // ── PhonePe payment ───────────────────────────────────────────────────────
   const handlePhonePePayment = async () => {
     if (isPlacingOrder || !selectedAddressData) return;
+
+    if (shopInfo?.enable_add_to_cart_btn === false || shopInfo?.enable_add_to_cart_btn === 0 || shopInfo?.enable_add_to_cart_btn === '0') {
+      toast.error("Delivery partners are not available now. Please try again later.");
+      return;
+    }
 
     // Final pincode check
     if (!ALLOWED_PINCODES.includes(String(selectedAddressData.pincode).trim())) {
@@ -609,7 +626,16 @@ export default function Checkout() {
       }
     } catch (err) {
       toast.dismiss("phonepe-init");
-      toast.error(err?.response?.data?.message || "Payment initiation failed. Please try again.");
+      const status  = err?.response?.status;
+      const message = err?.response?.data?.message || "Payment initiation failed. Please try again.";
+      if (status === 400) {
+        toast.error(message);
+        if (message.toLowerCase().includes("out of stock") || message.toLowerCase().includes("stock")) {
+          setTimeout(() => navigate('/cart'), 1500);
+        }
+      } else {
+        toast.error(message);
+      }
     } finally {
       setIsPlacingOrder(false);
     }

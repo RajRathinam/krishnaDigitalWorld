@@ -103,7 +103,7 @@ const InfiniteScrollRow = ({ brands, direction }: RowProps) => {
 // ─── BrandShowcase ────────────────────────────────────────────────────────────
 
 export const BrandShowcase = () => {
-    const { data: brandsData, isLoading } = useQuery({
+    const { data: brandsData, isLoading, isError } = useQuery({
         queryKey: ['brands'],
         queryFn: () => brandApi.getBrands(),
     });
@@ -118,7 +118,7 @@ export const BrandShowcase = () => {
         (b) => b.isActive !== false && b.logo
     );
 
-    if (isLoading) {
+    if (isLoading || isError || !activeBrands.length) {
         return (
             <View style={styles.section}>
                 <View style={styles.header}>
@@ -133,8 +133,6 @@ export const BrandShowcase = () => {
             </View>
         );
     }
-
-    if (!activeBrands.length) return null;
 
     // Split into two rows (same logic as web)
     const mid = Math.ceil(activeBrands.length / 2);

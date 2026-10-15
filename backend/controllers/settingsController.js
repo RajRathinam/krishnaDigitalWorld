@@ -365,6 +365,43 @@ export const updateOnlineGiftsSetting = async (req, res) => {
 };
 
 /**
+ * @desc    Update only the enable_add_to_cart_btn setting
+ * @route   PUT /api/admin/settings/add-to-cart
+ * @access  Private (Admin/Subadmin)
+ */
+export const updateAddToCartSetting = async (req, res) => {
+  try {
+    const { enable_add_to_cart_btn, enableAddToCart } = req.body;
+    const value = enable_add_to_cart_btn !== undefined ? enable_add_to_cart_btn : enableAddToCart;
+    
+    let shopInfo = await ShopInfo.findOne({
+      where: { isActive: true }
+    });
+
+    if (!shopInfo) {
+      shopInfo = await ShopInfo.create({
+        enable_add_to_cart_btn: value,
+        isActive: true
+      });
+    } else {
+      await shopInfo.update({ enable_add_to_cart_btn: value });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Add to cart setting updated',
+      data: { enable_add_to_cart_btn: shopInfo.enable_add_to_cart_btn }
+    });
+  } catch (error) {
+    console.error('Update add to cart setting error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while updating setting'
+    });
+  }
+};
+
+/**
  * @desc    Get shop information (Public)
  * @route   GET /api/shop-info
  * @access  Public
@@ -391,7 +428,8 @@ export const getShopInfoPublic = async (req, res) => {
         'logoUrl',
         'supportEmail',
         'supportPhone',
-        'whatsappNumber'
+        'whatsappNumber',
+        'enable_add_to_cart_btn'
       ]
     });
 
@@ -405,7 +443,8 @@ export const getShopInfoPublic = async (req, res) => {
           address: null,
           locations: [],
           socialMedia: {},
-          businessHours: {}
+          businessHours: {},
+          enable_add_to_cart_btn: true
         }
       });
     }

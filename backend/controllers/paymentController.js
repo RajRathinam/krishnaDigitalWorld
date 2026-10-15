@@ -192,6 +192,16 @@ export const initiatePaymentHandler = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Shipping address is required' });
     }
 
+    // ── Check if delivery partners / ordering is enabled ──────────────────────
+    const shopInfo = await ShopInfo.findOne({ where: { isActive: true }, transaction });
+    if (shopInfo && (shopInfo.enable_add_to_cart_btn === false || shopInfo.enable_add_to_cart_btn === 0 || shopInfo.enable_add_to_cart_btn === '0')) {
+      await transaction.rollback();
+      return res.status(400).json({
+        success: false,
+        message: 'Delivery partners are not available now. Please try again later.'
+      });
+    }
+
     // ── 1. Load cart ─────────────────────────────────────────────────────────
     const cart = await Cart.findOne({ where: { userId: req.user.id }, transaction });
     if (!cart?.items?.length) {
@@ -351,8 +361,7 @@ export const initiatePaymentHandler = async (req, res) => {
     const finalAmount   = Math.max(0, totalPrice + shippingCost - discountAmount);
     const amountInPaise = Math.round(finalAmount * 100);
 
-    // ── 2.5. Gift Logic ────────────────────────────────────────────────────────
-    const shopInfo = await ShopInfo.findOne({ where: { isActive: true }, transaction });
+    // ── 2.5. Gift Logic (using shopInfo fetched earlier) ────────────────────────
     const enableOnlineGifts = shopInfo ? (shopInfo.enableOnlineGifts !== false) : true;
     
     let giftScanned = false;

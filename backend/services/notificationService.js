@@ -26,6 +26,8 @@ export const sendPushNotification = async (pushToken, title, body, data = {}) =>
       title: title,
       body: body,
       data: data,
+      channelId: 'default',
+      priority: 'high',
     }];
 
     // The Expo push notification service accepts batches of notifications
@@ -37,6 +39,13 @@ export const sendPushNotification = async (pushToken, title, body, data = {}) =>
       try {
         const ticketChunk = await expo.sendPushNotificationsAsync(chunk);
         tickets.push(...ticketChunk);
+        for (const ticket of ticketChunk) {
+          if (ticket.status === 'error') {
+            console.error(`❌ Push notification ticket error: ${ticket.message} (${ticket.details?.error})`);
+          } else {
+            console.log(`✅ Push notification sent successfully, ticket id: ${ticket.id}`);
+          }
+        }
       } catch (error) {
         console.error('Error sending push notification chunk:', error);
       }

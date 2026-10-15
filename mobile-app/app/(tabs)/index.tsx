@@ -13,9 +13,18 @@ import { ProductShowcase } from '@/components/ProductShowcase';
 import Header from '@/components/Header';
 import { AdvertisementCarousel } from '@/components/AdvertisementCarousel';
 import { TrustBadges } from '@/components/TrustBadges';
+import { useNetwork } from '@/contexts/NetworkContext';
 import { BrandShowcase } from '@/components/BrandShowcase';
 import { CategoryItemSkeleton, ProductCardSkeleton } from '@/components/SkeletonLoader';
 import { productApi, categoryApi, API_BASE_URL } from '@/services/api';
+
+const chunkArray = <T,>(arr: T[], size: number): T[][] => {
+  const chunks: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) {
+    chunks.push(arr.slice(i, i + size));
+  }
+  return chunks;
+};
 
 const AnimatedTodayDealsBanner = () => {
   const router = useRouter();
@@ -86,18 +95,19 @@ const AnimatedTodayDealsBanner = () => {
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { isOffline } = useNetwork();
 
-  const { data: categoriesData, isLoading: categoriesLoading, refetch: refetchCategories } = useQuery({
+  const { data: categoriesData, isLoading: categoriesLoading, isError: categoriesError, refetch: refetchCategories } = useQuery({
     queryKey: ['categories'],
     queryFn: categoryApi.getCategories,
   });
 
-  const { data: productsData, isLoading: productsLoading, refetch: refetchProducts } = useQuery({
+  const { data: productsData, isLoading: productsLoading, isError: productsError, refetch: refetchProducts } = useQuery({
     queryKey: ['new-arrivals-products'],
     queryFn: () => productApi.getNewArrivals(6),
   });
 
-  const { data: dealsData, isLoading: dealsLoading } = useQuery({
+  const { data: dealsData, isLoading: dealsLoading, isError: dealsError } = useQuery({
     queryKey: ['deal-of-the-day'],
     queryFn: () => productApi.getDealOfTheDay(6),
   });
@@ -146,7 +156,7 @@ export default function HomeScreen() {
       >
         <HeroSlider />
 
-        {!categoriesLoading && categoriesData?.data && (
+        {!categoriesLoading && !categoriesError && !isOffline && categoriesData?.data && (
           <SubcategorySlider 
             categories={categoriesData.data} 
             onSubcategoryPress={(sub, parentCategory) => {
@@ -170,7 +180,7 @@ export default function HomeScreen() {
             </View>
             <Text className="text-[13px] text-[#666666] mt-1">Explore our wide range of collections</Text>
           </View>
-          {categoriesLoading ? (
+          {categoriesLoading || categoriesError || isOffline || !categories.length ? (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20 }}>
               {[1, 2, 3, 4, 5].map(i => <CategoryItemSkeleton key={i} />)}
             </ScrollView>
@@ -247,17 +257,27 @@ export default function HomeScreen() {
             </Pressable>
           </View>
 
-          {productsLoading ? (
-            <View className="flex-row flex-wrap justify-between">
-              {[1, 2, 3, 4].map(i => <ProductCardSkeleton key={i} />)}
+          {productsLoading || productsError || isOffline || !newArrivalsProducts.length ? (
+            <View>
+              {chunkArray([1, 2, 3, 4], 2).map((row, rowIndex) => (
+                <View key={rowIndex} className="flex-row justify-between">
+                  {row.map(i => <ProductCardSkeleton key={i} />)}
+                  {row.length === 1 && <View style={{ width: '48%' }} />}
+                </View>
+              ))}
             </View>
           ) : (
-            <View className="flex-row flex-wrap justify-between">
-              {newArrivalsProducts.map((item: any) => (
-                <ProductCard
-                  key={item.id}
-                  product={item}
-                />
+            <View>
+              {chunkArray(newArrivalsProducts, 2).map((row: any[], rowIndex: number) => (
+                <View key={rowIndex} className="flex-row justify-between">
+                  {row.map((item: any) => (
+                    <ProductCard
+                      key={item.id || item._id}
+                      product={item}
+                    />
+                  ))}
+                  {row.length === 1 && <View style={{ width: '48%' }} />}
+                </View>
               ))}
             </View>
           )}
@@ -270,17 +290,27 @@ export default function HomeScreen() {
         <AnimatedTodayDealsBanner />
         
         <View className="px-5 pb-5">
-          {dealsLoading ? (
-            <View className="flex-row flex-wrap justify-between">
-              {[1, 2, 3, 4, 5, 6].map(i => <ProductCardSkeleton key={i} />)}
+          {dealsLoading || dealsError || isOffline || !dealsProducts.length ? (
+            <View>
+              {chunkArray([1, 2, 3, 4, 5, 6], 2).map((row, rowIndex) => (
+                <View key={rowIndex} className="flex-row justify-between">
+                  {row.map(i => <ProductCardSkeleton key={i} />)}
+                  {row.length === 1 && <View style={{ width: '48%' }} />}
+                </View>
+              ))}
             </View>
           ) : (
-            <View className="flex-row flex-wrap justify-between">
-              {dealsProducts.map((item: any) => (
-                <ProductCard
-                  key={item.id}
-                  product={item}
-                />
+            <View>
+              {chunkArray(dealsProducts, 2).map((row: any[], rowIndex: number) => (
+                <View key={rowIndex} className="flex-row justify-between">
+                  {row.map((item: any) => (
+                    <ProductCard
+                      key={item.id || item._id}
+                      product={item}
+                    />
+                  ))}
+                  {row.length === 1 && <View style={{ width: '48%' }} />}
+                </View>
               ))}
             </View>
           )}

@@ -47,6 +47,8 @@ const [activeTab, setActiveTab] = useState(isAdmin ? "subadmins" : "shop-info");
   const [shopInfo, setShopInfo] = useState({
     shopName: '',
     email: '',
+    enableOnlineGifts: true,
+    enable_add_to_cart_btn: true,
     phone: '',
     alternatePhone: '',
     address: '',
@@ -437,7 +439,7 @@ const [activeTab, setActiveTab] = useState(isAdmin ? "subadmins" : "shop-info");
               {/* Features */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Features</h3>
-                <div className="border rounded-lg p-4">
+                <div className="border rounded-lg p-4 space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
                       <Label className="text-base">Enable Online Order Gifts</Label>
@@ -456,6 +458,30 @@ const [activeTab, setActiveTab] = useState(isAdmin ? "subadmins" : "shop-info");
                         } catch (error) {
                           // Revert on failure
                           setShopInfo(prev => ({ ...prev, enableOnlineGifts: !checked }));
+                          toast({ title: "Error", description: "Failed to update setting", variant: "destructive" });
+                        }
+                      }}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between pt-4 border-t">
+                    <div className="space-y-0.5">
+                      <Label className="text-base">Enable Add to Cart Button</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Allow customers to add items to cart and place orders. When disabled, customers will see "Delivery partners are not available now. Please try again later."
+                      </p>
+                    </div>
+                    <Switch
+                      checked={shopInfo.enable_add_to_cart_btn === undefined ? true : (shopInfo.enable_add_to_cart_btn === true || shopInfo.enable_add_to_cart_btn === 1 || shopInfo.enable_add_to_cart_btn === '1')}
+                      onCheckedChange={async (checked) => {
+                        // Optimistic update
+                        setShopInfo(prev => ({ ...prev, enable_add_to_cart_btn: checked }));
+                        try {
+                          await adminApi.updateAddToCart(checked);
+                          toast({ title: "Success", description: `Add to cart button ${checked ? 'enabled' : 'disabled'} successfully` });
+                        } catch (error) {
+                          // Revert on failure
+                          setShopInfo(prev => ({ ...prev, enable_add_to_cart_btn: !checked }));
                           toast({ title: "Error", description: "Failed to update setting", variant: "destructive" });
                         }
                       }}

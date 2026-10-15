@@ -35,6 +35,7 @@ import Header from '@/components/Header';
 import PhonePePaymentButton from '@/components/PhonePePaymentButton';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
+import { useShopInfo } from '@/contexts/ShopInfoContext';
 import { authApi, orderApi, couponApi, paymentApi, API_BASE_URL } from '@/services/api';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Skeleton from '@/components/Skeleton';
@@ -170,6 +171,7 @@ export default function CheckoutScreen() {
     const router = useRouter();
     const queryClient = useQueryClient();
     const { cart, clearCart } = useCart();
+    const { shopInfo } = useShopInfo();
     const { user } = useAuth();
 
     const scrollViewRef = useRef<ScrollView>(null);
@@ -293,6 +295,11 @@ export default function CheckoutScreen() {
 
     // ── Order Placement ──────────────────────────────────────────────────────
     const handlePlaceOrder = async () => {
+        if (shopInfo?.enable_add_to_cart_btn === false || shopInfo?.enable_add_to_cart_btn === 0 || shopInfo?.enable_add_to_cart_btn === '0') {
+            Alert.alert('Notice', 'Delivery partners are not available now. Please try again later.');
+            return;
+        }
+
         if (!selectedAddressData) {
             Alert.alert('Error', 'Please select a delivery address.');
             return;
@@ -348,7 +355,15 @@ export default function CheckoutScreen() {
                     queryClient.invalidateQueries({ queryKey: ['me'] });
                     await clearCart();
                 } else {
-                    Alert.alert('Order Failed', res.message || 'Failed to place order.');
+                    const errorMsg = res.message || 'Failed to place order.';
+                    const isStockError = errorMsg.toLowerCase().includes('out of stock') || errorMsg.toLowerCase().includes('stock');
+                    Alert.alert(
+                        'Order Failed',
+                        errorMsg,
+                        isStockError
+                            ? [{ text: 'Go to Cart', onPress: () => router.push('/cart') }]
+                            : [{ text: 'OK' }]
+                    );
                 }
             } else {
                 // PhonePe Payment Redirect flow
@@ -389,11 +404,27 @@ export default function CheckoutScreen() {
                         Alert.alert('Error', 'Failed to generate online payment redirect URL.');
                     }
                 } else {
-                    Alert.alert('Payment Failed', res.message || 'Payment initiation failed.');
+                    const errorMsg = res.message || 'Payment initiation failed.';
+                    const isStockError = errorMsg.toLowerCase().includes('out of stock') || errorMsg.toLowerCase().includes('stock');
+                    Alert.alert(
+                        'Payment Failed',
+                        errorMsg,
+                        isStockError
+                            ? [{ text: 'Go to Cart', onPress: () => router.push('/cart') }]
+                            : [{ text: 'OK' }]
+                    );
                 }
             }
         } catch (err: any) {
-            Alert.alert('Order Error', err?.response?.data?.message || 'Failed to place order.');
+            const errorMsg = err?.response?.data?.message || 'Failed to place order.';
+            const isStockError = errorMsg.toLowerCase().includes('out of stock') || errorMsg.toLowerCase().includes('stock');
+            Alert.alert(
+                'Order Error',
+                errorMsg,
+                isStockError
+                    ? [{ text: 'Go to Cart', onPress: () => router.push('/cart') }]
+                    : [{ text: 'OK' }]
+            );
         } finally {
             setIsPlacingOrder(false);
         }

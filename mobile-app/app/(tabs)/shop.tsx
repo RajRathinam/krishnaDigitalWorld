@@ -33,6 +33,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useLocalSearchParams, useFocusEffect } from 'expo-router';
 import ProductCard from '@/components/ProductCard';
+import { useNetwork } from '@/contexts/NetworkContext';
 import Header from '@/components/Header';
 import { ProductCardSkeleton } from '@/components/SkeletonLoader';
 import api, { productApi, categoryApi } from '@/services/api';
@@ -61,6 +62,7 @@ const PRICE_RANGES = [
 
 export default function ShopScreen() {
     const insets = useSafeAreaInsets();
+    const { isOffline } = useNetwork();
     const [products, setProducts] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
@@ -575,7 +577,7 @@ export default function ShopScreen() {
 
 
             {/* Products */}
-            {loading ? (
+            {loading || (isOffline && products.length === 0) ? (
                 <View style={styles.productList}>
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
                         {[1, 2, 3, 4, 5, 6, 7, 8].map(i => <ProductCardSkeleton key={i} />)}

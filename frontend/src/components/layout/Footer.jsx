@@ -1,4 +1,4 @@
-import { ChevronUp, MapPin, Phone, Mail, Shield, FileText, Truck, RefreshCcw, Home, Briefcase, Globe } from "lucide-react";
+import { ChevronUp, MapPin, Phone, Mail, Shield, FileText, Truck, RefreshCcw, Home, Briefcase, Globe, Smartphone } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useEffect, useState } from 'react';
 import { categoryApi } from '@/services/api';
@@ -44,7 +44,8 @@ const footerLinks = {
     { name: "Careers", path: "/careers", icon: Briefcase },
     { name: "Our Promise", path: "/our-promise", icon: Shield },
     { name: "Help", path: "/help", icon: Shield },
-    { name: "Contact Us", path: "/contact", icon: Phone }
+    { name: "Contact Us", path: "/contact", icon: Phone },
+    { name: "Download App", path: "https://play.google.com/store/apps/details?id=com.srikrishnadigital.app", icon: Smartphone, isExternal: true }
   ],
   "Policies": [
     { name: "Privacy Policy", path: "/privacy-policy", icon: Shield },
@@ -268,10 +269,22 @@ export function Footer() {
                     const Icon = link.icon;
                     return (
                       <li key={link.name}>
-                        <Link to={link.path} className="flex items-center gap-2 text-primary-foreground/60 hover:text-primary-foreground text-sm transition-colors">
-                          {Icon && <Icon className="w-3.5 h-3.5" />}
-                          {link.name}
-                        </Link>
+                        {link.isExternal ? (
+                          <a
+                            href={link.path}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 text-primary-foreground/60 hover:text-primary-foreground text-sm transition-colors"
+                          >
+                            {Icon && <Icon className="w-3.5 h-3.5" />}
+                            {link.name}
+                          </a>
+                        ) : (
+                          <Link to={link.path} className="flex items-center gap-2 text-primary-foreground/60 hover:text-primary-foreground text-sm transition-colors">
+                            {Icon && <Icon className="w-3.5 h-3.5" />}
+                            {link.name}
+                          </Link>
+                        )}
                       </li>
                     );
                   })}
@@ -279,72 +292,120 @@ export function Footer() {
               </div>
             ))}
                       {/* Social Media Links Column */}
-          {hasSocialMedia && (
+            {/* 4th Column: Connect With Us & App Download (Desktop) */}
             <div className="hidden md:block">
-              <h3 className="text-primary-foreground font-display font-medium text-lg mb-4">Connect With Us</h3>
-              <div className="flex flex-wrap gap-3">
-                {Object.entries(socialMediaLinks).map(([platform, url]) => {
-                  if (!url || typeof url !== 'string' || !url.trim()) return null;
-                  
-                  const formattedUrl = formatSocialMediaUrl(platform, url);
-                  
-                  return (
-                    <a
-                      key={platform}
-                      href={formattedUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground transition-colors"
-                      aria-label={`Follow us on ${platform}`}
-                      title={`Follow us on ${platform}: ${url}`}
-                    >
-                      {getSocialMediaIcon(platform)}
-                    </a>
-                  );
-                })}
-              </div>
-              
-              {/* Follow us text */}
-              <p className="mt-4 text-sm text-primary-foreground/60">
-                Follow us for updates, offers, and more!
-              </p>
-            </div>
-          )}
+              {hasSocialMedia && (
+                <>
+                  <h3 className="text-primary-foreground font-display font-medium text-lg mb-4">Connect With Us</h3>
+                  <div className="flex flex-wrap gap-3">
+                    {Object.entries(socialMediaLinks).map(([platform, url]) => {
+                      if (!url || typeof url !== 'string' || !url.trim()) return null;
+                      const formattedUrl = formatSocialMediaUrl(platform, url);
+                      return (
+                        <a
+                          key={platform}
+                          href={formattedUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground transition-colors"
+                          aria-label={`Follow us on ${platform}`}
+                          title={`Follow us on ${platform}: ${url}`}
+                        >
+                          {getSocialMediaIcon(platform)}
+                        </a>
+                      );
+                    })}
+                  </div>
+                  <p className="mt-3 text-xs text-primary-foreground/60">
+                    Follow us for updates, offers, and more!
+                  </p>
+                </>
+              )}
 
+              {/* App Download Badge */}
+              <div className={`${hasSocialMedia ? 'mt-6 pt-5 border-t border-primary-foreground/10' : ''}`}>
+                <h4 className="text-sm font-semibold text-primary-foreground mb-3 flex items-center gap-2">
+                  <Smartphone className="w-4 h-4 text-accent" />
+                  Experience Our Mobile App
+                </h4>
+                <a
+                  href="https://play.google.com/store/apps/details?id=com.srikrishnadigital.app"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white transition-all duration-300 hover:scale-105 group shadow-sm"
+                  aria-label="Download on Google Play Store"
+                >
+                  <svg className="w-6 h-6 shrink-0" viewBox="0 0 24 24" fill="none">
+                    <path d="M3.609 1.814L13.793 12 3.61 22.186A2.37 2.37 0 0 1 3 20.5V3.5c0-.66.24-1.26.609-1.686z" fill="#4285F4"/>
+                    <path d="M17.155 8.638L4.85 1.62c-.442-.252-.897-.333-1.241-.194L13.793 12l3.362-3.362z" fill="#EA4335"/>
+                    <path d="M17.155 15.362L13.793 12 3.609 22.186c.344.139.799.058 1.241-.194l12.305-7.018c.677-.386.677-1.026 0-1.412z" fill="#FBBC04"/>
+                    <path d="M21.144 11.294l-3.989-2.276L13.793 12l3.362 3.362 3.989-2.276c.677-.386.677-1.026 0-1.412z" fill="#34A853"/>
+                  </svg>
+                  <div className="text-left">
+                    <span className="block text-[9px] uppercase tracking-wider text-primary-foreground/60 font-semibold leading-none">GET IT ON</span>
+                    <span className="block text-xs font-bold text-white group-hover:text-accent transition-colors leading-tight mt-0.5">Google Play</span>
+                  </div>
+                </a>
+              </div>
+            </div>
           </div>
 
-          {/* Social Media Links Column */}
-          {hasSocialMedia && (
-            <div className="mt-8 md:hidden block">
-              <h3 className="text-primary-foreground font-display font-medium text-lg mb-4">Connect With Us</h3>
-              <div className="flex flex-wrap gap-3">
-                {Object.entries(socialMediaLinks).map(([platform, url]) => {
-                  if (!url || typeof url !== 'string' || !url.trim()) return null;
-                  
-                  const formattedUrl = formatSocialMediaUrl(platform, url);
-                  
-                  return (
-                    <a
-                      key={platform}
-                      href={formattedUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground transition-colors"
-                      aria-label={`Follow us on ${platform}`}
-                      title={`Follow us on ${platform}: ${url}`}
-                    >
-                      {getSocialMediaIcon(platform)}
-                    </a>
-                  );
-                })}
-              </div>
-              
-              {/* Follow us text */}
-              <p className="mt-4 text-sm text-primary-foreground/60">
-                Follow us for updates, offers, and more!
-              </p>
+          {/* Social Media Links & App Download (Mobile) */}
+          <div className="mt-8 md:hidden block">
+            {hasSocialMedia && (
+              <>
+                <h3 className="text-primary-foreground font-display font-medium text-lg mb-4">Connect With Us</h3>
+                <div className="flex flex-wrap gap-3">
+                  {Object.entries(socialMediaLinks).map(([platform, url]) => {
+                    if (!url || typeof url !== 'string' || !url.trim()) return null;
+                    const formattedUrl = formatSocialMediaUrl(platform, url);
+                    return (
+                      <a
+                        key={platform}
+                        href={formattedUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground transition-colors"
+                        aria-label={`Follow us on ${platform}`}
+                        title={`Follow us on ${platform}: ${url}`}
+                      >
+                        {getSocialMediaIcon(platform)}
+                      </a>
+                    );
+                  })}
+                </div>
+                <p className="mt-3 text-xs text-primary-foreground/60">
+                  Follow us for updates, offers, and more!
+                </p>
+              </>
+            )}
+
+            {/* App Download Badge Mobile */}
+            <div className={`${hasSocialMedia ? 'mt-6 pt-5 border-t border-primary-foreground/10' : ''}`}>
+              <h4 className="text-sm font-semibold text-primary-foreground mb-3 flex items-center gap-2">
+                <Smartphone className="w-4 h-4 text-accent" />
+                Experience Our Mobile App
+              </h4>
+              <a
+                href="https://play.google.com/store/apps/details?id=com.srikrishnadigital.app"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white transition-all duration-300 active:scale-95 group shadow-sm"
+                aria-label="Download on Google Play Store"
+              >
+                <svg className="w-6 h-6 shrink-0" viewBox="0 0 24 24" fill="none">
+                  <path d="M3.609 1.814L13.793 12 3.61 22.186A2.37 2.37 0 0 1 3 20.5V3.5c0-.66.24-1.26.609-1.686z" fill="#4285F4"/>
+                  <path d="M17.155 8.638L4.85 1.62c-.442-.252-.897-.333-1.241-.194L13.793 12l3.362-3.362z" fill="#EA4335"/>
+                  <path d="M17.155 15.362L13.793 12 3.609 22.186c.344.139.799.058 1.241-.194l12.305-7.018c.677-.386.677-1.026 0-1.412z" fill="#FBBC04"/>
+                  <path d="M21.144 11.294l-3.989-2.276L13.793 12l3.362 3.362 3.989-2.276c.677-.386.677-1.026 0-1.412z" fill="#34A853"/>
+                </svg>
+                <div className="text-left">
+                  <span className="block text-[9px] uppercase tracking-wider text-primary-foreground/60 font-semibold leading-none">GET IT ON</span>
+                  <span className="block text-xs font-bold text-white group-hover:text-accent transition-colors leading-tight mt-0.5">Google Play</span>
+                </div>
+              </a>
             </div>
-          )}
+          </div>
 
           {/* Contact Information */}
           <div className="mt-8 pt-8 border-t border-primary-foreground/10">

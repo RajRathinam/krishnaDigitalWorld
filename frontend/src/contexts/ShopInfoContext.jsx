@@ -40,6 +40,9 @@ export const ShopInfoProvider = ({ children }) => {
           supportEmail: response.data.supportEmail,
           supportPhone: response.data.supportPhone,
           whatsappNumber: response.data.whatsappNumber,
+          enable_add_to_cart_btn: response.data.enable_add_to_cart_btn !== undefined
+            ? (response.data.enable_add_to_cart_btn === true || response.data.enable_add_to_cart_btn === 1 || response.data.enable_add_to_cart_btn === '1')
+            : true,
           isActive: response.data.isActive
         });
       } else {
@@ -65,7 +68,8 @@ export const ShopInfoProvider = ({ children }) => {
           gstNumber: null,
           supportEmail: null,
           supportPhone: null,
-          whatsappNumber: null
+          whatsappNumber: null,
+          enable_add_to_cart_btn: true
         });
       }
     } catch (error) {
@@ -92,7 +96,8 @@ export const ShopInfoProvider = ({ children }) => {
         gstNumber: null,
         supportEmail: null,
         supportPhone: null,
-        whatsappNumber: null
+        whatsappNumber: null,
+        enable_add_to_cart_btn: true
       });
     } finally {
       setLoading(false);

@@ -106,7 +106,7 @@ export default function CategoryProductsScreen() {
             </View>
 
             <View style={styles.content}>
-                {loading ? (
+                {loading || !products.length ? (
                     <FlatList
                         data={[1, 2, 3, 4, 5, 6, 7, 8]}
                         numColumns={2}

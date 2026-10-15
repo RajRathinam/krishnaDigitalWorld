@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { productApi, API_BASE_URL } from '@/services/api';
 import { useCart } from '@/contexts/CartContext';
+import { useShopInfo } from '@/contexts/ShopInfoContext';
 import { ChevronLeft, Share2, Heart, Star, ShoppingCart, Check, Package, ChevronUp, ChevronDown } from 'lucide-react-native';
 import ProductCard from '@/components/ProductCard';
 import Header from '@/components/Header';
@@ -23,6 +24,14 @@ const parseJSONSafe = (data: any, defaultValue: any = null) => {
     }
   }
   return defaultValue;
+};
+
+const chunkArray = <T,>(arr: T[], size: number): T[][] => {
+  const chunks: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) {
+    chunks.push(arr.slice(i, i + size));
+  }
+  return chunks;
 };
 
 const getImageUrl = (path: string) => {
@@ -176,6 +185,7 @@ export default function ProductDetailScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const { cart, addToCart } = useCart();
+  const { shopInfo } = useShopInfo();
 
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -254,6 +264,11 @@ export default function ProductDetailScreen() {
   };
 
   const handleAddToCart = async () => {
+    if (shopInfo?.enable_add_to_cart_btn === false || shopInfo?.enable_add_to_cart_btn === 0 || shopInfo?.enable_add_to_cart_btn === '0') {
+      Alert.alert('Notice', 'Delivery partners are not available now. Please try again later.');
+      return;
+    }
+
     const colorNames = Object.keys(parseJSONSafe(product?.colorsAndImages, {}));
     const selectedColorName = colorNames[selectedColor];
     if (selectedColorName && getStockForColor(product?.stock, selectedColorName) <= 0) {
@@ -287,6 +302,11 @@ export default function ProductDetailScreen() {
   };
 
   const handleBuyNow = async () => {
+    if (shopInfo?.enable_add_to_cart_btn === false || shopInfo?.enable_add_to_cart_btn === 0 || shopInfo?.enable_add_to_cart_btn === '0') {
+      Alert.alert('Notice', 'Delivery partners are not available now. Please try again later.');
+      return;
+    }
+
     const colorNames = Object.keys(parseJSONSafe(product?.colorsAndImages, {}));
     const selectedColorName = colorNames[selectedColor];
     if (selectedColorName && getStockForColor(product?.stock, selectedColorName) <= 0) {
@@ -571,16 +591,26 @@ export default function ProductDetailScreen() {
           {relatedLoading ? (
             <View className="mb-8 mt-4">
               <Text className="text-lg font-bold text-gray-900 mb-4 font-heading">You May Also Like</Text>
-              <View className="flex-row flex-wrap justify-between">
-                {[1, 2, 3, 4].map(i => <ProductCardSkeleton key={i} />)}
+              <View>
+                {chunkArray([1, 2, 3, 4], 2).map((row, rowIndex) => (
+                  <View key={rowIndex} className="flex-row justify-between">
+                    {row.map(i => <ProductCardSkeleton key={i} />)}
+                    {row.length === 1 && <View style={{ width: '48%' }} />}
+                  </View>
+                ))}
               </View>
             </View>
           ) : relatedProducts.length > 0 ? (
             <View className="mb-8 mt-4">
               <Text className="text-lg font-bold text-gray-900 mb-4 font-heading">You May Also Like</Text>
-              <View className="flex-row flex-wrap justify-between">
-                {relatedProducts.map((p) => (
-                  <ProductCard key={p.id} product={p} />
+              <View>
+                {chunkArray(relatedProducts, 2).map((row: any[], rowIndex: number) => (
+                  <View key={rowIndex} className="flex-row justify-between">
+                    {row.map((p) => (
+                      <ProductCard key={p.id || p._id} product={p} />
+                    ))}
+                    {row.length === 1 && <View style={{ width: '48%' }} />}
+                  </View>
                 ))}
               </View>
             </View>

@@ -6,6 +6,7 @@ import { Star, Heart, ShoppingCart, Check, Tv, Refrigerator, WashingMachine, Air
 import axios from "axios";
 import { baseUrl } from '@/config/baseUrl';
 import { useCart } from "@/contexts/CartContext";
+import { useShopInfo } from "@/contexts/ShopInfoContext";
 // Base API configuration
 const API_BASE_URL = baseUrl;
 // Helper function to parse JSON strings safely
@@ -393,6 +394,7 @@ export function ProductCard({ product, variant = "default", selectedColor }) {
     const slug = parsedProduct.slug || id;
     const { addToCart: addToCartContext } = useCartContext();
     const { cartItems } = useCart();
+    const { shopInfo } = useShopInfo();
     // Function to find the first image and color
     const getProductImageAndColor = () => {
         let imageUrl = '/placeholder.svg';
@@ -455,6 +457,14 @@ export function ProductCard({ product, variant = "default", selectedColor }) {
     const handleAddToCart = async (e) => {
         e.preventDefault();
         e.stopPropagation();
+
+        if (shopInfo?.enable_add_to_cart_btn === false || shopInfo?.enable_add_to_cart_btn === 0 || shopInfo?.enable_add_to_cart_btn === '0') {
+            toast({
+                title: "Notice",
+                description: "Delivery partners are not available now. Please try again later.",
+            });
+            return;
+        }
 
         // Check authentication
         const token = localStorage.getItem("authToken");

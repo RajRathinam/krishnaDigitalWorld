@@ -7,6 +7,7 @@ import {
   getShopInfo,
   updateShopInfo,
   updateOnlineGiftsSetting,
+  updateAddToCartSetting,
   getShopInfoPublic
 } from '../controllers/settingsController.js';
 import { authenticate, requireAdmin, requireAdminOrSubadmin } from '../middleware/auth.js';
@@ -26,6 +27,7 @@ export const adminSettingsRouter = express.Router();
 adminSettingsRouter.get('/shop-info', authenticate, getShopInfo);
 adminSettingsRouter.put('/shop-info', authenticate, requireAdminOrSubadmin, updateShopInfo);
 adminSettingsRouter.put('/online-gifts', authenticate, requireAdminOrSubadmin, updateOnlineGiftsSetting);
+adminSettingsRouter.put('/add-to-cart', authenticate, requireAdminOrSubadmin, updateAddToCartSetting);
 adminSettingsRouter.post('/subadmins', authenticate, requireAdmin, createSubadmin);
 adminSettingsRouter.get('/subadmins', authenticate, requireAdmin, getSubadmins);
 adminSettingsRouter.put('/subadmins/:id', authenticate, requireAdmin, updateSubadmin);

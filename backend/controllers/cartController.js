@@ -1,4 +1,4 @@
-import { Cart, Product, User, sequelize } from '../models/index.js';
+import { Cart, Product, User, ShopInfo, sequelize } from '../models/index.js';
 import { getTotalStock } from '../utils/helpers.js';
 
 // Add these helper functions at the top of the file:
@@ -120,6 +120,27 @@ export const getCart = async (req, res) => {
         const productImages = parseProductImages(product);
         const colorsAndImages = parseColorsAndImages(product);
 
+        // Parse stock
+        let stockObj = {};
+        try {
+          if (typeof product.stock === 'string') {
+            stockObj = JSON.parse(product.stock);
+          } else if (typeof product.stock === 'object' && product.stock !== null) {
+            stockObj = product.stock;
+          }
+        } catch(e) {
+          console.error('Error parsing stock for product', product.id, e);
+        }
+
+        let availableStock = 0;
+        if (item.colorName && stockObj[item.colorName] !== undefined) {
+          availableStock = Number(stockObj[item.colorName]) || 0;
+        } else {
+          availableStock = Object.values(stockObj).reduce((s, v) => s + (Number(v) || 0), 0);
+        }
+
+        const isOutOfStock = availableStock < (item.quantity || 1) || !product.isActive;
+
         // Prepare product data for response
         const productData = {
           id: product.id,
@@ -128,7 +149,8 @@ export const getCart = async (req, res) => {
           price: product.price,
           discountPrice: product.discountPrice,
           isActive: product.isActive,
-          images: productImages
+          images: productImages,
+          availableStock
         };
 
         // If item has an imageUrl already, use it
@@ -154,6 +176,8 @@ export const getCart = async (req, res) => {
           ...item,
           product: productData,
           imageUrl: imageUrl, // Ensure imageUrl is included
+          availableStock,
+          isOutOfStock,
           totalPrice: (product.discountPrice || product.price || 0) * (item.quantity || 1)
         };
       })
@@ -202,6 +226,16 @@ export const addToCart = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Product ID is required'
+      });
+    }
+
+    // Check if Add to Cart is enabled by shop
+    const shopInfo = await ShopInfo.findOne({ where: { isActive: true }, transaction });
+    if (shopInfo && (shopInfo.enable_add_to_cart_btn === false || shopInfo.enable_add_to_cart_btn === 0 || shopInfo.enable_add_to_cart_btn === '0')) {
+      await transaction.rollback();
+      return res.status(400).json({
+        success: false,
+        message: 'Delivery partners are not available now. Please try again later.'
       });
     }
 

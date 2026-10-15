@@ -4,6 +4,7 @@ import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import { useRouter } from 'expo-router';
 import { phonePeMobileService, MobilePaymentResponse } from '../services/phonePeService';
+import { useShopInfo } from '../contexts/ShopInfoContext';
 
 interface PhonePePaymentButtonProps {
   shippingAddress: any;
@@ -29,9 +30,15 @@ export default function PhonePePaymentButton({
   textStyle,
 }: PhonePePaymentButtonProps) {
   const [loading, setLoading] = useState(false);
+  const { shopInfo } = useShopInfo();
   const router = useRouter();
 
   const handlePayment = async () => {
+    if (shopInfo?.enable_add_to_cart_btn === false || shopInfo?.enable_add_to_cart_btn === 0 || shopInfo?.enable_add_to_cart_btn === '0') {
+      Alert.alert('Notice', 'Delivery partners are not available now. Please try again later.');
+      return;
+    }
+
     try {
       setLoading(true);
 

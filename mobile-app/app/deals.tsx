@@ -50,7 +50,7 @@ export default function DealsScreen() {
                         </View>
                     </View>
 
-                    {loading ? (
+                    {loading || !dealProducts.length ? (
                         <View className="flex-row flex-wrap justify-between gap-y-4">
                             {[1, 2, 3, 4, 5, 6].map(i => <ProductCardSkeleton key={i} />)}
                         </View>

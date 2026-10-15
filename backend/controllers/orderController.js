@@ -40,6 +40,16 @@ export const createOrder = async (req, res) => {
       });
     }
 
+    // Check if delivery partners / order placement is enabled
+    const shopInfo = await ShopInfo.findOne({ where: { isActive: true }, transaction });
+    if (shopInfo && (shopInfo.enable_add_to_cart_btn === false || shopInfo.enable_add_to_cart_btn === 0 || shopInfo.enable_add_to_cart_btn === '0')) {
+      await transaction.rollback();
+      return res.status(400).json({
+        success: false,
+        message: 'Delivery partners are not available now. Please try again later.'
+      });
+    }
+
     // Get user's cart
     const cart = await Cart.findOne({
       where: { userId: req.user.id },
@@ -272,8 +282,7 @@ export const createOrder = async (req, res) => {
     // Ensure accurate float math
     const finalAmount = Math.max(0, totalPrice + shippingCost + taxAmount - discountAmount);
 
-    // Fetch ShopInfo to check if online gifts are enabled
-    const shopInfo = await ShopInfo.findOne({ where: { isActive: true }, transaction });
+    // Check if online gifts are enabled (using shopInfo fetched earlier)
     const enableOnlineGifts = shopInfo ? (shopInfo.enableOnlineGifts !== false) : true;
 
     // Auto-assign Gift logic for online orders based on cadre

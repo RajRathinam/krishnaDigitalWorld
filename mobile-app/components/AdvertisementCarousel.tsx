@@ -76,8 +76,8 @@ export const AdvertisementCarousel = ({ position = 'homepage_middle' }) => {
     if (isLoading) {
         if (position === 'homepage_top') {
             return (
-                <View className="bg-gray-900 px-4 py-2 h-[60px] justify-center">
-                    <Skeleton height={20} width={200} borderRadius={4} baseColor="#1F2937" highlightColor="#374151" />
+                <View className="bg-gray-100 px-4 py-2 h-[60px] justify-center">
+                    <Skeleton height={20} width={200} borderRadius={4} baseColor="#E5E7EB" highlightColor="#F9FAFB" />
                 </View>
             );
         }
@@ -235,7 +235,7 @@ export const AdvertisementCarousel = ({ position = 'homepage_middle' }) => {
 
     return (
         <View className="py-6">
-            <FlatList
+            <Animated.FlatList
                 ref={flatListRef}
                 data={ads}
                 renderItem={renderMedia}
@@ -250,7 +250,7 @@ export const AdvertisementCarousel = ({ position = 'homepage_middle' }) => {
                 keyExtractor={(item) => item.id}
                 onScroll={Animated.event(
                     [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-                    { useNativeDriver: false }
+                    { useNativeDriver: true }
                 )}
                 onMomentumScrollEnd={(e) => {
                     const index = Math.round(e.nativeEvent.contentOffset.x / (itemWidth + 16));

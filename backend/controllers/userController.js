@@ -1,6 +1,7 @@
 import { User, Order, Review, Cart } from '../models/index.js';
 import { sanitizeUserForPublic } from '../utils/helpers.js';
 import { deleteImages } from '../middleware/upload.js';
+import { Expo } from 'expo-server-sdk';
 
 /**
  * @desc    Get public user profile by slug
@@ -339,10 +340,10 @@ export const savePushToken = async (req, res) => {
   try {
     const { pushToken } = req.body;
     
-    if (!pushToken) {
+    if (!pushToken || !Expo.isExpoPushToken(pushToken)) {
       return res.status(400).json({
         success: false,
-        message: 'Push token is required'
+        message: 'A valid Expo push token is required'
       });
     }
     

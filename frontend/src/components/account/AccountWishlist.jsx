@@ -6,6 +6,7 @@ import axios from "axios";
 import { baseUrl } from "@/config/baseUrl";
 import { getImageUrl } from "@/lib/utils";
 import { useCart } from "@/contexts/CartContext";
+import { useShopInfo } from "@/contexts/ShopInfoContext";
 import { useNavigate } from "react-router-dom";
 
 const API_BASE_URL = baseUrl;
@@ -57,6 +58,7 @@ export default function AccountWishlist() {
   const [wishlistItems, setWishlistItems] = useState([]);
   const [movingToCart, setMovingToCart] = useState({}); // Track which items are being moved
   const { cartItems } = useCart();
+  const { shopInfo } = useShopInfo();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -87,6 +89,14 @@ export default function AccountWishlist() {
   };
 
   const moveToCart = async (item) => {
+    if (shopInfo?.enable_add_to_cart_btn === false || shopInfo?.enable_add_to_cart_btn === 0 || shopInfo?.enable_add_to_cart_btn === '0') {
+      toast({
+        title: "Notice",
+        description: "Delivery partners are not available now. Please try again later.",
+      });
+      return;
+    }
+
     // Check authentication first
     const token = localStorage.getItem("authToken");
     if (!token) {

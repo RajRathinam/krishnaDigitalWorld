@@ -129,9 +129,9 @@ const App = () => {
       <TooltipProvider>
         <BrowserRouter>
           <ScrollToTop />
-          <CartProvider>
-            <AuthProvider>
-              <ShopInfoProvider>
+          <ShopInfoProvider>
+            <CartProvider>
+              <AuthProvider>
                 <Routes>
                   <Route element={<CustomerGuard />}>
                     <Route path="/" element={<Index />} />
@@ -181,9 +181,9 @@ const App = () => {
 
                 {/* Only show signup dialog if user is not authenticated */}
                 <SignupDialog open={showSignup} onOpenChange={handleSignupOpenChange} />
-              </ShopInfoProvider>
-            </AuthProvider>
-          </CartProvider>
+              </AuthProvider>
+            </CartProvider>
+          </ShopInfoProvider>
         </BrowserRouter>
         <Toaster />
         <Sonner />

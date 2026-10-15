@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ShoppingCart, Trash2, Plus, Minus, ChevronRight, ShieldCheck, Truck, ChevronLeft, ArrowRight } from 'lucide-react-native';
 import Header from '@/components/Header';
 import { useCart } from '@/contexts/CartContext';
+import { useShopInfo } from '@/contexts/ShopInfoContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'expo-router';
 import Animated, { FadeIn, FadeInDown, FadeOut, Layout } from 'react-native-reanimated';
@@ -31,6 +32,7 @@ const parseJSONSafe = (data: any, fallback: any) => {
 
 export default function CartScreen() {
     const { cart, cartCount, isLoading, isUpdating, isRemoving, isClearing, updateQuantity, removeFromCart, clearCart } = useCart();
+    const { shopInfo } = useShopInfo();
     const { user } = useAuth();
     const router = useRouter();
     const [localUpdating, setLocalUpdating] = React.useState<Record<string, 'inc' | 'dec' | null>>({});
@@ -227,7 +229,7 @@ export default function CartScreen() {
                                     key={key}
                                     entering={FadeInDown.delay(index * 100)}
                                     layout={Layout.springify()}
-                                    className={`bg-white rounded-3xl p-4 flex-row gap-4 border border-gray-100 shadow-sm ${removing ? 'opacity-50' : ''}`}
+                                    className={`bg-white rounded-3xl p-4 flex-row gap-4 border shadow-sm ${removing ? 'opacity-50' : ''} ${item.isOutOfStock ? 'border-red-200 bg-red-50' : 'border-gray-100'}`}
                                 >
                                     {/* Product Image */}
                                     <Pressable
@@ -251,6 +253,11 @@ export default function CartScreen() {
                                             </TouchableOpacity>
                                             {item.colorName && (
                                                 <Text className="text-gray-400 text-xs font-bold mt-1 uppercase tracking-tighter font-body">Color: <Text className="text-gray-600 font-body">{item.colorName}</Text></Text>
+                                            )}
+                                            {item.isOutOfStock && (
+                                                <Text className="text-red-500 text-xs font-bold mt-1 font-body">
+                                                    Out of Stock {item.availableStock !== undefined && item.availableStock > 0 ? `(Only ${item.availableStock} available)` : ''}
+                                                </Text>
                                             )}
                                         </View>
 
@@ -383,11 +390,22 @@ export default function CartScreen() {
             {/* Sticky Checkout Button */}
             <View className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 shadow-2xl">
                 <TouchableOpacity
-                    onPress={() => router.push('/checkout')}
-                    className="bg-gray-900 py-4 rounded-2xl flex-row items-center justify-center gap-3 active:scale-95"
+                    onPress={() => {
+                        if (shopInfo?.enable_add_to_cart_btn === false || shopInfo?.enable_add_to_cart_btn === 0 || shopInfo?.enable_add_to_cart_btn === '0') {
+                            Alert.alert('Notice', 'Delivery partners are not available now. Please try again later.');
+                            return;
+                        }
+                        if (!cart.items.some(item => item.isOutOfStock)) {
+                            router.push('/checkout');
+                        }
+                    }}
+                    disabled={cart.items.some(item => item.isOutOfStock)}
+                    className={`py-4 rounded-2xl flex-row items-center justify-center gap-3 active:scale-95 ${cart.items.some(item => item.isOutOfStock) ? 'bg-gray-300 opacity-80' : 'bg-gray-900'}`}
                 >
-                    <Text className="text-white font-black text-lg font-body">Proceed to Checkout</Text>
-                    <ChevronRight size={20} color="#FFFFFF" strokeWidth={3} />
+                    <Text className="text-white font-black text-lg font-body">
+                        {cart.items.some(item => item.isOutOfStock) ? 'Remove Out of Stock Items' : 'Proceed to Checkout'}
+                    </Text>
+                    {!cart.items.some(item => item.isOutOfStock) && <ChevronRight size={20} color="#FFFFFF" strokeWidth={3} />}
                 </TouchableOpacity>
             </View>
         </SafeAreaView>

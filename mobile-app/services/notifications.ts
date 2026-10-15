@@ -18,7 +18,7 @@ export async function registerForPushNotificationsAsync() {
   let token;
 
   if (Platform.OS === 'android') {
-    Notifications.setNotificationChannelAsync('default', {
+    await Notifications.setNotificationChannelAsync('default', {
       name: 'default',
       importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
@@ -34,24 +34,25 @@ export async function registerForPushNotificationsAsync() {
       finalStatus = status;
     }
     if (finalStatus !== 'granted') {
-      console.log('Failed to get push token for push notification!');
+      console.log('Permission not granted for push notifications!');
       return null;
     }
     try {
       const projectId =
         Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
       
-      // We pass the projectId for EAS builds. If using Expo Go, it uses the app experience ID.
-      token = (await Notifications.getExpoPushTokenAsync({
+      const pushTokenData = await Notifications.getExpoPushTokenAsync({
         projectId,
-      })).data;
-      console.log('Expo Push Token:', token);
+      });
+      token = pushTokenData.data;
+      console.log('✅ Expo Push Token obtained:', token);
     } catch (e) {
-      token = `${e}`;
-      console.log('Error getting push token:', e);
+      console.error('❌ Error getting Expo push token (check Firebase/FCM config for standalone builds):', e);
+      return null;
     }
   } else {
     console.log('Must use physical device for Push Notifications');
+    return null;
   }
 
   return token;

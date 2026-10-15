@@ -120,6 +120,12 @@ const ShopInfo = sequelize.define('ShopInfo', {
     defaultValue: true,
     comment: 'Enable giving gifts for online orders automatically'
   },
+  enable_add_to_cart_btn: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+    field: 'enable_add_to_cart_btn',
+    comment: '0 = Disabled (delivery partners unavailable), 1 = Enabled'
+  },
   isActive: {
     type: DataTypes.BOOLEAN,
     defaultValue: true

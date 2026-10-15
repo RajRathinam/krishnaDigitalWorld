@@ -46,7 +46,7 @@ export default function BestSellersScreen() {
                         <Text className="text-gray-900/80 text-center text-sm">Our most loved products • Trusted by thousands</Text>
                     </View>
 
-                    {loading ? (
+                    {loading || !bestSellers.length ? (
                         <View className="flex-row flex-wrap justify-between gap-y-4">
                             {[1, 2, 3, 4, 5, 6].map(i => <ProductCardSkeleton key={i} />)}
                         </View>

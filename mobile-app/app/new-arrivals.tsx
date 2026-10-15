@@ -46,7 +46,7 @@ export default function NewArrivalsScreen() {
                         <Text className="text-white/80 text-center text-sm z-10">Discover the latest products • Up to 25% off</Text>
                     </View>
 
-                    {loading ? (
+                    {loading || !newProducts.length ? (
                         <View className="flex-row flex-wrap justify-between gap-y-4">
                             {[1, 2, 3, 4, 5, 6].map(i => <ProductCardSkeleton key={i} />)}
                         </View>

@@ -7,6 +7,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
 import { getImageUrl } from "@/lib/utils";
+import { useShopInfo } from "@/contexts/ShopInfoContext";
 
 const emptyCart = { id: 0, items: [], totalAmount: 0 };
 
@@ -17,6 +18,7 @@ export default function Cart() {
   const [updatingItems, setUpdatingItems] = useState({}); // { "productId-colorName": 'inc' | 'dec' }
   const [removingItems, setRemovingItems] = useState({}); // { "productId-colorName": true }
   const [clearingCart, setClearingCart] = useState(false);
+  const { shopInfo } = useShopInfo();
   const navigate = useNavigate();
 
   // Unique key per cart line (product + color variant)
@@ -223,6 +225,10 @@ export default function Cart() {
   const total = subtotal + deliveryFee;
 
   const handleProceedToCheckout = () => {
+    if (shopInfo?.enable_add_to_cart_btn === false || shopInfo?.enable_add_to_cart_btn === 0 || shopInfo?.enable_add_to_cart_btn === '0') {
+      toast.error("Delivery partners are not available now. Please try again later.");
+      return;
+    }
     sessionStorage.setItem('checkoutCart', JSON.stringify({
       subtotal, discount, total, items: cart.items
     }));
@@ -364,9 +370,9 @@ export default function Cart() {
               return (
                 <div
                   key={`${item.productId}-${item.colorName || 'null'}-${index}`}
-                  className={`bg-card rounded-lg border border-border p-3 md:p-4 transition-opacity ${
+                  className={`rounded-lg border border-border p-3 md:p-4 transition-opacity ${
                     isRemoving ? 'opacity-50' : 'opacity-100'
-                  }`}
+                  } ${item.isOutOfStock ? 'bg-red-50/50 dark:bg-red-950/20 border-red-200' : 'bg-card'}`}
                 >
                   <div className="flex gap-3 md:gap-4">
                     {/* Image */}
@@ -408,6 +414,12 @@ export default function Cart() {
                           </span>
                         )}
                       </div>
+
+                      {item.isOutOfStock && (
+                        <p className="text-xs md:text-sm text-destructive font-semibold mt-2">
+                          Out of Stock {item.availableStock > 0 ? `(Only ${item.availableStock} available)` : ''}
+                        </p>
+                      )}
 
                       {/* Quantity & Remove */}
                       <div className="flex items-center gap-3 mt-3">
@@ -555,9 +567,10 @@ export default function Cart() {
 
               <button
                 onClick={handleProceedToCheckout}
-                className="block w-full mt-4 py-3 bg-accent text-accent-foreground text-center font-medium rounded-lg hover:opacity-90 transition-colors"
+                disabled={cart.items.some(item => item.isOutOfStock)}
+                className="block w-full mt-4 py-3 bg-accent text-accent-foreground text-center font-medium rounded-lg hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Proceed to Checkout
+                {cart.items.some(item => item.isOutOfStock) ? 'Remove Out of Stock Items' : 'Proceed to Checkout'}
               </button>
 
               <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">

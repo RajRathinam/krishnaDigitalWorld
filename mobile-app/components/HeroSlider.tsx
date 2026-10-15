@@ -29,42 +29,6 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const AUTO_PLAY_INTERVAL = 5000;
 const SLIDE_HEIGHT = 200;
 
-const DEFAULT_SLIDES = [
-    {
-        id: 'def-1',
-        title: 'Transform Your Living Space',
-        subtitle: 'Premium furniture at unbeatable prices',
-        cta: 'Shop Living Room',
-        ctaLink: '/products?category=furniture',
-        image: require('@/assets/images/sk.png'), // fallback to logo or your hero image
-        accent: 'Up to 50% Off',
-        isDefault: true,
-        tag: 'Furniture',
-    },
-    {
-        id: 'def-2',
-        title: 'Smart Kitchen Essentials',
-        subtitle: 'Modern appliances for the contemporary home chef',
-        cta: 'Explore Kitchen',
-        ctaLink: '/products?category=kitchen',
-        image: require('@/assets/images/sk.png'),
-        accent: 'New Arrivals',
-        isDefault: true,
-        tag: 'Electronics',
-    },
-    {
-        id: 'def-3',
-        title: 'Summer Cooling Solutions',
-        subtitle: 'Beat the heat with energy-efficient ACs & coolers',
-        cta: 'View Collection',
-        ctaLink: '/products?category=home-appliances',
-        image: require('@/assets/images/sk.png'),
-        accent: 'Starting ₹15,999',
-        isDefault: true,
-        tag: 'Appliances',
-    },
-];
-
 // ── Animated dot with progress fill ──
 const SlideDot = ({
     active,
@@ -127,16 +91,16 @@ export default function HeroSlider() {
         );
     }, [slides.length]);
 
-    const { data: queryData, isLoading: loading } = useQuery({
+    const { data: queryData, isLoading: loading, isError } = useQuery({
         queryKey: ['hero-sliders'],
         queryFn: heroSliderApi.getSliders,
     });
 
     useEffect(() => {
-        if (!loading) {
-            setSlides(queryData?.success && queryData?.data?.length > 0 ? queryData.data : DEFAULT_SLIDES);
+        if (!loading && !isError) {
+            setSlides(queryData?.success && queryData?.data?.length > 0 ? queryData.data : []);
         }
-    }, [queryData, loading]);
+    }, [queryData, loading, isError]);
 
     const animateTextIn = useCallback(() => {
         [tagAnim, titleAnim, subAnim, ctaAnim].forEach(a => a.setValue(0));
@@ -182,9 +146,9 @@ export default function HeroSlider() {
         progressAnim.setValue(0);
         progressAnimation.current?.stop();
         progressAnimation.current = Animated.timing(progressAnim, {
-            toValue: 100,
+            toValue: 1,
             duration: AUTO_PLAY_INTERVAL,
-            useNativeDriver: false,
+            useNativeDriver: true,
         });
         progressAnimation.current.start(({ finished }) => {
             if (finished && !isPaused.current && slides.length > 1) {
@@ -230,7 +194,7 @@ export default function HeroSlider() {
         ],
     });
 
-    if (loading) {
+    if (loading || isError || !slides.length) {
         return (
             <View style={styles.wrapper}>
                 <HeroSliderSkeleton />
@@ -238,12 +202,8 @@ export default function HeroSlider() {
         );
     }
 
-    if (!slides.length) return null;
-
     const slide = slides[current];
-    const imageSource = slide.isDefault
-        ? slide.image
-        : { uri: `${API_BASE_URL}${slide.image}` };
+    const imageSource = { uri: `${API_BASE_URL}${slide.image}` };
 
     return (
         <View style={styles.wrapper}>
@@ -256,9 +216,7 @@ export default function HeroSlider() {
                 {slides.map((s, i) => {
                     const tx = translateXAnims.current[i];
                     if (!tx) return null;
-                    const src = s.isDefault
-                        ? s.image
-                        : { uri: `${API_BASE_URL}${s.image}` };
+                    const src = { uri: `${API_BASE_URL}${s.image}` };
                     return (
                         <Animated.View
                             key={s.id}
@@ -304,10 +262,9 @@ export default function HeroSlider() {
                         style={[
                             styles.progressBar,
                             {
-                                width: progressAnim.interpolate({
-                                    inputRange: [0, 100],
-                                    outputRange: ['0%', '100%'],
-                                }),
+                                width: '100%',
+                                transform: [{ scaleX: progressAnim }],
+                                transformOrigin: 'left',
                             },
                         ]}
                     />
@@ -326,7 +283,7 @@ const styles = StyleSheet.create({
         height: SLIDE_HEIGHT,
         borderRadius: 18,
         overflow: 'hidden',
-        backgroundColor: '#1a1a2e',
+        backgroundColor: '#E5E7EB',
         position: 'relative',
     },
     skeleton: {

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { useShopInfo } from './ShopInfoContext';
 import axios from 'axios';
 import { baseUrl } from '@/config/baseUrl';
 // Base API configuration
@@ -31,6 +32,7 @@ export const CartProvider = ({ children }) => {
     const [cartItems, setCartItems] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
+    const { shopInfo } = useShopInfo();
     const cartApi = createCartApi();
     const refreshCart = async () => {
         const token = localStorage.getItem('authToken');
@@ -85,6 +87,15 @@ export const CartProvider = ({ children }) => {
         }
     };
     const addToCart = async (productId, quantity = 1, colorName) => {
+        if (shopInfo?.enable_add_to_cart_btn === false || shopInfo?.enable_add_to_cart_btn === 0 || shopInfo?.enable_add_to_cart_btn === '0') {
+            toast({
+                title: 'Notice',
+                description: 'Delivery partners are not available now. Please try again later.',
+                variant: 'destructive',
+            });
+            return false;
+        }
+
         try {
             const payload = { productId, quantity };
             if (colorName) {

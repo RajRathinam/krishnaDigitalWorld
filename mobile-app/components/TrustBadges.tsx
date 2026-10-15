@@ -92,17 +92,14 @@ export const TrustBadges = () => {
     return (
         <View className="px-5 py-4">
             {/* Section Header */}
-            <Animated.View
-                entering={FadeInDown.duration(600).springify()}
-                className="mb-5"
-            >
+            <View className="mb-5">
                 <Text className="text-lg font-bold text-gray-800 text-center">
                     Why Shop With Us?
                 </Text>
                 <View className="flex-row justify-center mt-1">
                     <View className="w-12 h-1 bg-yellow-400 rounded-full" />
                 </View>
-            </Animated.View>
+            </View>
 
             <View className="bg-white rounded-3xl shadow-xl border border-gray-100/80 overflow-hidden">
                 {/* Decorative top bar */}

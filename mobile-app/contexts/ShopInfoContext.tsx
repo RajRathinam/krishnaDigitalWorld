@@ -38,14 +38,16 @@ export const ShopInfoProvider = ({ children }: { children: React.ReactNode }) =>
           supportEmail: response.data.supportEmail,
           supportPhone: response.data.supportPhone,
           whatsappNumber: response.data.whatsappNumber,
-          isActive: response.data.isActive
+          isActive: response.data.isActive,
+          enable_add_to_cart_btn: response.data.enable_add_to_cart_btn !== undefined ? (response.data.enable_add_to_cart_btn === 1 || response.data.enable_add_to_cart_btn === true || response.data.enable_add_to_cart_btn === '1') : true
         });
       } else {
         setShopInfo({
           shopName: 'Krishna Digital World',
           country: 'India',
           currency: 'INR',
-          locations: []
+          locations: [],
+          enable_add_to_cart_btn: true
         });
       }
     } catch (error) {
@@ -54,7 +56,8 @@ export const ShopInfoProvider = ({ children }: { children: React.ReactNode }) =>
         shopName: 'Krishna Digital World',
         country: 'India',
         currency: 'INR',
-        locations: []
+        locations: [],
+        enable_add_to_cart_btn: true
       });
     } finally {
       setLoading(false);

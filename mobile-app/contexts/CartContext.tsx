@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useMemo } from '
 import { Alert } from 'react-native';
 import { cartApi } from '@/services/api';
 import { useAuth } from './AuthContext';
+import { useShopInfo } from './ShopInfoContext';
 
 interface CartItem {
   productId: string;
@@ -12,6 +13,8 @@ interface CartItem {
   image?: string;
   colorName?: string;
   product?: any;
+  isOutOfStock?: boolean;
+  availableStock?: number;
 }
 
 interface CartData {
@@ -39,6 +42,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, logout } = useAuth();
+  const { shopInfo } = useShopInfo();
   const [cart, setCart] = useState<CartData>(emptyCart);
   const [isLoading, setIsLoading] = useState(false);
   const [isUpdating, setIsUpdating] = useState<Record<string, boolean>>({});
@@ -79,6 +83,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [user]);
 
   const addToCart = async (productId: string, quantity: number = 1, colorName?: string, imageUrl?: string) => {
+    if (shopInfo?.enable_add_to_cart_btn === false || shopInfo?.enable_add_to_cart_btn === 0 || shopInfo?.enable_add_to_cart_btn === '0') {
+      Alert.alert('Notice', 'Delivery partners are not available now. Please try again later.');
+      return false;
+    }
+
     if (!user) {
       Alert.alert('Sign In Required', 'Please sign in to add items to your cart.');
       return false;

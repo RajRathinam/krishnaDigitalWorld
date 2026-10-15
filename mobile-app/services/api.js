@@ -1,7 +1,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://192.168.0.104:5000';
+export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://192.168.0.105:5000';
 const API_URL = `${API_BASE_URL}/api`;
 
 const api = axios.create({
@@ -54,6 +54,45 @@ async function publicPostJson(path, body) {
   return data;
 }
 
+let currentNetworkStatus = true;
+
+const networkListeners = new Set();
+
+export const subscribeNetworkStatus = (listener) => {
+  networkListeners.add(listener);
+  return () => {
+    networkListeners.delete(listener);
+  };
+};
+
+export const notifyNetworkStatus = (isOnline) => {
+  // Guard: ONLY broadcast when status actually changes!
+  if (currentNetworkStatus === isOnline) {
+    return;
+  }
+  currentNetworkStatus = isOnline;
+  networkListeners.forEach((fn) => {
+    try {
+      fn(isOnline);
+    } catch (e) {
+      console.warn('Network listener error:', e);
+    }
+  });
+};
+
+publicApi.interceptors.response.use(
+  (res) => {
+    notifyNetworkStatus(true);
+    return res;
+  },
+  async (error) => {
+    if (!error.response || error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
+      notifyNetworkStatus(false);
+    }
+    return Promise.reject(error);
+  }
+);
+
 api.interceptors.request.use(
   async (config) => {
     const token = await AsyncStorage.getItem('authToken');
@@ -66,8 +105,14 @@ api.interceptors.request.use(
 );
 
 api.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    notifyNetworkStatus(true);
+    return res;
+  },
   async (error) => {
+    if (!error.response || error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
+      notifyNetworkStatus(false);
+    }
     const status = error.response?.status;
     if (status === 401 && error.config) {
       const url = String(error.config.url || '');
@@ -81,6 +126,10 @@ api.interceptors.response.use(
         await AsyncStorage.removeItem('authToken');
         await AsyncStorage.removeItem('user');
       }
+    }
+    // Propagate the backend's user-friendly error message if available
+    if (error.response?.data?.message) {
+      error.message = error.response.data.message;
     }
     return Promise.reject(error);
   }

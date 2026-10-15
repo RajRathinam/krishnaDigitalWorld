@@ -1,4 +1,5 @@
 import { User, Otp, Coupon, UserCoupon } from '../models/index.js';
+import { Op } from 'sequelize';
 import { generateToken } from '../utils/jwt.js';
 import { generateSlug } from '../utils/slugGenerator.js';
 import { createOTP, verifyOTP } from './otpService.js';
@@ -671,6 +672,33 @@ export const updateUserProfile = async (userId, updateData, uploadedFiles = null
       };
     }
 
+    // Handle email updates & validate uniqueness
+    if (updateData.email !== undefined) {
+      const trimmedEmail = typeof updateData.email === 'string' ? updateData.email.trim().toLowerCase() : '';
+      if (trimmedEmail) {
+        // If email is changed, check if it's already used by another user
+        if (trimmedEmail !== (user.email || '').toLowerCase()) {
+          const existingUserWithEmail = await User.findOne({
+            where: {
+              email: trimmedEmail,
+              id: { [Op.ne]: userId }
+            }
+          });
+
+          if (existingUserWithEmail) {
+            return {
+              success: false,
+              message: 'This email is already registered with another account'
+            };
+          }
+        }
+        updateData.email = trimmedEmail;
+      } else {
+        // Clear email if empty string is supplied
+        updateData.email = null;
+      }
+    }
+
     // Update user
     await user.update(updateData);
 
@@ -696,17 +724,17 @@ export const updateUserProfile = async (userId, updateData, uploadedFiles = null
       }
     };
   } catch (error) {
-    console.error('Error updating user profile:', error);
-
-    // Handle unique constraint errors
+    // Handle unique constraint errors cleanly without logging as unhandled server crash
     if (error.name === 'SequelizeUniqueConstraintError') {
-      const field = error.errors[0].path;
+      const field = error.errors?.[0]?.path || 'field';
+      const capitalizedField = field.charAt(0).toUpperCase() + field.slice(1);
       return {
         success: false,
-        message: `${field} already exists`
+        message: `${capitalizedField} is already registered with another account`
       };
     }
 
+    console.error('Error updating user profile:', error);
     throw error;
   }
 };

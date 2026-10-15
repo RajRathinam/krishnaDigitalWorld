@@ -3,6 +3,7 @@ import { View, Text, Pressable, TouchableOpacity, ActivityIndicator, Alert } fro
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useCart } from '@/contexts/CartContext';
+import { useShopInfo } from '@/contexts/ShopInfoContext';
 import { useWishlist } from '@/contexts/WishlistContext';
 import { ShoppingCart, Heart, Star, Check } from 'lucide-react-native';
 import { API_BASE_URL } from '@/services/api';
@@ -31,6 +32,7 @@ interface ProductCardProps {
 export default function ProductCard({ product, onPress, isCompact }: ProductCardProps) {
   const router = useRouter();
   const { cart, addToCart } = useCart();
+  const { shopInfo } = useShopInfo();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const [isAdding, setIsAdding] = React.useState(false);
   const [showSuccess, setShowSuccess] = React.useState(false);
@@ -101,6 +103,11 @@ export default function ProductCard({ product, onPress, isCompact }: ProductCard
   };
 
   const handleAddToCart = async () => {
+    if (shopInfo?.enable_add_to_cart_btn === false || shopInfo?.enable_add_to_cart_btn === 0 || shopInfo?.enable_add_to_cart_btn === '0') {
+      Alert.alert('Notice', 'Delivery partners are not available now. Please try again later.');
+      return;
+    }
+
     const colorsAndImages = parseJSONSafe(product.colorsAndImages, {});
     const colorNames = Object.keys(colorsAndImages);
     const defaultColor = colorNames.length > 0 ? colorNames[0] : undefined;
@@ -124,11 +131,13 @@ export default function ProductCard({ product, onPress, isCompact }: ProductCard
 
     setIsAdding(true);
     try {
-      await addToCart(productIdStr, 1, defaultColor);
-      setShowSuccess(true);
-      setTimeout(() => {
-        setShowSuccess(false);
-      }, 1200);
+      const success = await addToCart(productIdStr, 1, defaultColor);
+      if (success) {
+        setShowSuccess(true);
+        setTimeout(() => {
+          setShowSuccess(false);
+        }, 1200);
+      }
     } finally {
       setIsAdding(false);
     }
@@ -188,27 +197,29 @@ export default function ProductCard({ product, onPress, isCompact }: ProductCard
       </View>
 
       {/* Content Container */}
-      <View className="flex-col flex-1">
-        {/* Title */}
-        <Text className="text-gray-900 font-medium text-sm leading-snug mb-2" numberOfLines={2} style={{ minHeight: 40 }}>
-          {name}
-        </Text>
+      <View className="flex-col flex-1 justify-between">
+        <View>
+          {/* Title */}
+          <Text className="text-gray-900 font-medium text-sm leading-snug mb-1.5" numberOfLines={2} style={{ minHeight: 38 }}>
+            {name}
+          </Text>
 
-        {/* Rating */}
-        <View className="flex-row items-center mb-2 gap-0.5">
-          {[1, 2, 3, 4, 5].map((star) => (
-            <Star 
-              key={star} 
-              size={12} 
-              color={star <= Math.floor(rating) ? "#EAB308" : star <= rating ? "#EAB308" : "#E5E7EB"}
-              fill={star <= Math.floor(rating) ? "#EAB308" : star <= rating ? "rgba(234,179,8,0.5)" : "#E5E7EB"}
-            />
-          ))}
+          {/* Rating */}
+          <View className="flex-row items-center mb-2 gap-0.5">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Star 
+                key={star} 
+                size={12} 
+                color={star <= Math.floor(rating) ? "#EAB308" : star <= rating ? "#EAB308" : "#E5E7EB"}
+                fill={star <= Math.floor(rating) ? "#EAB308" : star <= rating ? "rgba(234,179,8,0.5)" : "#E5E7EB"}
+              />
+            ))}
+          </View>
         </View>
 
         {/* Price section */}
-        <View className="mt-auto">
-          <View className="flex-col gap-2 mb-4">
+        <View className="mt-2">
+          <View className="flex-col gap-2 mb-3">
             <View className="flex-row items-center gap-2 flex-wrap">
               <Text className="text-gray-900 font-bold text-base leading-none">
                 {formatPrice(price)}
