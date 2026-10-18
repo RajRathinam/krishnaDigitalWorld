@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Bell, Truck, PackageCheck, PackageSearch, Ticket } from "lucide-react";
 import { notificationApi } from "@/services/api";
 import { toast } from "@/hooks/use-toast";
@@ -25,6 +26,7 @@ const formatDate = (dateStr) => {
 };
 
 export default function AccountNotifications() {
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -60,14 +62,22 @@ export default function AccountNotifications() {
   };
 
   const handleItemClick = async (notification) => {
-    if (notification.isRead) return;
-    try {
-      await notificationApi.markRead(notification.id);
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === notification.id ? { ...n, isRead: true } : n))
-      );
-    } catch {
-      // non-critical, ignore
+    if (!notification.isRead) {
+      try {
+        await notificationApi.markRead(notification.id);
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === notification.id ? { ...n, isRead: true } : n))
+        );
+      } catch {
+        // non-critical, ignore
+      }
+    }
+
+    const data = notification.data || {};
+    if (data.orderId) {
+      navigate(`/account/orders/${data.orderId}`);
+    } else if (notification.type === "coupon" || data.couponId) {
+      navigate(`/account/coupons`);
     }
   };
 

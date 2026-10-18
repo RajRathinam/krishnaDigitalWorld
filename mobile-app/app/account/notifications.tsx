@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft, Bell, Truck, PackageCheck, PackageSearch, Ticket } from 'lucide-react-native';
 import Header from '@/components/Header';
-import { useNavigation } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
 import { notificationApi } from '@/services/api';
 
 const ICONS: Record<string, { icon: any; color: string; bg: string }> = {
@@ -29,6 +29,7 @@ const formatDate = (dateStr?: string) => {
 
 export default function NotificationsScreen() {
   const navigation = useNavigation();
+  const router = useRouter();
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -60,14 +61,22 @@ export default function NotificationsScreen() {
   };
 
   const handlePress = async (notification: any) => {
-    if (notification.isRead) return;
-    try {
-      await notificationApi.markRead(notification.id);
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === notification.id ? { ...n, isRead: true } : n))
-      );
-    } catch {
-      // non-critical
+    if (!notification.isRead) {
+      try {
+        await notificationApi.markRead(notification.id);
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === notification.id ? { ...n, isRead: true } : n))
+        );
+      } catch {
+        // non-critical
+      }
+    }
+
+    const data = notification.data || {};
+    if (data.orderId) {
+      router.push(`/account/orders/${data.orderId}`);
+    } else if (notification.type === 'coupon' || data.couponId) {
+      router.push('/account/coupons');
     }
   };
 
