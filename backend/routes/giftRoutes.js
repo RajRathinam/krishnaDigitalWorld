@@ -7,7 +7,8 @@ import {
   deleteGift,
   scanOfflineGift,
   getOfflineClaims,
-  updateClaimStatus
+  updateClaimStatus,
+  getMyClaimedGifts
 } from '../controllers/giftController.js';
 import { authenticate, requireAdminOrSubadmin } from '../middleware/auth.js';
 import { uploadSingleImage, processUploadedFiles } from '../middleware/upload.js';
@@ -15,7 +16,16 @@ import { uploadSingleImage, processUploadedFiles } from '../middleware/upload.js
 const router = express.Router();
 
 // Offline scan (User needs to be authenticated)
-router.post('/scan-offline', authenticate, scanOfflineGift);
+router.post(
+  '/scan-offline',
+  authenticate,
+  uploadSingleImage('profileImage', 'profiles'),
+  processUploadedFiles,
+  scanOfflineGift
+);
+
+// Logged-in user's own claimed gifts (must come before the /:id param route)
+router.get('/my-claims', authenticate, getMyClaimedGifts);
 
 // Admin claims routes
 router.get('/claims', authenticate, requireAdminOrSubadmin, getOfflineClaims);

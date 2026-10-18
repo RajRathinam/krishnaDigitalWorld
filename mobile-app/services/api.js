@@ -340,9 +340,45 @@ export const brandApi = {
   },
 };
 
+export const notificationApi = {
+  getMyNotifications: async () => {
+    const response = await api.get('/notifications');
+    return response.data;
+  },
+  markRead: async (id) => {
+    const response = await api.patch(`/notifications/${id}/read`);
+    return response.data;
+  },
+  markAllRead: async () => {
+    const response = await api.patch('/notifications/read-all');
+    return response.data;
+  },
+};
+
 export const giftApi = {
-  scanOfflineGift: async (qrData) => {
-    const response = await api.post('/gifts/scan-offline', { secretKey: qrData });
+  scanOfflineGift: async ({ secretKey, billNumber, purchasedAmount, profileImage }) => {
+    const formData = new FormData();
+    formData.append('secretKey', secretKey);
+    formData.append('billNumber', billNumber);
+    formData.append('purchasedAmount', purchasedAmount);
+
+    if (profileImage) {
+      const uriParts = profileImage.uri.split('.');
+      const fileType = uriParts[uriParts.length - 1];
+      formData.append('profileImage', {
+        uri: profileImage.uri,
+        name: `profile.${fileType}`,
+        type: `image/${fileType === 'png' ? 'png' : 'jpeg'}`,
+      });
+    }
+
+    const response = await api.post('/gifts/scan-offline', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+  getMyClaimedGifts: async () => {
+    const response = await api.get('/gifts/my-claims');
     return response.data;
   },
 };

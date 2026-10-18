@@ -129,6 +129,31 @@ const ShopInfo = sequelize.define('ShopInfo', {
   isActive: {
     type: DataTypes.BOOLEAN,
     defaultValue: true
+  },
+  // App force-update control
+  minAppVersionCode: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    comment: 'Minimum Android versionCode allowed to use the app. Below this, app is blocked until update.'
+  },
+  latestAppVersionCode: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    comment: 'Latest published Android versionCode. Used to show a (dismissible) update-available prompt.'
+  },
+  forceUpdateEnabled: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    comment: 'When true, versions below minAppVersionCode are blocked from using the app'
+  },
+  playStoreUrl: {
+    type: DataTypes.STRING(500),
+    allowNull: true
+  },
+  appUpdateMessage: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    comment: 'Custom message shown on the force-update screen'
   }
 }, {
   tableName: 'shop_info',

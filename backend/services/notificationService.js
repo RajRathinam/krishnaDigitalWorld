@@ -1,4 +1,5 @@
 import { Expo } from 'expo-server-sdk';
+import Notification from '../models/Notification.js';
 
 // Create a new Expo SDK client
 // optionally providing an access token if you have enabled push security
@@ -56,5 +57,28 @@ export const sendPushNotification = async (pushToken, title, body, data = {}) =>
   } catch (error) {
     console.error('Error in sendPushNotification service:', error);
     return false;
+  }
+};
+
+/**
+ * Notify a user: persists the notification so it shows in their in-app
+ * notifications list, and also sends a push alert if they have a device token.
+ * @param {object} params
+ * @param {number} params.userId
+ * @param {'order_shipped'|'order_delivered'|'order_status'|'coupon'} params.type
+ * @param {string} params.title
+ * @param {string} params.body
+ * @param {object} [params.data]
+ * @param {string|null} [params.pushToken]
+ */
+export const notifyUser = async ({ userId, type, title, body, data = {}, pushToken = null }) => {
+  try {
+    await Notification.create({ userId, type, title, body, data });
+  } catch (error) {
+    console.error('Error saving notification record:', error);
+  }
+
+  if (pushToken) {
+    await sendPushNotification(pushToken, title, body, data);
   }
 };

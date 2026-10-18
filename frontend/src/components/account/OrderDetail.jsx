@@ -896,6 +896,16 @@ export default function OrderDetail() {
             <SectionCard title="Tracking Info" icon={Truck} delay={0.38}>
               {order.trackingId        && <InfoRow label="Tracking ID"   value={order.trackingId}                          mono />}
               {order.estimatedDelivery && <InfoRow label="Est. Delivery" value={formatDateShort(order.estimatedDelivery)} highlight />}
+              {order.deliveryPersonPhone && (
+                <InfoRow
+                  label="Delivery Person"
+                  value={
+                    <a href={`tel:${order.deliveryPersonPhone}`} className="text-primary hover:underline">
+                      {order.deliveryPersonPhone}
+                    </a>
+                  }
+                />
+              )}
               {order.orderStatus === "shipped" && (
                 <motion.div
                   initial={{ opacity: 0 }}
@@ -945,11 +955,6 @@ export default function OrderDetail() {
                   <div className="flex-1 relative z-10 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
                       <p className="text-sm font-black text-gray-900 leading-none">You won a</p>
-                      {order.gift?.cadre && (
-                        <span className="text-[10px] uppercase font-bold bg-pink-100 text-pink-700 px-1.5 py-0.5 rounded shadow-sm border border-pink-200">
-                          {order.gift.cadre} Tier
-                        </span>
-                      )}
                     </div>
                     <p className="text-lg font-black text-pink-700 leading-tight truncate">
                       {order.gift?.productName || 'Surprise Gift'}

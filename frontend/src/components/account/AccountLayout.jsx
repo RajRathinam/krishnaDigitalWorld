@@ -4,13 +4,15 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
-import { User, Package, Heart, LogOut, MapPin, ChevronRight, Ticket } from "lucide-react";
+import { User, Package, Heart, LogOut, MapPin, ChevronRight, Ticket, Gift, Bell } from "lucide-react";
 
 const menuItems = [
   { id: "profile", label: "Profile", icon: User, path: "/account/profile" },
   { id: "orders", label: "My Orders", icon: Package, path: "/account/orders" },
   { id: "coupons", label: "Coupons", icon: Ticket, path: "/account/coupons" },
   { id: "wishlist", label: "Wishlist", icon: Heart, path: "/account/wishlist" },
+  { id: "claimed-gifts", label: "Claimed Gifts", icon: Gift, path: "/account/claimed-gifts" },
+  { id: "notifications", label: "Notifications", icon: Bell, path: "/account/notifications" },
   { id: "addresses", label: "Addresses", icon: MapPin, path: "/account/addresses" },
 ];
 
@@ -27,6 +29,8 @@ export function AccountLayout() {
     else if (path.includes('/orders')) setActiveTab('orders');
     else if (path.includes('/coupons')) setActiveTab('coupons');
     else if (path.includes('/wishlist')) setActiveTab('wishlist');
+    else if (path.includes('/claimed-gifts')) setActiveTab('claimed-gifts');
+    else if (path.includes('/notifications')) setActiveTab('notifications');
     else if (path.includes('/addresses')) setActiveTab('addresses');
   }, [location.pathname]);
 

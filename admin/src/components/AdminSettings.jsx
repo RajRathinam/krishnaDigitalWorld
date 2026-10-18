@@ -49,6 +49,11 @@ const [activeTab, setActiveTab] = useState(isAdmin ? "subadmins" : "shop-info");
     email: '',
     enableOnlineGifts: true,
     enable_add_to_cart_btn: true,
+    forceUpdateEnabled: false,
+    minAppVersionCode: '',
+    latestAppVersionCode: '',
+    playStoreUrl: '',
+    appUpdateMessage: '',
     phone: '',
     alternatePhone: '',
     address: '',
@@ -485,6 +490,64 @@ const [activeTab, setActiveTab] = useState(isAdmin ? "subadmins" : "shop-info");
                           toast({ title: "Error", description: "Failed to update setting", variant: "destructive" });
                         }
                       }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* App Update Control */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">App Update Control</h3>
+                <div className="border rounded-lg p-4 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-base">Force Update</Label>
+                      <p className="text-sm text-muted-foreground">
+                        When enabled, users on a version below "Minimum Supported Version Code" cannot use the app until they update.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={shopInfo.forceUpdateEnabled === true || shopInfo.forceUpdateEnabled === 1 || shopInfo.forceUpdateEnabled === '1'}
+                      onCheckedChange={(checked) => setShopInfo(prev => ({ ...prev, forceUpdateEnabled: checked }))}
+                    />
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Minimum Supported Version Code</Label>
+                      <Input
+                        type="number"
+                        value={shopInfo.minAppVersionCode ?? ''}
+                        onChange={(e) => setShopInfo(prev => ({ ...prev, minAppVersionCode: e.target.value === '' ? '' : Number(e.target.value) }))}
+                        placeholder="e.g. 3"
+                      />
+                      <p className="text-xs text-muted-foreground">Android versionCode (app.json → android.versionCode) of the oldest version still allowed.</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Latest Version Code</Label>
+                      <Input
+                        type="number"
+                        value={shopInfo.latestAppVersionCode ?? ''}
+                        onChange={(e) => setShopInfo(prev => ({ ...prev, latestAppVersionCode: e.target.value === '' ? '' : Number(e.target.value) }))}
+                        placeholder="e.g. 4"
+                      />
+                      <p className="text-xs text-muted-foreground">versionCode of the version currently live on Play Store.</p>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Play Store URL</Label>
+                    <Input
+                      value={shopInfo.playStoreUrl || ''}
+                      onChange={(e) => setShopInfo(prev => ({ ...prev, playStoreUrl: e.target.value }))}
+                      placeholder="https://play.google.com/store/apps/details?id=com.srikrishnadigital.app"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Update Message</Label>
+                    <Textarea
+                      value={shopInfo.appUpdateMessage || ''}
+                      onChange={(e) => setShopInfo(prev => ({ ...prev, appUpdateMessage: e.target.value }))}
+                      rows={2}
+                      placeholder="A new version is available. Please update to continue using the app."
                     />
                   </div>
                 </div>

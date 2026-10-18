@@ -31,6 +31,8 @@ import AccountProfile from "@/components/account/AccountProfile";
 import AccountOrders from "@/components/account/AccountOrders";
 import { AccountCoupons } from "@/components/account/AccountCoupons";
 import AccountWishlist from "@/components/account/AccountWishlist";
+import AccountClaimedGifts from "@/components/account/AccountClaimedGifts";
+import AccountNotifications from "@/components/account/AccountNotifications";
 import AccountAddresses from "@/components/account/AccountAddresses";
 import OrderDetail from "./components/account/OrderDetail";
 // Import new policy pages
@@ -150,6 +152,8 @@ const App = () => {
                       <Route path="/account/orders/:id" element={<OrderDetail />} />
                       <Route path="coupons" element={<AccountCoupons />} />
                       <Route path="wishlist" element={<AccountWishlist />} />
+                      <Route path="claimed-gifts" element={<AccountClaimedGifts />} />
+                      <Route path="notifications" element={<AccountNotifications />} />
                       <Route path="addresses" element={<AccountAddresses />} />
                     </Route>
 

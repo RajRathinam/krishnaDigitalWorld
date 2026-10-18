@@ -18,6 +18,14 @@ const OfflineGiftClaim = sequelize.define('OfflineGiftClaim', {
   status: {
     type: DataTypes.STRING(20),
     allowNull: false
+  },
+  billNumber: {
+    type: DataTypes.STRING(100),
+    allowNull: true
+  },
+  purchasedAmount: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: true
   }
 }, {
   tableName: 'offline_gift_claims',

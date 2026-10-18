@@ -1,13 +1,8 @@
 /**
- * HeroSlider — Innovated
+ * HeroSlider — Split dual-banner hero
  *
- * Design direction: Cinematic editorial
- * - Clip-path wipe transitions instead of plain fade
- * - Floating glassmorphism content card (not locked to bottom)
- * - Animated SVG progress ring per slide
- * - Staggered text reveal on slide change
- * - Floating accent pill that morphs between slides
- * - Magnetic-feel CTA button on hover
+ * Shows two banners side-by-side (desktop) and stacked (mobile).
+ * Pages through slides two at a time, with autoplay, dots and arrow nav.
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -16,7 +11,7 @@ import { Link } from "react-router-dom";
 import { heroSliderApi } from "@/services/api";
 import { getImageUrl } from "@/lib/utils";
 
-const AUTO_PLAY_INTERVAL = 5000;
+const AUTO_PLAY_INTERVAL = 6000;
 const PAUSE_RESUME_DELAY = 10000;
 
 const DEFAULT_SLIDES = [
@@ -24,70 +19,88 @@ const DEFAULT_SLIDES = [
     id: "def-1",
     title: "Transform Your Living Space",
     subtitle: "Premium furniture & home decor at unbeatable prices",
-    cta: "Shop Living Room",
+    cta: "Shop Now",
     ctaLink: "/products?category=furniture",
     image: "/hero-slider/sk_Furiture.png",
-    accent: "Up to 50% Off",
+    accent: "UP TO 35% OFF",
     isDefault: true,
-    color: "from-amber-900/80 to-orange-900/60",
-    tag: "Furniture",
   },
   {
     id: "def-2",
     title: "Smart Kitchen Essentials",
     subtitle: "Modern appliances for the contemporary home chef",
-    cta: "Explore Kitchen",
+    cta: "Shop Now",
     ctaLink: "/products?category=kitchen",
     image: "/hero-slider/sk_Electronics.png",
-    accent: "New Arrivals",
+    accent: "UP TO 40% OFF",
     isDefault: true,
-    color: "from-blue-900/80 to-indigo-900/60",
-    tag: "Electronics",
   },
   {
     id: "def-3",
     title: "Summer Cooling Solutions",
     subtitle: "Beat the heat with energy-efficient ACs & coolers",
-    cta: "View Collection",
+    cta: "Shop Now",
     ctaLink: "/products?category=home-appliances",
     image: "/hero-slider/sk_Furiture.png",
     accent: "Starting ₹15,999",
     isDefault: true,
-    color: "from-cyan-900/80 to-teal-900/60",
-    tag: "Appliances",
   },
 ];
 
-// SVG progress ring for the nav buttons
-const ProgressRing = ({ progress, size = 44, stroke = 2.5 }) => {
-  const r = (size - stroke * 2) / 2;
-  const circ = 2 * Math.PI * r;
+function BannerCard({ slide, hiddenOnMobile = false }) {
   return (
-    <svg width={size} height={size} className="absolute inset-0 -rotate-90">
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth={stroke} />
-      <circle
-        cx={size / 2} cy={size / 2} r={r} fill="none"
-        stroke="rgba(255,255,255,0.9)" strokeWidth={stroke}
-        strokeDasharray={circ}
-        strokeDashoffset={circ - (circ * progress) / 100}
-        strokeLinecap="round"
-        style={{ transition: "stroke-dashoffset 0.1s linear" }}
+    <Link
+      to={slide.ctaLink || "#"}
+      className={`group relative flex-1 min-w-0 rounded-2xl overflow-hidden ${hiddenOnMobile ? "hidden sm:block" : ""}`}
+      style={{ height: "clamp(220px, 32vw, 400px)" }}
+      aria-label={slide.title}
+    >
+      <img
+        src={slide.isDefault ? slide.image : getImageUrl(slide.image)}
+        alt={slide.title}
+        className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
       />
-    </svg>
+      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+
+      {slide.accent && (
+        <div className="absolute top-4 right-4 sm:top-5 sm:right-5 z-10">
+          <div className="flex flex-col items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/95 shadow-lg text-center leading-none">
+            <span className="text-[9px] sm:text-[10px] font-bold text-foreground/70 uppercase">Up to</span>
+            <span className="text-sm sm:text-lg font-black text-accent-foreground" style={{ color: "hsl(45,100%,38%)" }}>
+              {slide.accent.replace(/up to/i, "").trim()}
+            </span>
+          </div>
+        </div>
+      )}
+
+      <div className="absolute bottom-0 left-0 right-0 z-10 p-4 sm:p-6">
+        <h3 className="text-lg sm:text-2xl md:text-3xl font-black text-white leading-tight mb-1.5 sm:mb-2"
+          style={{ textShadow: "0 2px 16px rgba(0,0,0,0.5)" }}>
+          {slide.title}
+        </h3>
+        {slide.subtitle && (
+          <p className="hidden sm:block text-xs sm:text-sm text-white/85 mb-3 sm:mb-4 max-w-xs">
+            {slide.subtitle}
+          </p>
+        )}
+        {slide.cta && (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-5 sm:py-2.5 rounded-full font-bold text-black text-xs sm:text-sm shadow-lg group-hover:gap-2.5 transition-all"
+            style={{ background: "hsl(45,100%,52%)" }}>
+            {slide.cta}
+            <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          </span>
+        )}
+      </div>
+    </Link>
   );
-};
+}
 
 export function HeroSlider() {
   const [slides, setSlides] = useState([]);
   const [loading, setLoading] = useState(true);
   const [current, setCurrent] = useState(0);
-  const [prev, setPrev] = useState(null);
-  const [direction, setDirection] = useState("next");
   const [isPlaying, setIsPlaying] = useState(true);
-  const [progress, setProgress] = useState(0);
-  const [textKey, setTextKey] = useState(0); // force re-animate text
-  const progressRef = useRef(null);
-  const startTimeRef = useRef(null);
+  const timerRef = useRef(null);
 
   useEffect(() => {
     (async () => {
@@ -102,95 +115,36 @@ export function HeroSlider() {
     })();
   }, []);
 
-  const goTo = useCallback((index, dir = "next") => {
-    setDirection(dir);
-    setPrev(current => current);
-    setCurrent(index);
-    setTextKey(k => k + 1);
-    setProgress(0);
-    startTimeRef.current = performance.now();
-  }, []);
+  const total = slides.length;
 
-  const next = useCallback(() => {
-    setCurrent(c => {
-      const n = (c + 1) % slides.length;
-      goTo(n, "next");
-      return c; // goTo will update
-    });
-  }, [slides.length, goTo]);
+  const goTo = useCallback((i) => {
+    setCurrent((((i % total) + total) % total));
+  }, [total]);
 
-  const nextSlide = useCallback(() => {
-    if (!slides.length) return;
-    setDirection("next");
-    setTextKey(k => k + 1);
-    setProgress(0);
-    startTimeRef.current = performance.now();
-    setCurrent(c => {
-      setPrev(c);
-      return (c + 1) % slides.length;
-    });
-  }, [slides.length]);
+  const nextSlide = useCallback(() => goTo(current + 1), [current, goTo]);
+  const prevSlide = useCallback(() => goTo(current - 1), [current, goTo]);
 
-  const prevSlide = useCallback(() => {
-    if (!slides.length) return;
-    setDirection("prev");
-    setTextKey(k => k + 1);
-    setProgress(0);
-    startTimeRef.current = performance.now();
-    setCurrent(c => {
-      setPrev(c);
-      return (c - 1 + slides.length) % slides.length;
-    });
-  }, [slides.length]);
-
-  const handleDot = (i) => {
+  const handleManualNav = (fn) => {
+    fn();
     setIsPlaying(false);
-    setDirection(i > current ? "next" : "prev");
-    setTextKey(k => k + 1);
-    setProgress(0);
-    setPrev(current);
-    setCurrent(i);
     setTimeout(() => setIsPlaying(true), PAUSE_RESUME_DELAY);
   };
 
-  // Progress tick
+  // Autoplay
   useEffect(() => {
-    if (!isPlaying || !slides.length) return;
-    startTimeRef.current = performance.now();
-    const tick = () => {
-      const elapsed = performance.now() - startTimeRef.current;
-      const p = Math.min((elapsed / AUTO_PLAY_INTERVAL) * 100, 100);
-      setProgress(p);
-      if (p < 100) {
-        progressRef.current = requestAnimationFrame(tick);
-      } else {
-        nextSlide();
-        startTimeRef.current = performance.now();
-      }
-    };
-    progressRef.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(progressRef.current);
-  }, [isPlaying, slides.length, current, nextSlide]);
-
-  // Keyboard
-  useEffect(() => {
-    const fn = (e) => {
-      if (e.key === "ArrowLeft") { prevSlide(); setIsPlaying(false); setTimeout(() => setIsPlaying(true), PAUSE_RESUME_DELAY); }
-      if (e.key === "ArrowRight") { nextSlide(); setIsPlaying(false); setTimeout(() => setIsPlaying(true), PAUSE_RESUME_DELAY); }
-    };
-    window.addEventListener("keydown", fn);
-    return () => window.removeEventListener("keydown", fn);
-  }, [nextSlide, prevSlide]);
+    if (!isPlaying || total <= 1) return;
+    timerRef.current = setTimeout(() => {
+      setCurrent((c) => (c + 1) % total);
+    }, AUTO_PLAY_INTERVAL);
+    return () => clearTimeout(timerRef.current);
+  }, [isPlaying, current, total]);
 
   if (loading) {
     return (
       <section className="p-3 sm:p-6 lg:px-5">
-        <div className="relative rounded-2xl w-full h-[250px] sm:h-[350px] lg:h-[530px] bg-gray-100 animate-pulse overflow-hidden">
-          <div className="absolute bottom-6 left-6 space-y-3">
-            <div className="h-4 w-24 bg-gray-200 rounded-full" />
-            <div className="h-8 w-64 bg-gray-200 rounded-lg" />
-            <div className="h-4 w-48 bg-gray-200 rounded" />
-          </div>
+        <div className="flex gap-3 sm:gap-5">
+          <div className="flex-1 rounded-2xl h-[220px] sm:h-[350px] bg-gray-100 animate-pulse" />
+          <div className="flex-1 rounded-2xl h-[220px] sm:h-[350px] bg-gray-100 animate-pulse hidden sm:block" />
         </div>
       </section>
     );
@@ -198,194 +152,53 @@ export function HeroSlider() {
 
   if (!slides.length) return null;
 
-  const slide = slides[current];
+  const secondSlide = total > 1 ? slides[(current + 1) % total] : null;
 
   return (
-    <section className="p-3 sm:p-5 lg:px-5">
-      <style>{`
-        @keyframes slideInRight {
-          from { transform: translateX(60px); opacity: 0; }
-          to   { transform: translateX(0);   opacity: 1; }
-        }
-        @keyframes slideInLeft {
-          from { transform: translateX(-60px); opacity: 0; }
-          to   { transform: translateX(0);     opacity: 1; }
-        }
-        @keyframes fadeUp {
-          from { transform: translateY(20px); opacity: 0; }
-          to   { transform: translateY(0);    opacity: 1; }
-        }
-        @keyframes clipIn {
-          from { clip-path: inset(0 100% 0 0); }
-          to   { clip-path: inset(0 0% 0 0);   }
-        }
-        @keyframes clipInLeft {
-          from { clip-path: inset(0 0 0 100%); }
-          to   { clip-path: inset(0 0 0 0%);   }
-        }
-        @keyframes float {
-          0%, 100% { transform: translateY(0px);  }
-          50%       { transform: translateY(-8px); }
-        }
-        @keyframes shimmer {
-          0%   { background-position: -200% center; }
-          100% { background-position:  200% center; }
-        }
-
-        .hero-img-in-next  { animation: clipIn     0.75s cubic-bezier(0.77,0,0.175,1) forwards; }
-        .hero-img-in-prev  { animation: clipInLeft 0.75s cubic-bezier(0.77,0,0.175,1) forwards; }
-        .text-tag    { animation: fadeUp       0.4s 0.2s ease both; }
-        .text-title  { animation: fadeUp       0.5s 0.35s ease both; }
-        .text-sub    { animation: fadeUp       0.45s 0.5s ease both; }
-        .text-cta    { animation: fadeUp       0.45s 0.65s ease both; }
-        .float-pill  { animation: float 4s ease-in-out infinite; }
-        .shimmer-btn {
-          background: linear-gradient(90deg, hsl(45,100%,50%) 0%, hsl(45,100%,70%) 45%, hsl(45,100%,50%) 100%);
-          background-size: 200% auto;
-          animation: shimmer 2.5s linear infinite;
-        }
-      `}</style>
-
-      <div
-        className="relative rounded-2xl w-full overflow-hidden mx-auto"
-        style={{ height: "clamp(200px, 48vw, 530px)" }}
-        onMouseEnter={() => setIsPlaying(false)}
-        onMouseLeave={() => setIsPlaying(true)}
-        aria-label="Hero banner carousel"
-      >
-        {/* ── Background images with clip-path transition ── */}
-        {slides.map((s, i) => (
-          <div
-            key={s.id}
-            className={`absolute inset-0 ${
-              i === current
-                ? direction === "next"
-                  ? "hero-img-in-next z-10"
-                  : "hero-img-in-prev z-10"
-                : "z-0"
-            }`}
-          >
-            <img
-              src={s.isDefault ? s.image : getImageUrl(s.image)}
-              alt={s.title}
-              className="w-full h-full object-fill"
-              loading={i === 0 ? "eager" : "lazy"}
-            />
-          </div>
-        ))}
-
-        {/* ── Floating accent pill (top-left) ── */}
-        <div className="absolute top-4 left-4 z-30 float-pill hidden sm:block">
-          <div
-            className="px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase text-black shadow-lg"
-            style={{ background: "hsl(45,100%,52%)" }}
-          >
-            {slide.accent || slide.tag || "Featured"}
-          </div>
+    <section
+      className="p-3 sm:p-5 lg:px-5"
+      onMouseEnter={() => setIsPlaying(false)}
+      onMouseLeave={() => setIsPlaying(true)}
+    >
+      <div className="relative">
+        <div className="flex flex-row gap-3 sm:gap-5">
+          <BannerCard key={slides[current].id} slide={slides[current]} />
+          {secondSlide && <BannerCard key={secondSlide.id} slide={secondSlide} hiddenOnMobile />}
         </div>
 
-        {/* ── Slide counter top-right ── */}
-        <div className="absolute top-4 right-4 z-30 hidden md:flex items-center gap-1.5">
-          <span className="text-white font-bold text-lg leading-none" style={{ fontVariantNumeric: "tabular-nums" }}>
-            {String(current + 1).padStart(2, "0")}
-          </span>
-          <span className="text-white/40 text-sm">/</span>
-          <span className="text-white/50 text-sm">{String(slides.length).padStart(2, "0")}</span>
-        </div>
-
-        {/* ── Content card (glassmorphism) ── */}
-        <div className="absolute bottom-0 left-0 right-0 z-20 p-4 sm:p-6 lg:p-8">
-          <div key={textKey} className="max-w-lg">
-       
-
-            {/* Title */}
-            <h2 className="text-title text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-white leading-tight mb-2 sm:mb-3 opacity-0"
-              style={{ textShadow: "0 2px 20px rgba(0,0,0,0.5)" }}>
-              {slide.title}
-            </h2>
-
-            {/* Subtitle */}
-            {slide.subtitle && (
-              <p className="text-sub hidden sm:block text-sm md:text-base text-white/80 mb-4 md:mb-5 max-w-sm opacity-0">
-                {slide.subtitle}
-              </p>
-            )}
-
-            {/* CTA */}
-            {slide.cta && (
-              <div className="text-cta opacity-0">
-                <Link
-                  to={slide.ctaLink || "#"}
-                  className="shimmer-btn inline-flex text-xs items-center gap-1 px-3 py-1.5 sm:px-6 sm:py-3 rounded-full font-bold text-black text-sm shadow-xl hover:scale-105 transition-transform duration-200 group"
-                >
-                  {slide.cta}
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </Link>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* ── Left nav button with progress ring ── */}
-        <button
-          onClick={() => { prevSlide(); setIsPlaying(false); setTimeout(() => setIsPlaying(true), PAUSE_RESUME_DELAY); }}
-          className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-30 w-11 h-11 items-center justify-center"
-          aria-label="Previous slide"
-        >
-          <ProgressRing progress={100 - progress} />
-          <div className="relative w-8 h-8 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center hover:bg-white/30 transition-colors">
-            <ChevronLeft className="w-4 h-4 text-white" />
-          </div>
-        </button>
-
-        {/* ── Right nav button with progress ring ── */}
-        <button
-          onClick={() => { nextSlide(); setIsPlaying(false); setTimeout(() => setIsPlaying(true), PAUSE_RESUME_DELAY); }}
-          className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-30 w-11 h-11 items-center justify-center"
-          aria-label="Next slide"
-        >
-          <ProgressRing progress={progress} />
-          <div className="relative w-8 h-8 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center hover:bg-white/30 transition-colors">
-            <ChevronRight className="w-4 h-4 text-white" />
-          </div>
-        </button>
-
-        {/* ── Dot indicators ── */}
-        <div className="absolute bottom-4 right-4 md:right-16 z-30 flex items-center gap-1.5 md:bottom-6">
-          {slides.map((_, i) => (
+        {total > 1 && (
+          <>
             <button
-              key={i}
-              onClick={() => handleDot(i)}
-              aria-label={`Slide ${i + 1}`}
-              className="relative overflow-hidden rounded-full transition-all duration-300"
-              style={{
-                width: i === current ? 22 : 6,
-                height: 6,
-                background: i === current ? "rgba(242,233,234)" : "rgba(255,255,255,0.4)",
-              }}
+              onClick={() => handleManualNav(prevSlide)}
+              className="hidden md:flex absolute -left-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center rounded-full bg-white shadow-lg hover:scale-110 transition-transform"
+              aria-label="Previous banner"
             >
-              {/* fill bar on active */}
-              {i === current && (
-                <span
-                  className="absolute inset-y-0 left-0 rounded-full"
+              <ChevronLeft className="w-5 h-5 text-foreground" />
+            </button>
+            <button
+              onClick={() => handleManualNav(nextSlide)}
+              className="hidden md:flex absolute -right-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center rounded-full bg-white shadow-lg hover:scale-110 transition-transform"
+              aria-label="Next banner"
+            >
+              <ChevronRight className="w-5 h-5 text-foreground" />
+            </button>
+
+            <div className="flex items-center justify-center gap-1.5 mt-4">
+              {slides.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => handleManualNav(() => goTo(i))}
+                  aria-label={`Banner ${i + 1}`}
+                  className="h-1.5 rounded-full transition-all duration-300"
                   style={{
-                    width: `${progress}%`,
-                    background: "rgba(0,0,0,0.25)",
-                    transition: "width 0.1s linear",
+                    width: i === current ? 22 : 6,
+                    background: i === current ? "hsl(45,100%,52%)" : "rgba(0,0,0,0.15)",
                   }}
                 />
-              )}
-            </button>
-          ))}
-        </div>
-
-        {/* ── Mobile bottom bar with thin progress line ── */}
-        <div className="md:hidden absolute bottom-0 left-0 right-0 h-0.5 bg-white/20 z-30">
-          <div
-            className="h-full bg-yellow-400 transition-none rounded-full"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </section>
   );

@@ -18,6 +18,7 @@ import Sequelize from 'sequelize';
 import Advertisement from './Advertisement.js';
 import Gift from './Gift.js';
 import OfflineGiftClaim from './OfflineGiftClaim.js';
+import Notification from './Notification.js';
 
 // Add associations if needed
 Advertisement.belongsTo(User, { as: 'creator', foreignKey: 'createdBy' });
@@ -83,6 +84,10 @@ Otp.belongsTo(User, { foreignKey: 'phone', targetKey: 'phone', as: 'user' });
 OfflineGiftClaim.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 OfflineGiftClaim.belongsTo(Gift, { foreignKey: 'giftId', as: 'gift' });
 
+// Notification associations
+Notification.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+User.hasMany(Notification, { foreignKey: 'userId', as: 'notifications' });
+
 // Export all models individually
 export {
   sequelize,
@@ -102,5 +107,6 @@ export {
   HeroSlider,
   Advertisement,
   Gift,
-  OfflineGiftClaim
+  OfflineGiftClaim,
+  Notification
 };

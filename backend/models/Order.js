@@ -77,6 +77,11 @@ const Order = sequelize.define('Order', {
     unique: true,
     allowNull: true
   },
+  deliveryPersonPhone: {
+    type: DataTypes.STRING(20),
+    allowNull: true,
+    field: 'delivery_person_phone'
+  },
   notes: {
     type: DataTypes.TEXT,
     allowNull: true

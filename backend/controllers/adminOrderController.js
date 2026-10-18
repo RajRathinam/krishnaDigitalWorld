@@ -2,7 +2,7 @@ import { Order, User, Product, Coupon, Gift, sequelize } from '../models/index.j
 import { Op, Sequelize } from 'sequelize'; // Add Sequelize import
 // import { sendOrderConfirmationEmail, sendOrderConfirmationSMS } from '../services/emailService.js';
 import { sendOrderShippedSMS, sendOrderDeliveredSMS } from '../services/smsService.js';
-import { sendPushNotification } from '../services/notificationService.js';
+import { notifyUser } from '../services/notificationService.js';
 
 // Helper: always returns a plain JS object for stock, handles both string and object
 const safeParseStock = (raw) => {
@@ -494,7 +494,7 @@ export const updateOrderStatus = async (req, res) => {
   const transaction = await sequelize.transaction();
 
   try {
-    const { status } = req.body;
+    const { status, deliveryPersonPhone } = req.body;
     const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
 
     if (!status || !validStatuses.includes(status)) {
@@ -502,6 +502,14 @@ export const updateOrderStatus = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: `Valid status is required. Allowed: ${validStatuses.join(', ')}`
+      });
+    }
+
+    if (status === 'shipped' && !deliveryPersonPhone) {
+      await transaction.rollback();
+      return res.status(400).json({
+        success: false,
+        message: 'Delivery person WhatsApp number is required to mark an order as shipped'
       });
     }
 
@@ -540,6 +548,10 @@ export const updateOrderStatus = async (req, res) => {
     // Generate tracking ID when shipping
     if (status === 'shipped' && !order.trackingId) {
       updateData.trackingId = `TRK${Date.now()}${Math.floor(Math.random() * 10000)}`;
+    }
+
+    if (status === 'shipped' && deliveryPersonPhone) {
+      updateData.deliveryPersonPhone = deliveryPersonPhone;
     }
 
     // Update payment status for COD orders when delivered
@@ -595,33 +607,38 @@ export const updateOrderStatus = async (req, res) => {
 
     if (status === 'shipped' && user) {
       await sendOrderShippedSMS(user.phone, order.orderNumber, order.trackingId);
-      if (user.expoPushToken) {
-        await sendPushNotification(
-          user.expoPushToken, 
-          'Order Shipped! 🚚', 
-          `Your order #${order.orderNumber} has been shipped. Track it with ID: ${order.trackingId}`,
-          { orderId: order.id }
-        );
-      }
+      const deliveryContactLine = order.deliveryPersonPhone
+        ? ` Delivery person contact: ${order.deliveryPersonPhone}.`
+        : '';
+      await notifyUser({
+        userId: user.id,
+        type: 'order_shipped',
+        title: 'Order Shipped! 🚚',
+        body: `Your order #${order.orderNumber} has been shipped. Track it with ID: ${order.trackingId}.${deliveryContactLine}`,
+        data: { orderId: order.id, deliveryPersonPhone: order.deliveryPersonPhone || null },
+        pushToken: user.expoPushToken
+      });
     } else if (status === 'delivered' && user) {
       await sendOrderDeliveredSMS(user.phone, order.orderNumber);
-      if (user.expoPushToken) {
-        await sendPushNotification(
-          user.expoPushToken, 
-          'Order Delivered! 🎉', 
-          `Your order #${order.orderNumber} has been delivered. Thank you for shopping with us!`,
-          { orderId: order.id }
-        );
-      }
-    } else if (user && user.expoPushToken) {
+      await notifyUser({
+        userId: user.id,
+        type: 'order_delivered',
+        title: 'Order Delivered! 🎉',
+        body: `Your order #${order.orderNumber} has been delivered. Thank you for shopping with us!`,
+        data: { orderId: order.id },
+        pushToken: user.expoPushToken
+      });
+    } else if (user) {
        // Send general status update for other statuses (optional, but good for processing, etc)
        const statusFormatted = status.charAt(0).toUpperCase() + status.slice(1);
-       await sendPushNotification(
-          user.expoPushToken, 
-          `Order ${statusFormatted}`, 
-          `The status of your order #${order.orderNumber} is now ${statusFormatted}.`,
-          { orderId: order.id }
-       );
+       await notifyUser({
+          userId: user.id,
+          type: 'order_status',
+          title: `Order ${statusFormatted}`,
+          body: `The status of your order #${order.orderNumber} is now ${statusFormatted}.`,
+          data: { orderId: order.id },
+          pushToken: user.expoPushToken
+       });
     }
 
     res.status(200).json({

@@ -395,6 +395,8 @@ export function ProductCard({ product, variant = "default", selectedColor }) {
     const { addToCart: addToCartContext } = useCartContext();
     const { cartItems } = useCart();
     const { shopInfo } = useShopInfo();
+    const addToCartDisabled = shopInfo?.enable_add_to_cart_btn === false || shopInfo?.enable_add_to_cart_btn === 0 || shopInfo?.enable_add_to_cart_btn === '0';
+    const priceBlurClass = addToCartDisabled ? 'blur-sm select-none' : '';
     // Function to find the first image and color
     const getProductImageAndColor = () => {
         let imageUrl = '/placeholder.svg';
@@ -612,7 +614,7 @@ export function ProductCard({ product, variant = "default", selectedColor }) {
             <div className="mt-auto flex flex-col">
                 {/* Price (styled to match default variant) */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-1.5 mb-3">
-                    <div className="flex items-center justify-start gap-5 md:justify-start md:gap-2 w-full md:w-auto">
+                    <div className={`flex items-center justify-start gap-5 md:justify-start md:gap-2 w-full md:w-auto ${priceBlurClass}`}>
                         <span className="text-base md:text-lg font-bold font-poppins text-foreground leading-none">{formatPrice(price)}</span>
                         {originalPrice > price && (
                             <span className="text-xs text-red-500 line-through decoration-red-500/60 font-medium font-poppins">
@@ -621,7 +623,7 @@ export function ProductCard({ product, variant = "default", selectedColor }) {
                         )}
                     </div>
                     {originalPrice > price && (
-                        <div className="flex items-center mt-0.5 md:mt-0">
+                        <div className={`flex items-center mt-0.5 md:mt-0 ${priceBlurClass}`}>
                             <span className="text-[10px] font-bold font-poppins text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100/50 shadow-sm whitespace-nowrap">
                                 SAVE {formatPrice(originalPrice - price)}
                             </span>
@@ -694,7 +696,7 @@ export function ProductCard({ product, variant = "default", selectedColor }) {
             {/* Price section - Push to bottom of flex container */}
             <div className="mt-auto">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-4">
-                    <div className="flex items-center justify-between md:justify-start md:gap-2.5 w-full md:w-auto">
+                    <div className={`flex items-center justify-between md:justify-start md:gap-2.5 w-full md:w-auto ${priceBlurClass}`}>
                         <span className="text-base md:text-lg font-bold font-poppins text-foreground leading-none">{formatPrice(price)}</span>
                         {originalPrice > price && (
                             <span className="text-xs md:text-sm text-red-500 line-through decoration-red-500/60 font-medium font-poppins">
@@ -703,7 +705,7 @@ export function ProductCard({ product, variant = "default", selectedColor }) {
                         )}
                     </div>
                     {originalPrice > price && (
-                        <div className="flex items-center mt-0.5 md:mt-0">
+                        <div className={`flex items-center mt-0.5 md:mt-0 ${priceBlurClass}`}>
                             <span className="text-[10px] md:text-[11px] font-bold font-poppins text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-100/50 shadow-sm whitespace-nowrap">
                                 SAVE {formatPrice(originalPrice - price)}
                             </span>

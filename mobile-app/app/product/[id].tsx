@@ -9,6 +9,7 @@ import { useShopInfo } from '@/contexts/ShopInfoContext';
 import { ChevronLeft, Share2, Heart, Star, ShoppingCart, Check, Package, ChevronUp, ChevronDown } from 'lucide-react-native';
 import ProductCard from '@/components/ProductCard';
 import Header from '@/components/Header';
+import PriceHiddenBadge from '@/components/PriceHiddenBadge';
 import { ProductDetailSkeleton, ProductCardSkeleton } from '@/components/SkeletonLoader';
 
 // Helpers
@@ -186,6 +187,7 @@ export default function ProductDetailScreen() {
   const { width } = useWindowDimensions();
   const { cart, addToCart } = useCart();
   const { shopInfo } = useShopInfo();
+  const addToCartDisabled = shopInfo?.enable_add_to_cart_btn === false || shopInfo?.enable_add_to_cart_btn === 0 || shopInfo?.enable_add_to_cart_btn === '0';
 
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -465,16 +467,22 @@ export default function ProductDetailScreen() {
 
           {/* Price */}
           <View className="bg-white rounded-xl border border-gray-100 p-4 mb-6 shadow-sm">
-            <View className="flex-row items-baseline gap-2 flex-wrap">
-              <Text className="text-3xl font-bold text-gray-900 font-body">₹{Number(price).toLocaleString('en-IN')}</Text>
-              {originalPrice > price && (
-                <>
-                  <Text className="text-lg text-gray-500 line-through font-body">₹{Number(originalPrice).toLocaleString('en-IN')}</Text>
-                  <Text className="text-sm text-green-600 font-bold ml-1 font-body">Save ₹{Number(originalPrice - price).toLocaleString('en-IN')}</Text>
-                </>
-              )}
-            </View>
-            <Text className="text-gray-500 text-xs mt-1 font-body">Inclusive of all taxes</Text>
+            {addToCartDisabled ? (
+              <PriceHiddenBadge size="md" />
+            ) : (
+              <>
+                <View className="flex-row items-baseline gap-2 flex-wrap">
+                  <Text className="text-3xl font-bold text-gray-900 font-body">₹{Number(price).toLocaleString('en-IN')}</Text>
+                  {originalPrice > price && (
+                    <>
+                      <Text className="text-lg text-gray-500 line-through font-body">₹{Number(originalPrice).toLocaleString('en-IN')}</Text>
+                      <Text className="text-sm text-green-600 font-bold ml-1 font-body">Save ₹{Number(originalPrice - price).toLocaleString('en-IN')}</Text>
+                    </>
+                  )}
+                </View>
+                <Text className="text-gray-500 text-xs mt-1 font-body">Inclusive of all taxes</Text>
+              </>
+            )}
           </View>
 
           {/* Color Selection */}

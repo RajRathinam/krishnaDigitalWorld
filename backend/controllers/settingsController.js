@@ -429,7 +429,12 @@ export const getShopInfoPublic = async (req, res) => {
         'supportEmail',
         'supportPhone',
         'whatsappNumber',
-        'enable_add_to_cart_btn'
+        'enable_add_to_cart_btn',
+        'minAppVersionCode',
+        'latestAppVersionCode',
+        'forceUpdateEnabled',
+        'playStoreUrl',
+        'appUpdateMessage'
       ]
     });
 
@@ -444,7 +449,12 @@ export const getShopInfoPublic = async (req, res) => {
           locations: [],
           socialMedia: {},
           businessHours: {},
-          enable_add_to_cart_btn: true
+          enable_add_to_cart_btn: true,
+          minAppVersionCode: null,
+          latestAppVersionCode: null,
+          forceUpdateEnabled: false,
+          playStoreUrl: null,
+          appUpdateMessage: null
         }
       });
     }

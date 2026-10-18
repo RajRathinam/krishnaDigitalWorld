@@ -320,6 +320,28 @@ export const heroSliderApi = {
     }
 };
 
+export const giftApi = {
+    getMyClaimedGifts: async () => {
+        const response = await api.get('/gifts/my-claims');
+        return response.data;
+    }
+};
+
+export const notificationApi = {
+    getMyNotifications: async () => {
+        const response = await api.get('/notifications');
+        return response.data;
+    },
+    markRead: async (id) => {
+        const response = await api.patch(`/notifications/${id}/read`);
+        return response.data;
+    },
+    markAllRead: async () => {
+        const response = await api.patch('/notifications/read-all');
+        return response.data;
+    }
+};
+
 export const orderApi = {
     createOrder: async (data) => {
         const response = await api.post('/orders', data);

@@ -104,13 +104,15 @@ export const OfflineGiftClaims = () => {
         setExporting(true);
         try {
             const esc = (v) => { const s = String(v ?? ""); return s.includes(",") || s.includes('"') ? `"${s.replace(/"/g,'""')}"` : s; };
-            const headers = ["User Name", "Phone", "Gift Item", "Status", "Date Scanned"].join(",");
+            const headers = ["User Name", "Phone", "Gift Item", "Bill Number", "Purchased Amount", "Status", "Date Scanned"].join(",");
             const rows = filteredClaims.map(c => {
                 return [
-                    c.user?.name || "", 
-                    c.user?.phone || "", 
-                    c.gift?.productName || (c.status === 'lost' ? "None (Lost)" : ""), 
-                    c.status || "", 
+                    c.user?.name || "",
+                    c.user?.phone || "",
+                    c.gift?.productName || (c.status === 'lost' ? "None (Lost)" : ""),
+                    c.billNumber || "",
+                    c.purchasedAmount || "",
+                    c.status || "",
                     formatDate(c.createdAt || c.created_at)
                 ].map(esc).join(",");
             });
@@ -199,6 +201,8 @@ export const OfflineGiftClaims = () => {
                                     <TableHead>User</TableHead>
                                     <TableHead>Phone</TableHead>
                                     <TableHead>Gift Item</TableHead>
+                                    <TableHead>Bill Number</TableHead>
+                                    <TableHead>Purchased Amount</TableHead>
                                     <TableHead className="w-[100px]">Status</TableHead>
                                     <TableHead className="w-[150px]">Date Scanned</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
@@ -207,13 +211,13 @@ export const OfflineGiftClaims = () => {
                             <TableBody>
                                 {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={6} className="h-24 text-center">
+                                        <TableCell colSpan={8} className="h-24 text-center">
                                             <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
                                         </TableCell>
                                     </TableRow>
                                 ) : filteredClaims.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                                        <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
                                             {searchTerm ? "No claims match your search." : "No offline claims found."}
                                         </TableCell>
                                     </TableRow>
@@ -246,6 +250,14 @@ export const OfflineGiftClaims = () => {
                                                     ) : (
                                                         <span className="text-muted-foreground italic">None (Lost)</span>
                                                     )}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <span className="text-sm">{claim.billNumber || 'N/A'}</span>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <span className="text-sm">
+                                                        {claim.purchasedAmount ? `₹${parseFloat(claim.purchasedAmount).toLocaleString('en-IN')}` : 'N/A'}
+                                                    </span>
                                                 </TableCell>
                                                 <TableCell>
                                                     {getStatusBadge(claim.status)}

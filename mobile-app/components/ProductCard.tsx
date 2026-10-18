@@ -7,6 +7,7 @@ import { useShopInfo } from '@/contexts/ShopInfoContext';
 import { useWishlist } from '@/contexts/WishlistContext';
 import { ShoppingCart, Heart, Star, Check } from 'lucide-react-native';
 import { API_BASE_URL } from '@/services/api';
+import PriceHiddenBadge from './PriceHiddenBadge';
 
 // Helper to safely parse JSON strings
 const parseJSONSafe = (data: any, defaultValue: any = null) => {
@@ -33,6 +34,7 @@ export default function ProductCard({ product, onPress, isCompact }: ProductCard
   const router = useRouter();
   const { cart, addToCart } = useCart();
   const { shopInfo } = useShopInfo();
+  const addToCartDisabled = shopInfo?.enable_add_to_cart_btn === false || shopInfo?.enable_add_to_cart_btn === 0 || shopInfo?.enable_add_to_cart_btn === '0';
   const { toggleWishlist, isInWishlist } = useWishlist();
   const [isAdding, setIsAdding] = React.useState(false);
   const [showSuccess, setShowSuccess] = React.useState(false);
@@ -219,26 +221,30 @@ export default function ProductCard({ product, onPress, isCompact }: ProductCard
 
         {/* Price section */}
         <View className="mt-2">
-          <View className="flex-col gap-2 mb-3">
-            <View className="flex-row items-center gap-2 flex-wrap">
-              <Text className="text-gray-900 font-bold text-base leading-none">
-                {formatPrice(price)}
-              </Text>
-              {originalPrice > price && (
-                <Text className="text-red-500 text-xs line-through font-medium">
-                  {formatPrice(originalPrice)}
+          {addToCartDisabled ? (
+            <PriceHiddenBadge size="sm" />
+          ) : (
+            <View className="flex-col gap-2 mb-3">
+              <View className="flex-row items-center gap-2 flex-wrap">
+                <Text className="text-gray-900 font-bold text-base leading-none">
+                  {formatPrice(price)}
                 </Text>
+                {originalPrice > price && (
+                  <Text className="text-red-500 text-xs line-through font-medium">
+                    {formatPrice(originalPrice)}
+                  </Text>
+                )}
+              </View>
+
+              {originalPrice > price && (
+                <View className="self-start bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100/50">
+                  <Text className="text-emerald-600 text-[10px] font-bold">
+                    SAVE {formatPrice(originalPrice - price)}
+                  </Text>
+                </View>
               )}
             </View>
-            
-            {originalPrice > price && (
-              <View className="self-start bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100/50">
-                <Text className="text-emerald-600 text-[10px] font-bold">
-                  SAVE {formatPrice(originalPrice - price)}
-                </Text>
-              </View>
-            )}
-          </View>
+          )}
 
           {/* Add to Cart Button */}
           <TouchableOpacity

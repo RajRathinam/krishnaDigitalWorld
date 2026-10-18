@@ -11,6 +11,10 @@ const Gift = sequelize.define('Gift', {
     type: DataTypes.STRING(255),
     allowNull: false
   },
+  productCode: {
+    type: DataTypes.STRING(100),
+    allowNull: true
+  },
   image: {
     type: DataTypes.STRING(500),
     allowNull: true

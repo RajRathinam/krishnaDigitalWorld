@@ -1,7 +1,7 @@
 import { Coupon, UserCoupon, Order, User } from '../models/index.js';
 import { validateCoupon } from '../utils/validators.js';
 import { Sequelize } from 'sequelize';
-import { sendPushNotification } from '../services/notificationService.js';
+import { notifyUser } from '../services/notificationService.js';
 
 /**
  * @desc    Get all coupons (admin)
@@ -706,15 +706,17 @@ export const assignCouponToUser = async (req, res) => {
       );
     }
 
-    // Send push notification to the user
-    if (user.expoPushToken) {
+    // Notify the user
+    {
       const discountText = discountType === 'percentage' ? `${discountValue}%` : `₹${discountValue}`;
-      await sendPushNotification(
-        user.expoPushToken,
-        'New Coupon Unlocked! 🎁',
-        `You've received a ${discountText} off coupon! Code: ${coupon.code}`,
-        { couponId: coupon.id }
-      );
+      await notifyUser({
+        userId: user.id,
+        type: 'coupon',
+        title: 'New Coupon Unlocked! 🎁',
+        body: `You've received a ${discountText} off coupon! Code: ${coupon.code}`,
+        data: { couponId: coupon.id },
+        pushToken: user.expoPushToken
+      });
     }
 
     res.status(201).json({

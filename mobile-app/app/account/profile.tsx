@@ -301,17 +301,17 @@ export default function ProfileScreen() {
                         <TouchableOpacity onPress={pickImage} className="relative">
                             <View className="w-28 h-28 rounded-full bg-gray-200 items-center justify-center border-4 border-white shadow-sm overflow-hidden">
                                 {selectedImage ? (
-                                    <Image source={{ uri: selectedImage.uri }} className="w-full h-full" />
+                                    <Image source={{ uri: selectedImage.uri }} style={{ width: '100%', height: '100%' }} />
                                 ) : (user?.profileImage && user.profileImage !== 'null' && !imageError) ? (
-                                    <Image 
-                                        source={{ uri: user.profileImage.startsWith('http') ? user.profileImage : `${API_BASE_URL}${user.profileImage.replace(/\\/g, '/').startsWith('/') ? '' : '/'}${user.profileImage.replace(/\\/g, '/')}` }} 
-                                        className="w-full h-full" 
+                                    <Image
+                                        source={{ uri: user.profileImage.startsWith('http') ? user.profileImage : `${API_BASE_URL}${user.profileImage.replace(/\\/g, '/').startsWith('/') ? '' : '/'}${user.profileImage.replace(/\\/g, '/')}` }}
+                                        style={{ width: '100%', height: '100%' }}
                                         onError={() => setImageError(true)}
                                     />
                                 ) : (
-                                    <Image 
-                                        source={{ uri: `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=F3F4F6&color=9CA3AF&size=200` }} 
-                                        className="w-full h-full" 
+                                    <Image
+                                        source={{ uri: `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=F3F4F6&color=9CA3AF&size=200` }}
+                                        style={{ width: '100%', height: '100%' }}
                                     />
                                 )}
                             </View>

@@ -306,6 +306,7 @@ export default function ProductDetail() {
   const navigate = useNavigate();
   const { cartItems } = useCart();
   const { shopInfo } = useShopInfo();
+  const addToCartDisabled = shopInfo?.enable_add_to_cart_btn === false || shopInfo?.enable_add_to_cart_btn === 0 || shopInfo?.enable_add_to_cart_btn === '0';
   const identifier = slug || id || "";
 
   const [product, setProduct] = useState(null);
@@ -710,7 +711,7 @@ export default function ProductDetail() {
 
             {/* Price */}
             <div className="bg-card rounded-lg border border-border p-4 mb-4">
-              <div className="flex items-baseline gap-2 flex-wrap">
+              <div className={`flex items-baseline gap-2 flex-wrap ${addToCartDisabled ? 'blur-sm select-none' : ''}`}>
                 <span className="text-2xl md:text-3xl font-bold text-foreground font-poppins">{formatPrice(price)}</span>
                 {originalPrice > price && (
                   <>

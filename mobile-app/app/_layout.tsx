@@ -16,6 +16,7 @@ import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { CartProvider } from '@/contexts/CartContext';
 import { WishlistProvider } from '@/contexts/WishlistContext';
 import AuthModal from '@/components/AuthModal';
+import ForceUpdateModal from '@/components/ForceUpdateModal';
 import CouponNotificationPopup from '@/components/coupon/CouponNotificationPopup';
 import { NetworkProvider, NetworkBanner } from '@/contexts/NetworkContext';
 import { registerForPushNotificationsAsync } from '@/services/notifications';
@@ -57,7 +58,7 @@ export default function RootLayout() {
   }, [error]);
 
   if (!loaded && !error) {
-    return <AnimatedSplashScreen onFinish={() => setIsSplashFinished(true)} />;
+    return <AnimatedSplashScreen showLoader={false} onFinish={() => setIsSplashFinished(true)} />;
   }
 
   return (
@@ -72,6 +73,7 @@ export default function RootLayout() {
                   <RootLayoutNav />
                   <AuthWrapper isSplashFinished={isSplashFinished} />
                   <CouponNotificationPopup />
+                  {isSplashFinished && <ForceUpdateModal />}
                   {!isSplashFinished && (
                     <AnimatedSplashScreen onFinish={() => setIsSplashFinished(true)} />
                   )}

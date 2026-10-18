@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Modal, ScrollView, Animated, Dimensions, Linking, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
-import { ShoppingCart, Menu, X, ChevronRight, Home, LayoutGrid, Gift, Star, TrendingUp, User, Package, Ticket, Heart, LogOut, MapPin, Phone, ExternalLink, ChevronDown, Truck, Clock, Shield, QrCode } from 'lucide-react-native';
+import { ShoppingCart, Menu, X, ChevronRight, Home, LayoutGrid, Gift, Star, TrendingUp, User, Package, Ticket, Heart, LogOut, MapPin, Phone, ExternalLink, ChevronDown, Truck, Clock, Shield, QrCode, Award, Bell } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { authApi, categoryApi, API_BASE_URL } from '@/services/api';
@@ -294,6 +294,8 @@ const Header = () => {
                                 <SidebarLink icon={ShoppingCart} label="Cart" badge={cartCount > 0 ? cartCount : null} onPress={() => navigateTo('/cart')} />
                                 <SidebarLink icon={Package} label="Orders" onPress={() => navigateTo('/account/orders')} />
                                 <SidebarLink icon={Ticket} label="Coupons" onPress={() => navigateTo('/account/coupons')} />
+                                <SidebarLink icon={Award} label="Claimed Gifts" color="#D97706" onPress={() => navigateTo('/account/claimed-gifts')} />
+                                <SidebarLink icon={Bell} label="Notifications" color="#2563EB" onPress={() => navigateTo('/account/notifications')} />
                                 <SidebarLink icon={Heart} label="Wishlist" color="#EF4444" onPress={() => navigateTo('/account/wishlist')} />
 
                                 <View className="h-[1px] bg-gray-100 my-4 px-2" />

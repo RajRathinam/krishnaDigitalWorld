@@ -7,10 +7,6 @@
     "icon": "./assets/images/skdw.png",
     "scheme": "mobileapp",
     "userInterfaceStyle": "automatic",
-    "splash": {
-      "resizeMode": "contain",
-      "backgroundColor": "#0d001a"
-    },
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
@@ -45,6 +41,15 @@
       "expo-router",
       "expo-font",
       "expo-web-browser",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/sk.png",
+          "imageWidth": 160,
+          "resizeMode": "contain",
+          "backgroundColor": "#0d001a"
+        }
+      ],
       [
         "expo-notifications",
         {

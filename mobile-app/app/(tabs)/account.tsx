@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { User, Mail, ShoppingBag, Heart, Settings, LogOut, Ticket, ChevronRight, MapPin } from 'lucide-react-native';
+import { User, Mail, ShoppingBag, Heart, Settings, LogOut, Ticket, ChevronRight, MapPin, Gift, Bell } from 'lucide-react-native';
 import { API_BASE_URL } from '@/services/api';
 import Header from '@/components/Header';
 import { useRouter } from 'expo-router';
@@ -101,6 +101,22 @@ export default function AccountScreen() {
                         <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/account/coupons')}>
                             <Ticket size={20} color="#6B7280" />
                             <Text style={styles.menuText}>Coupons & Offers</Text>
+                            <View className="ml-auto">
+                                <ChevronRight size={16} color="#D1D5DB" />
+                            </View>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/account/claimed-gifts')}>
+                            <Gift size={20} color="#6B7280" />
+                            <Text style={styles.menuText}>Claimed Gifts</Text>
+                            <View className="ml-auto">
+                                <ChevronRight size={16} color="#D1D5DB" />
+                            </View>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/account/notifications')}>
+                            <Bell size={20} color="#6B7280" />
+                            <Text style={styles.menuText}>Notifications</Text>
                             <View className="ml-auto">
                                 <ChevronRight size={16} color="#D1D5DB" />
                             </View>

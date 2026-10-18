@@ -1,6 +1,18 @@
-import { Gift, OfflineGiftClaim, User } from '../models/index.js';
+import { Gift, OfflineGiftClaim, Order, User } from '../models/index.js';
 import { deleteImage } from '../middleware/upload.js';
 import { Op } from 'sequelize';
+
+// Same cadre ranges shown in the admin Gift form (Basic up to 5K, Economy 5K-10K, ...)
+const getCadreForAmount = (amount) => {
+  const n = parseFloat(amount) || 0;
+  if (n <= 5000) return 'Basic';
+  if (n <= 10000) return 'Economy';
+  if (n <= 25000) return 'Standard';
+  if (n <= 50000) return 'Premium';
+  if (n <= 75000) return 'Elite';
+  if (n <= 100000) return 'Luxury';
+  return 'Platinum';
+};
 
 /**
  * @desc    Scan offline shop QR code for gift
@@ -9,27 +21,13 @@ import { Op } from 'sequelize';
  */
 export const scanOfflineGift = async (req, res) => {
   try {
-    const { secretKey } = req.body;
+    const { secretKey, billNumber, purchasedAmount } = req.body;
 
     if (!secretKey) {
-      return res.status(400).json({ success: false, message: 'Invalid QR code.' });
+      return res.status(400).json({ success: false, code: 'INVALID_QR', message: 'Invalid QR code.' });
     }
 
-    let parsedQR;
-    try {
-      parsedQR = JSON.parse(secretKey);
-    } catch (e) {
-      // Fallback for old QR codes
-      parsedQR = { secret: secretKey, category: 'Basic' };
-    }
-
-    if (parsedQR.secret !== process.env.GIFT_QR_SECRET) {
-      return res.status(400).json({ success: false, message: 'Invalid QR code. This is not the correct store QR.' });
-    }
-
-    const targetCadre = parsedQR.category || 'Basic';
-
-    // Check if user already scanned today
+    // Check if user already scanned today — fail fast before validating form details
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
 
@@ -49,15 +47,62 @@ export const scanOfflineGift = async (req, res) => {
     });
 
     if (existingClaim) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'You have already scanned the shop QR code today. Come back tomorrow!' 
+      return res.status(400).json({
+        success: false,
+        code: 'ALREADY_SCANNED',
+        message: 'You have already scanned the shop QR code today. Come back tomorrow!'
       });
     }
 
-    // Determine win (e.g., 100% chance for testing, change as needed)
-    // 90% chance to win
-    const isWin = Math.random() > 0.1;
+    if (!billNumber || !billNumber.trim()) {
+      return res.status(400).json({ success: false, code: 'BILL_NUMBER_REQUIRED', message: 'Bill number is required.' });
+    }
+
+    if (!purchasedAmount || isNaN(parseFloat(purchasedAmount)) || parseFloat(purchasedAmount) <= 0) {
+      return res.status(400).json({ success: false, code: 'AMOUNT_REQUIRED', message: 'Purchased amount is required.' });
+    }
+
+    // Profile photo: required once, unless the user already has one on file.
+    // The auth middleware only attaches a minimal req.user (no profileImage), so look it up directly.
+    const currentUser = await User.findByPk(req.user.id, { attributes: ['id', 'profileImage'] });
+    let newProfileImage = null;
+    if (!currentUser?.profileImage) {
+      if (!req.uploadedFiles || req.uploadedFiles.length === 0) {
+        return res.status(400).json({ success: false, code: 'PHOTO_REQUIRED', message: 'Profile photo is required.' });
+      }
+      newProfileImage = req.uploadedFiles[0].url;
+    }
+
+    let parsedQR;
+    try {
+      parsedQR = JSON.parse(secretKey);
+    } catch (e) {
+      // Fallback for old QR codes
+      parsedQR = { secret: secretKey, category: 'Basic' };
+    }
+
+    if (parsedQR.secret !== process.env.GIFT_QR_SECRET) {
+      return res.status(400).json({ success: false, code: 'INVALID_QR', message: 'Invalid QR code. This is not the correct store QR.' });
+    }
+
+    const targetCadre = parsedQR.category || 'Basic';
+
+    // The scanned QR's cadre must match the cadre computed from the entered purchase amount
+    const expectedCadre = getCadreForAmount(purchasedAmount);
+    if (expectedCadre !== targetCadre) {
+      return res.status(400).json({
+        success: false,
+        code: 'INVALID_QR',
+        message: `Invalid QR code. This QR does not match your purchase amount (expected the ${expectedCadre} counter QR).`
+      });
+    }
+
+    if (newProfileImage) {
+      await User.update({ profileImage: newProfileImage }, { where: { id: req.user.id } });
+    }
+
+    // Always win — every scan gets a gift (subject to stock availability below)
+    const isWin = true;
     
     if (isWin) {
       const gifts = await Gift.findAll({ where: { status: true, cadre: targetCadre } });
@@ -67,7 +112,9 @@ export const scanOfflineGift = async (req, res) => {
         await OfflineGiftClaim.create({
           userId: req.user.id,
           giftId: randomGift.id,
-          status: 'won'
+          status: 'won',
+          billNumber: billNumber.trim(),
+          purchasedAmount
         });
 
         return res.status(200).json({
@@ -82,7 +129,9 @@ export const scanOfflineGift = async (req, res) => {
     // Lost
     await OfflineGiftClaim.create({
       userId: req.user.id,
-      status: 'lost'
+      status: 'lost',
+      billNumber: billNumber.trim(),
+      purchasedAmount
     });
 
     return res.status(200).json({
@@ -157,7 +206,7 @@ export const getGift = async (req, res) => {
  */
 export const createGift = async (req, res) => {
   try {
-    const { productName, price, status, cadre } = req.body;
+    const { productName, productCode, price, status, cadre } = req.body;
 
     if (!productName || !price) {
       return res.status(400).json({
@@ -187,6 +236,7 @@ export const createGift = async (req, res) => {
 
     const gift = await Gift.create({
       productName,
+      productCode: productCode || null,
       price,
       status: status !== undefined ? status : true,
       cadre: cadre || 'Basic',
@@ -357,6 +407,64 @@ export const updateClaimStatus = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error while updating claim'
+    });
+  }
+};
+
+/**
+ * @desc    Get the logged-in user's own claimed/won gifts (online orders + offline QR scans)
+ * @route   GET /api/gifts/my-claims
+ * @access  Private
+ */
+export const getMyClaimedGifts = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const [onlineOrders, offlineClaims] = await Promise.all([
+      Order.findAll({
+        where: { userId, giftStatus: 'won' },
+        include: [{ model: Gift, as: 'gift' }],
+        order: [['created_at', 'DESC']]
+      }),
+      OfflineGiftClaim.findAll({
+        where: { userId, status: 'won' },
+        include: [{ model: Gift, as: 'gift' }],
+        order: [['created_at', 'DESC']]
+      })
+    ]);
+
+    const claimed = [
+      ...onlineOrders
+        .filter(o => o.gift)
+        .map(o => ({
+          id: `order-${o.id}`,
+          source: 'online',
+          gift: o.gift,
+          orderId: o.id,
+          orderNumber: o.orderNumber,
+          claimedAt: o.createdAt
+        })),
+      ...offlineClaims
+        .filter(c => c.gift)
+        .map(c => ({
+          id: `offline-${c.id}`,
+          source: 'offline',
+          gift: c.gift,
+          billNumber: c.billNumber,
+          purchasedAmount: c.purchasedAmount,
+          claimedAt: c.createdAt
+        }))
+    ].sort((a, b) => new Date(b.claimedAt) - new Date(a.claimedAt));
+
+    res.status(200).json({
+      success: true,
+      data: claimed
+    });
+  } catch (error) {
+    console.error('Get my claimed gifts error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching your claimed gifts'
     });
   }
 };

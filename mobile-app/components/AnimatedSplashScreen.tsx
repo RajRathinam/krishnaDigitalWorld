@@ -2,15 +2,18 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Animated, Dimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
 
 interface AnimatedSplashScreenProps {
   onFinish: () => void;
+  showLoader?: boolean;
 }
 
-export default function AnimatedSplashScreen({ onFinish }: AnimatedSplashScreenProps) {
+export default function AnimatedSplashScreen({ onFinish, showLoader = true }: AnimatedSplashScreenProps) {
   const [isVisible, setIsVisible] = useState(true);
+  const insets = useSafeAreaInsets();
 
   // Animation values
   const bgOpacity = useRef(new Animated.Value(1)).current;
@@ -166,10 +169,11 @@ export default function AnimatedSplashScreen({ onFinish }: AnimatedSplashScreenP
         </Animated.View>
 
         {/* Loader Bar */}
-        <View 
+        {showLoader && (
+        <View
           style={{
             position: 'absolute',
-            bottom: 40,
+            bottom: 40 + insets.bottom,
             left: width / 2 - 70, // Center perfectly (140px / 2 = 70)
             width: 140,
             height: 2,
@@ -178,7 +182,7 @@ export default function AnimatedSplashScreen({ onFinish }: AnimatedSplashScreenP
             overflow: 'hidden',
           }}
         >
-          <Animated.View 
+          <Animated.View
             style={{
               width: '100%',
               height: '100%',
@@ -193,12 +197,13 @@ export default function AnimatedSplashScreen({ onFinish }: AnimatedSplashScreenP
             />
           </Animated.View>
         </View>
+        )}
 
         {/* Copyright Text */}
         <Animated.Text
           style={{
             position: 'absolute',
-            bottom: 16,
+            bottom: 16 + insets.bottom,
             opacity: textOpacity,
             fontSize: 11,
             fontWeight: '500',

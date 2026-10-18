@@ -684,13 +684,6 @@ export default function OrderDetailScreen() {
                       <Text style={{ fontSize: 14, fontWeight: '900', color: '#0F172A' }}>
                         You won a
                       </Text>
-                      {order.gift?.cadre && (
-                        <View style={{ backgroundColor: '#FCE7F3', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, borderWidth: 1, borderColor: '#FBCFE8' }}>
-                          <Text style={{ fontSize: 9, fontWeight: '800', color: '#BE185D', textTransform: 'uppercase' }}>
-                            {order.gift.cadre} Tier
-                          </Text>
-                        </View>
-                      )}
                     </View>
                     <Text style={{ fontSize: 18, fontWeight: '900', color: '#BE185D', marginBottom: 2, letterSpacing: -0.5 }}>
                       {order.gift?.productName || 'Surprise Gift'} {order.gift?.price && <Text style={{ fontSize: 12, color: '#DB2777' }}>(Worth ₹{order.gift.price})</Text>}
@@ -803,6 +796,11 @@ export default function OrderDetailScreen() {
           <SectionCard title="Tracking Info" icon={Truck} delay={450}>
             {order.trackingId && <InfoRow label="Tracking ID" value={order.trackingId} mono />}
             {order.estimatedDelivery && <InfoRow label="Est. Delivery" value={formatDate(order.estimatedDelivery)} highlight />}
+            {order.deliveryPersonPhone && (
+              <TouchableOpacity onPress={() => Linking.openURL(`tel:${order.deliveryPersonPhone}`)}>
+                <InfoRow label="Delivery Person" value={order.deliveryPersonPhone} highlight />
+              </TouchableOpacity>
+            )}
             {orderStatus === "shipped" && (
               <View style={styles.trackAlert}>
                 <Truck size={14} color={Y} />

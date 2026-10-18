@@ -28,6 +28,7 @@ import {
   giftRoutes
 } from './routes/index.js';
 import advertisementRoutes from './routes/advertisementRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
 import { apiLimiter } from './middleware/rateLimiter.js';
 import { checkBirthdaysAndSendWishes } from './utils/birthdayWish.js';
 import birthdayRoutes from './routes/birthdayRoutes.js';
@@ -165,6 +166,7 @@ app.use('/api/brands', brandRoutes);
 app.use('/api/models', modelRoutes);
 app.use('/api/birthdays', birthdayRoutes);
 app.use('/api/gifts', giftRoutes);
+app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin/settings', adminSettingsRouter);
 app.use('/api/hero-slider', heroSliderRoutes);
 app.use('/api/payments', paymentRoutes); // PhonePe PG v2 — must be before /api catch-all

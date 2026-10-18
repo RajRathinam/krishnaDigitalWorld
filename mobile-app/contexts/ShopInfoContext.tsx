@@ -39,7 +39,12 @@ export const ShopInfoProvider = ({ children }: { children: React.ReactNode }) =>
           supportPhone: response.data.supportPhone,
           whatsappNumber: response.data.whatsappNumber,
           isActive: response.data.isActive,
-          enable_add_to_cart_btn: response.data.enable_add_to_cart_btn !== undefined ? (response.data.enable_add_to_cart_btn === 1 || response.data.enable_add_to_cart_btn === true || response.data.enable_add_to_cart_btn === '1') : true
+          enable_add_to_cart_btn: response.data.enable_add_to_cart_btn !== undefined ? (response.data.enable_add_to_cart_btn === 1 || response.data.enable_add_to_cart_btn === true || response.data.enable_add_to_cart_btn === '1') : true,
+          minAppVersionCode: response.data.minAppVersionCode ?? null,
+          latestAppVersionCode: response.data.latestAppVersionCode ?? null,
+          forceUpdateEnabled: response.data.forceUpdateEnabled === 1 || response.data.forceUpdateEnabled === true || response.data.forceUpdateEnabled === '1',
+          playStoreUrl: response.data.playStoreUrl || null,
+          appUpdateMessage: response.data.appUpdateMessage || null
         });
       } else {
         setShopInfo({

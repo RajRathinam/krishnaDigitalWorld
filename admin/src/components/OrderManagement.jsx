@@ -68,6 +68,45 @@ const openMap = (addr) => {
   }
 };
 
+const parseAddress = (addr) => {
+  if (!addr) return null;
+  if (typeof addr === "string") { try { return JSON.parse(addr); } catch { return null; } }
+  return typeof addr === "object" ? addr : null;
+};
+
+const buildMapLink = (addr) => {
+  if (!addr) return "";
+  if (addr.lat && addr.lng) {
+    return `https://www.google.com/maps/search/?api=1&query=${addr.lat},${addr.lng}`;
+  }
+  const q = [addr.street, addr.city, addr.state, addr.pincode || addr.zipCode].filter(Boolean).join(', ');
+  return q ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}` : "";
+};
+
+const buildDeliveryWhatsAppUrl = (order, deliveryPersonPhone) => {
+  const addr = parseAddress(order.shippingAddress);
+  const addrLines = addr
+    ? [addr.street, [addr.city, addr.state].filter(Boolean).join(", "), addr.pincode || addr.zipCode].filter(Boolean).join("\n")
+    : "Address not available";
+  const mapLink = buildMapLink(addr);
+
+  const lines = [
+    `*New Delivery Assignment*`,
+    `Order: ${order.orderNumber}`,
+    `Customer: ${getCustomerName(order)}`,
+    `Phone: ${getCustomerPhone(order)}`,
+    ``,
+    `Address:`,
+    addrLines,
+  ];
+  if (mapLink) lines.push(``, `Map Location:`, mapLink);
+  lines.push(``, `Amount: ${fmt(order.finalAmount || order.totalPrice || 0)}`, `Payment: ${(order.paymentMethod || "COD").toUpperCase()}${order.paymentMethod === "cod" ? " (Collect on delivery)" : " (Paid)"}`);
+
+  const message = encodeURIComponent(lines.join("\n"));
+  const phoneDigits = (deliveryPersonPhone || "").replace(/\D/g, "");
+  return `https://wa.me/${phoneDigits}?text=${message}`;
+};
+
 /* ── badges ── */
 const STATUS_STYLES = {
   pending:     { bg: "bg-yellow-50",  text: "text-yellow-700",  border: "border-yellow-200"  },
@@ -369,6 +408,20 @@ function OrderDetailModal({ orderId, onClose, onUpdateStatus, onRequestCancel })
                         <Truck className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                         <span className="text-muted-foreground">Tracking ID:</span>
                         <span className="font-mono font-medium">{order.trackingId}</span>
+                      </div>
+                    )}
+                    {order.deliveryPersonPhone && (
+                      <div className="flex items-center gap-2 text-sm pt-1">
+                        <Phone className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                        <span className="text-muted-foreground">Delivery Person:</span>
+                        <span className="font-mono font-medium">{order.deliveryPersonPhone}</span>
+                        <a
+                          href={`https://wa.me/${order.deliveryPersonPhone.replace(/\D/g, "")}`}
+                          target="_blank" rel="noopener noreferrer"
+                          className="text-xs text-green-600 hover:underline ml-1"
+                        >
+                          WhatsApp
+                        </a>
                       </div>
                     )}
                     {order.notes && (
@@ -673,6 +726,8 @@ export const OrderManagement = () => {
   const [orderToUpdate, setOrderToUpdate]             = useState(null);
   const [isUpdateDialogOpen, setIsUpdateDialogOpen]   = useState(false);
   const [updateStatus, setUpdateStatus]               = useState("");
+  const [deliveryPersonPhone, setDeliveryPersonPhone] = useState("");
+  const [isUpdatingStatus, setIsUpdatingStatus]       = useState(false);
   const [pageSize, setPageSize]                       = useState(15);
   const [exporting, setExporting]                     = useState(false);
   const [pagination, setPagination]                   = useState({ page: 1, limit: 15, total: 0, totalPages: 1 });
@@ -768,19 +823,34 @@ export const OrderManagement = () => {
 
   const handleUpdateStatus = async () => {
     if (!orderToUpdate || !updateStatus) return;
+    if (updateStatus === "shipped" && !deliveryPersonPhone.trim()) {
+      toast({ title: "Delivery person required", description: "Enter the delivery person's WhatsApp number to mark as shipped", variant: "destructive" });
+      return;
+    }
     try {
-      const result = await updateOrderStatusApi(orderToUpdate.id, {
-        status: updateStatus,
-      });
+      setIsUpdatingStatus(true);
+      const payload = { status: updateStatus };
+      if (updateStatus === "shipped") payload.deliveryPersonPhone = deliveryPersonPhone.trim();
+
+      const result = await updateOrderStatusApi(orderToUpdate.id, payload);
       if (result.success) {
         toast({ title: "Success", description: "Order status updated successfully" });
+
+        if (updateStatus === "shipped") {
+          const waUrl = buildDeliveryWhatsAppUrl(orderToUpdate, deliveryPersonPhone.trim());
+          window.open(waUrl, "_blank");
+        }
+
         await fetchOrders(pagination.page, pageSize);
         setIsUpdateDialogOpen(false);
         setUpdateStatus("");
+        setDeliveryPersonPhone("");
         setOrderToUpdate(null);
       }
     } catch (error) {
       toast({ title: "Error", description: error.message || "Failed to update", variant: "destructive" });
+    } finally {
+      setIsUpdatingStatus(false);
     }
   };
 
@@ -1139,6 +1209,7 @@ export const OrderManagement = () => {
                           <DropdownMenuItem onClick={() => {
                                   setOrderToUpdate(order);
                             setUpdateStatus(order.orderStatus);
+                            setDeliveryPersonPhone(order.deliveryPersonPhone || "");
                             setIsUpdateDialogOpen(true);
                           }}>
                                   <RefreshCw className="h-4 w-4 mr-2" /> Update Delivery Status
@@ -1216,6 +1287,7 @@ export const OrderManagement = () => {
           onUpdateStatus={(order) => {
             setOrderToUpdate(order);
             setUpdateStatus(order.orderStatus);
+            setDeliveryPersonPhone(order.deliveryPersonPhone || "");
             setSelectedOrderId(null);
               setIsUpdateDialogOpen(true);
           }}
@@ -1252,10 +1324,28 @@ export const OrderManagement = () => {
               </SelectContent>
             </Select>
           </div>
+          {updateStatus === "shipped" && (
+            <div className="space-y-2">
+              <Label>Delivery Person WhatsApp Number *</Label>
+              <Input
+                placeholder="e.g. 9876543210"
+                value={deliveryPersonPhone}
+                onChange={(e) => setDeliveryPersonPhone(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                After updating, WhatsApp will open with the order & location details pre-filled to send to this number.
+              </p>
+            </div>
+          )}
         </div>
         <DialogFooter>
-            <Button variant="outline" onClick={() => { setIsUpdateDialogOpen(false); setUpdateStatus(""); }}>Cancel</Button>
-            <Button onClick={handleUpdateStatus} disabled={!updateStatus}>Update Status</Button>
+            <Button variant="outline" onClick={() => { setIsUpdateDialogOpen(false); setUpdateStatus(""); setDeliveryPersonPhone(""); }}>Cancel</Button>
+            <Button
+              onClick={handleUpdateStatus}
+              disabled={!updateStatus || isUpdatingStatus || (updateStatus === "shipped" && !deliveryPersonPhone.trim())}
+            >
+              {isUpdatingStatus ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Updating…</> : "Update Status"}
+            </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

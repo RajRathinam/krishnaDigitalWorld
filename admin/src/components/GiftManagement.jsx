@@ -26,6 +26,7 @@ export const GiftManagement = () => {
     // Form State
     const [form, setForm] = useState({
         productName: "",
+        productCode: "",
         price: "",
         status: true,
         cadre: "Basic",
@@ -36,6 +37,7 @@ export const GiftManagement = () => {
     const resetForm = () => {
         setForm({
             productName: "",
+            productCode: "",
             price: "",
             status: true,
             cadre: "Basic",
@@ -98,6 +100,7 @@ export const GiftManagement = () => {
         try {
             const formData = new FormData();
             formData.append("productName", form.productName.trim());
+            formData.append("productCode", form.productCode.trim());
             formData.append("price", form.price);
             formData.append("status", form.status.toString());
             formData.append("cadre", form.cadre);
@@ -137,6 +140,7 @@ export const GiftManagement = () => {
         resetForm();
         setForm({
             productName: gift.productName || "",
+            productCode: gift.productCode || "",
             price: gift.price || "",
             status: gift.status ?? true,
             cadre: gift.cadre || "Basic",
@@ -223,6 +227,7 @@ export const GiftManagement = () => {
                                 <TableRow>
                                     <TableHead className="w-[80px]">Image</TableHead>
                                     <TableHead>Product Name</TableHead>
+                                    <TableHead>Product Code</TableHead>
                                     <TableHead>Price</TableHead>
                                     <TableHead>Cadre</TableHead>
                                     <TableHead className="w-[100px]">Status</TableHead>
@@ -233,13 +238,13 @@ export const GiftManagement = () => {
                             <TableBody>
                                 {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={6} className="h-24 text-center">
+                                        <TableCell colSpan={7} className="h-24 text-center">
                                             <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
                                         </TableCell>
                                     </TableRow>
                                 ) : filteredGifts.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                                        <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
                                             {searchTerm ? "No gifts match your search." : "No gifts found. Click \"Add Gift\" to create one."}
                                         </TableCell>
                                     </TableRow>
@@ -270,6 +275,9 @@ export const GiftManagement = () => {
                                                 <div className="flex flex-col">
                                                     <span className="font-semibold">{gift.productName}</span>
                                                 </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <span className="text-sm text-muted-foreground">{gift.productCode || "—"}</span>
                                             </TableCell>
                                             <TableCell>
                                                 ₹{gift.price}
@@ -321,7 +329,7 @@ export const GiftManagement = () => {
 
             {/* Add/Edit Gift Dialog */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="sm:max-w-[500px]">
+                <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>{isEditing ? "Edit Gift" : "Add New Gift"}</DialogTitle>
                         <DialogDescription>
@@ -340,6 +348,16 @@ export const GiftManagement = () => {
                                 value={form.productName}
                                 onChange={(e) => setForm({ ...form, productName: e.target.value })}
                                 placeholder="Enter gift name"
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="productCode">Product Code</Label>
+                            <Input
+                                id="productCode"
+                                value={form.productCode}
+                                onChange={(e) => setForm({ ...form, productCode: e.target.value })}
+                                placeholder="Enter product code (optional)"
                             />
                         </div>
 
