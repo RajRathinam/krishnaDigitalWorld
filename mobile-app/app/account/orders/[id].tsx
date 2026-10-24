@@ -398,12 +398,6 @@ function GiftPopup({ order, onClose, onAwesome }: any) {
             {order.gift?.productName || 'Surprise Gift'}
           </Animated.Text>
           
-          {order.gift?.price && (
-            <Animated.View entering={FadeIn.delay(400)} style={{ backgroundColor: '#FCE7F3', alignSelf: 'center', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12, marginBottom: 16 }}>
-              <Text style={{ color: '#DB2777', fontWeight: '800', fontSize: 14 }}>Worth ₹{parseFloat(order.gift.price).toLocaleString('en-IN')}</Text>
-            </Animated.View>
-          )}
-
           <Animated.Text entering={FadeIn.delay(500)} style={{ fontSize: 14, color: '#4B5563', textAlign: 'center', paddingHorizontal: 20, lineHeight: 22, fontWeight: '500', marginBottom: 24 }}>
             Your free gift will be delivered along with your order.
           </Animated.Text>
@@ -686,7 +680,7 @@ export default function OrderDetailScreen() {
                       </Text>
                     </View>
                     <Text style={{ fontSize: 18, fontWeight: '900', color: '#BE185D', marginBottom: 2, letterSpacing: -0.5 }}>
-                      {order.gift?.productName || 'Surprise Gift'} {order.gift?.price && <Text style={{ fontSize: 12, color: '#DB2777' }}>(Worth ₹{order.gift.price})</Text>}
+                      {order.gift?.productName || 'Surprise Gift'}
                     </Text>
                     <Text style={{ fontSize: 10, color: '#475569', fontWeight: '500' }}>
                       Your free gift will be delivered with your order.

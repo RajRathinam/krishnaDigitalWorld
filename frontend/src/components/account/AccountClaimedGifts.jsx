@@ -62,12 +62,6 @@ function GiftDetailPopup({ item, onClose }) {
             {gift?.productName || "Surprise Gift"}
           </h3>
 
-          {gift?.price && (
-            <div className="inline-block bg-pink-100 text-pink-700 px-3 py-1 rounded-lg font-bold text-sm mb-4 relative z-10">
-              Worth ₹{parseFloat(gift.price).toLocaleString("en-IN")}
-            </div>
-          )}
-
           <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground mb-6 relative z-10">
             {item.source === "online" ? (
               <>

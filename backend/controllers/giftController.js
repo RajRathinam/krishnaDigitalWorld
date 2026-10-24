@@ -206,12 +206,12 @@ export const getGift = async (req, res) => {
  */
 export const createGift = async (req, res) => {
   try {
-    const { productName, productCode, price, status, cadre } = req.body;
+    const { productName, productCode, status, cadre } = req.body;
 
-    if (!productName || !price) {
+    if (!productName) {
       return res.status(400).json({
         success: false,
-        message: 'Product name and price are required'
+        message: 'Product name is required'
       });
     }
 
@@ -237,7 +237,6 @@ export const createGift = async (req, res) => {
     const gift = await Gift.create({
       productName,
       productCode: productCode || null,
-      price,
       status: status !== undefined ? status : true,
       cadre: cadre || 'Basic',
       image

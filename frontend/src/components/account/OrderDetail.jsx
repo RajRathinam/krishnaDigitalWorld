@@ -390,12 +390,6 @@ function GiftPopup({ order, onClose, onAwesome }) {
             {order.gift?.productName || "Surprise Gift"}
           </h3>
 
-          {order.gift?.price && (
-            <div className="inline-block bg-pink-100 text-pink-700 px-3 py-1 rounded-lg font-bold text-sm mb-4 relative z-10">
-              Worth ₹{parseFloat(order.gift.price).toLocaleString("en-IN")}
-            </div>
-          )}
-
           <p className="text-gray-600 text-sm mb-6 relative z-10 font-medium">
             Your free gift will be delivered along with your order.
           </p>
@@ -958,11 +952,6 @@ export default function OrderDetail() {
                     </div>
                     <p className="text-lg font-black text-pink-700 leading-tight truncate">
                       {order.gift?.productName || 'Surprise Gift'}
-                      {order.gift?.price && (
-                        <span className="text-sm font-semibold text-pink-500 ml-1.5">
-                          (Worth ₹{parseFloat(order.gift.price).toLocaleString('en-IN')})
-                        </span>
-                      )}
                     </p>
                     <p className="text-xs text-slate-500 mt-1">Your free gift will be delivered with your order.</p>
                   </div>

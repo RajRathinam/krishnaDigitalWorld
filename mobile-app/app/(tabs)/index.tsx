@@ -180,7 +180,7 @@ export default function HomeScreen() {
             </View>
             <Text className="text-[13px] text-[#666666] mt-1">Explore our wide range of collections</Text>
           </View>
-          {categoriesLoading || categoriesError || isOffline || !categories.length ? (
+          {!categories.length && (categoriesLoading || categoriesError || isOffline) ? (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20 }}>
               {[1, 2, 3, 4, 5].map(i => <CategoryItemSkeleton key={i} />)}
             </ScrollView>
@@ -257,7 +257,7 @@ export default function HomeScreen() {
             </Pressable>
           </View>
 
-          {productsLoading || productsError || isOffline || !newArrivalsProducts.length ? (
+          {!newArrivalsProducts.length && (productsLoading || productsError || isOffline) ? (
             <View>
               {chunkArray([1, 2, 3, 4], 2).map((row, rowIndex) => (
                 <View key={rowIndex} className="flex-row justify-between">
@@ -290,7 +290,7 @@ export default function HomeScreen() {
         <AnimatedTodayDealsBanner />
         
         <View className="px-5 pb-5">
-          {dealsLoading || dealsError || isOffline || !dealsProducts.length ? (
+          {!dealsProducts.length && (dealsLoading || dealsError || isOffline) ? (
             <View>
               {chunkArray([1, 2, 3, 4, 5, 6], 2).map((row, rowIndex) => (
                 <View key={rowIndex} className="flex-row justify-between">

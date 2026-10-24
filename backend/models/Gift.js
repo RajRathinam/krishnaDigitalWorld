@@ -19,10 +19,6 @@ const Gift = sequelize.define('Gift', {
     type: DataTypes.STRING(500),
     allowNull: true
   },
-  price: {
-    type: DataTypes.DECIMAL(10, 2),
-    allowNull: false
-  },
   status: {
     type: DataTypes.BOOLEAN,
     defaultValue: true

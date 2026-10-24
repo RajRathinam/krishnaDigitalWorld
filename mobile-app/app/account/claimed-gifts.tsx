@@ -47,14 +47,6 @@ function GiftDetailModal({ item, onClose }: { item: any; onClose: () => void }) 
             {gift?.productName || 'Surprise Gift'}
           </Text>
 
-          {!!gift?.price && (
-            <View className="bg-pink-100 px-3 py-1 rounded-lg mb-4 z-10">
-              <Text className="text-pink-700 font-bold text-sm">
-                Worth ₹{parseFloat(gift.price).toLocaleString('en-IN')}
-              </Text>
-            </View>
-          )}
-
           <View className="flex-row items-center gap-1.5 mb-5 z-10">
             {item.source === 'online' ? (
               <ShoppingBag size={13} color="#6B7280" />

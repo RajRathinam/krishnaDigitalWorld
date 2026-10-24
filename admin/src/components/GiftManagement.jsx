@@ -27,7 +27,6 @@ export const GiftManagement = () => {
     const [form, setForm] = useState({
         productName: "",
         productCode: "",
-        price: "",
         status: true,
         cadre: "Basic",
     });
@@ -38,7 +37,6 @@ export const GiftManagement = () => {
         setForm({
             productName: "",
             productCode: "",
-            price: "",
             status: true,
             cadre: "Basic",
         });
@@ -87,10 +85,10 @@ export const GiftManagement = () => {
     };
 
     const handleSubmit = async () => {
-        if (!form.productName.trim() || !form.price) {
+        if (!form.productName.trim()) {
             toast({
                 title: "Validation Error",
-                description: "Product name and price are required",
+                description: "Product name is required",
                 variant: "destructive",
             });
             return;
@@ -101,7 +99,6 @@ export const GiftManagement = () => {
             const formData = new FormData();
             formData.append("productName", form.productName.trim());
             formData.append("productCode", form.productCode.trim());
-            formData.append("price", form.price);
             formData.append("status", form.status.toString());
             formData.append("cadre", form.cadre);
 
@@ -141,7 +138,6 @@ export const GiftManagement = () => {
         setForm({
             productName: gift.productName || "",
             productCode: gift.productCode || "",
-            price: gift.price || "",
             status: gift.status ?? true,
             cadre: gift.cadre || "Basic",
         });
@@ -228,7 +224,6 @@ export const GiftManagement = () => {
                                     <TableHead className="w-[80px]">Image</TableHead>
                                     <TableHead>Product Name</TableHead>
                                     <TableHead>Product Code</TableHead>
-                                    <TableHead>Price</TableHead>
                                     <TableHead>Cadre</TableHead>
                                     <TableHead className="w-[100px]">Status</TableHead>
                                     <TableHead className="w-[100px]">Created</TableHead>
@@ -278,9 +273,6 @@ export const GiftManagement = () => {
                                             </TableCell>
                                             <TableCell>
                                                 <span className="text-sm text-muted-foreground">{gift.productCode || "—"}</span>
-                                            </TableCell>
-                                            <TableCell>
-                                                ₹{gift.price}
                                             </TableCell>
                                             <TableCell>
                                                 <Badge variant="outline">{gift.cadre || 'Basic'}</Badge>
@@ -358,18 +350,6 @@ export const GiftManagement = () => {
                                 value={form.productCode}
                                 onChange={(e) => setForm({ ...form, productCode: e.target.value })}
                                 placeholder="Enter product code (optional)"
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="price">Price *</Label>
-                            <Input
-                                id="price"
-                                type="number"
-                                step="0.01"
-                                value={form.price}
-                                onChange={(e) => setForm({ ...form, price: e.target.value })}
-                                placeholder="Enter price"
                             />
                         </div>
 
