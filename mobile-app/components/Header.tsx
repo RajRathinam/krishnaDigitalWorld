@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Modal, ScrollView, Animated, Dimensions, Linking, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
+import Constants from 'expo-constants';
 import { ShoppingCart, Menu, X, ChevronRight, Home, LayoutGrid, Gift, Star, TrendingUp, User, Package, Ticket, Heart, LogOut, MapPin, Phone, ExternalLink, ChevronDown, Truck, Clock, Shield, QrCode, Award, Bell } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -350,6 +351,14 @@ const Header = () => {
                                         <Text className="text-gray-500 text-xs ml-2 font-medium">Special Offers</Text>
                                     </View>
                                 </View>
+                            </View>
+
+                            {/* App Version */}
+                            <View className="items-center pb-2">
+                                <Text className="text-gray-400 text-[11px] font-medium">
+                                    App Version {Constants.expoConfig?.version || '1.0.0'}
+                                    {Constants.expoConfig?.android?.versionCode ? `+${Constants.expoConfig.android.versionCode}` : ''}
+                                </Text>
                             </View>
                         </ScrollView>
                     </Animated.View>
